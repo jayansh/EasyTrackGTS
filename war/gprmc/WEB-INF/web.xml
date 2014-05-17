@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!DOCTYPE web-app PUBLIC '-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN' 'http://java.sun.com/dtd/web-app_2_3.dtd'>
-<web-app id="gprmc">
+<web-app id="gprmc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" 
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" 
+         version="2.5">
 
     <display-name>dcs:w-gprmc</display-name>
     <description>GPRMC DCS</description>
@@ -29,9 +31,10 @@
 
     <servlet-mapping>
         <servlet-name>Data</servlet-name>
-        <url-pattern>/Data</url-pattern>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
+    <!--
     <servlet-mapping>
         <servlet-name>Data</servlet-name>
         <url-pattern>/data</url-pattern>
@@ -41,6 +44,7 @@
         <servlet-name>Data</servlet-name>
         <url-pattern>/gtc</url-pattern>
     </servlet-mapping>
+    -->
 
     <!-- ====================================================================== -->
 
