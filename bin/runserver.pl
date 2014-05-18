@@ -7,9 +7,12 @@
 # -----------------------------------------------------------------------------
 # Device Parser Server Startup (MySQL datastore)
 #  Valid Options:
-#    -s    <server>    : server name
-#    -port <port>      : [optional] listen port
+#    -s       <server> : server name
+#    -bind    <addr>   : [optional] local bind address
+#    -port    <port>   : [optional] listen port
+#    -cmdport <port>   : [optional] command port
 #    -i                : [optional] interactive
+#    -debug            : [optional] debug logging
 #    -kill             : [optional] kill running server
 #  Examples:
 #     % runserver.pl -s <server> -port 31000 -i

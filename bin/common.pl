@@ -201,6 +201,7 @@ if ($SCAN_JARDIR_FOR_JARS) {
         "custom.jar",                           # - custom code
         "gtsdmtp.jar",                          # - GTS DMTP tables/support
         "dmtpserv.jar",                         # - DMTP server
+        "ctrac.jar",                            # - ctracgts (not supported)
        #"activation.jar",                       # - JavaMail [optional here]
        #"mail.jar",                             # - JavaMail [optional here]
        #"mysql-connector-java-3.1.7-bin.jar",   # - MySQL JDBC [optional here]

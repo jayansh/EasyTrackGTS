@@ -37,7 +37,7 @@ NEWDEV=""; # "-newAccount=${ACCOUNT} -newDevice=${DEVICE}";
 
 # ---
 JMAIN="org.opengts.db.DBConfig"
-CMD_ARGS="-initTables ${NEWDEV} $1 $2 $3 $4 $5"
+CMD_ARGS="-initTables= ${NEWDEV} $1 $2 $3 $4 $5"
 COMMAND="${CMD_JAVA} -classpath ${CPATH} ${JMAIN} ${JMAIN_ARGS} ${CMD_ARGS}"
 if [ $GTS_DEBUG -ne 0 ]; then
     echo "${COMMAND}"

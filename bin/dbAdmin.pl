@@ -98,6 +98,7 @@ use Getopt::Long;
     "tables:s"          => \$opt_tables,
     "load:s"            => \$opt_load,
     "schema:s"          => \$opt_schema,
+    "columns:s"         => \$opt_columns,
     "status:s"          => \$opt_status,
     "dump:s"            => \$opt_dump,
     "xEventData"        => \$opt_excludeEventData,
@@ -106,6 +107,7 @@ use Getopt::Long;
     "help"              => \$opt_help,
     # --
     "rootUser:s"        => \$opt_rootUser,  # -- needed for 'createdb', 'grant', 'dump'
+    "mysqlUser:s"       => \$opt_rootUser,  # -- needed for 'createdb', 'grant', 'dump'
     "user:s"            => \$opt_rootUser,  # -- needed for 'createdb', 'grant', 'dump'
     "name:s"            => \$opt_tableName, # --- used by '-tables' only
     "tableName:s"       => \$opt_tableName, # --- used by '-tables' only
@@ -406,6 +408,16 @@ if (defined $opt_schema) {
     #print "Table Schema ...\n";
     my $rtnErr = 0;
     my $cmd = $Command . " -schema=$opt_schema";
+    $rtnErr = &sysCmd($cmd, $GTS_DEBUG);
+    $optFound = $true;
+}
+
+# --- display existing table schema
+if (defined $opt_columns) {
+    #print "\n";
+    #print "Existing Table Columns ...\n";
+    my $rtnErr = 0;
+    my $cmd = $Command . " -columns=$opt_columns";
     $rtnErr = &sysCmd($cmd, $GTS_DEBUG);
     $optFound = $true;
 }

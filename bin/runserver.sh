@@ -44,6 +44,7 @@ function usage() {
 KILL_SIG=9
 TEST_EXISTS=0
 SERVER_NAME=""
+BIND_ADDR=""
 PORT=0
 CMDPORT=0
 INTERACTIVE=0
@@ -74,10 +75,16 @@ while [ $# -gt 0 ]; do
             SERVER_NAME=$2
             shift  # skip $2
             ;;
-        
+
         # - explicit startup/main class
         "-main") 
             MAIN_CLASS=$2
+            shift  # skip $2
+            ;;
+
+        # - set explicit bind address
+        "-bind" | "-bindAddress") 
+            BIND_ADDR=$2
             shift  # skip $2
             ;;
 
@@ -223,9 +230,14 @@ if [ "$KILL_PROC" != "" ]; then
     exit 99
 fi
 
+# -- bind address
+if [ "$BIND_ADDR" != "" ]; then
+    ARGS="${ARGS} -bindAddress=${BIND_ADDR}"
+fi
+
 # --- port 
 if [ $PORT -gt 0 ]; then
-    ARGS="${ARGS} -${SERVER_NAME}.port=${PORT}"
+    ARGS="${ARGS} -port=${PORT}"
 fi
 
 # --- command-port 
