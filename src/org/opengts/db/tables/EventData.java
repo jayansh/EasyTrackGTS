@@ -169,6 +169,12 @@
 //     -Added KEY_TIMEZONE
 //  2013/09/20  Martin D. Flynn
 //     -Added field length check when setting FLD_postalCode.
+//  2014/03/03  Martin D. Flynn
+//     -Made some adjustments to display warnings when unable to count InnoDB events.
+//     -Added PROP_EventData_allowInnoDBCountWithWhere to allow "count(*)" with EventData
+//     -Added KEY_DRIVER_PHONE [B28]
+//  2014/05/05  Martin D. Flynn
+//     -Added FLD_tripPtoHours, FLD_tripBrakeCount, FLD_tripClutchCount
 // ----------------------------------------------------------------------------
 package org.opengts.db.tables;
 
@@ -212,6 +218,7 @@ public class EventData
     public static final String OPTCOLS_ThermoFieldInfo              = "startupInit.EventData.ThermoFieldInfo";
     public static final String OPTCOLS_AnalogFieldInfo              = "startupInit.EventData.AnalogFieldInfo";
     public static final String OPTCOLS_AutoIncrementIndex           = "startupInit.EventData.AutoIncrementIndex";
+    public static final String OPTCOLS_TripSummary                  = "startupInit.EventData.TripSummary";
     public static final String OPTCOLS_EndOfDaySummary              = "startupInit.EventData.EndOfDaySummary";
     public static final String OPTCOLS_ServingCellTowerData         = "startupInit.EventData.ServingCellTowerData";
     public static final String OPTCOLS_NeighborCellTowerData        = "startupInit.EventData.NeighborCellTowerData";
@@ -229,7 +236,7 @@ public class EventData
     // ------------------------------------------------------------------------
 
     public  static final double  INVALID_TEMPERATURE    = -9999.0;
-    public  static final double  TEMPERATURE_LIMIT_LO   = -273.15;   // degrees C
+    public  static final double  TEMPERATURE_LIMIT_LO   = -273.15;   // degrees C (Kelvin)
     public  static final double  TEMPERATURE_LIMIT_HI   = 200.0;     // degrees C
 
     // ------------------------------------------------------------------------
@@ -481,6 +488,7 @@ public class EventData
     public static final String FLD_satelliteCount       = "satelliteCount";         // number of satellites
     public static final String FLD_batteryLevel         = "batteryLevel";           // battery level %
     public static final String FLD_batteryVolts         = "batteryVolts";           // battery volts
+    public static final String FLD_batteryTemp          = "batteryTemp";            // battery temperature-C
     public static final String FLD_signalStrength       = "signalStrength";         // signal strength (RSSI)
     public static final DBField GPSFieldInfo[] = {
         new DBField(FLD_gpsFixType       , Integer.TYPE  , DBField.TYPE_UINT16      , I18N.getString(EventData.class,"EventData.fld.gpsFixType"         , "GPS Fix Type"          ), "enum=EventData$GPSFixType"),
@@ -491,6 +499,7 @@ public class EventData
         new DBField(FLD_satelliteCount   , Integer.TYPE  , DBField.TYPE_UINT16      , I18N.getString(EventData.class,"EventData.fld.satelliteCount"     , "Number of Satellites"  ), ""),
         new DBField(FLD_batteryLevel     , Double.TYPE   , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.batteryLevel"       , "Battery Level %"       ), "format=#0.0 units=percent"),
         new DBField(FLD_batteryVolts     , Double.TYPE   , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.batteryVolts"       , "Battery Volts"         ), "format=#0.0"),
+        new DBField(FLD_batteryTemp      , Double.TYPE   , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.batteryTempC"       , "Battery Temperature C" ), "format=#0.0 units=temp"),
         new DBField(FLD_signalStrength   , Double.TYPE   , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.signalStrength"     , "Signal Strength (RSSI)"), "format=#0.0"),
     };
 
@@ -530,7 +539,7 @@ public class EventData
     };
 
     // OBD fields
-    // startupInit.EventData.J1708FieldInfo=true
+    // startupInit.EventData.J1708FieldInfo=true (OBSOLETE)
     // startupInit.EventData.CANBUSFieldInfo=true
   //public static final String FLD_obdType              = "obdType";                // OBD type [0,1=J1708, 2=J1939, 3=OBDII]
     public static final String FLD_fuelTotal            = "fuelTotal";              // liters
@@ -777,6 +786,36 @@ public class EventData
         new DBField(FLD_dataPush         , Boolean.TYPE , DBField.TYPE_BOOLEAN   , I18N.getString(EventData.class,"EventData.fld.dataPush"           , "Data Push Indicator"   ), ALTKEY_eq_pushkey),
     };
 
+    // Trip summary (ATrack)
+    // startupInit.EventData.TripSummary=true
+    // tripFuelUsed ==> see FLD_fuelTrip
+    public static final String FLD_tripStartTime        = "tripStartTime";    
+    public static final String FLD_tripStopTime         = "tripStopTime";    
+    public static final String FLD_tripDistanceKM       = "tripDistanceKM";
+    public static final String FLD_tripIdleHours        = "tripIdleHours";
+    public static final String FLD_tripPtoHours         = "tripPtoHours";
+    public static final String FLD_tripMaxSpeedKPH      = "tripMaxSpeedKPH";
+    public static final String FLD_tripMaxRpm           = "tripMaxRpm";
+    public static final String FLD_tripStartLatitude    = "tripStartLatitude";
+    public static final String FLD_tripStartLongitude   = "tripStartLongitude";
+    public static final String FLD_tripElapsedSeconds   = "tripElapsedSeconds";
+    public static final String FLD_tripBrakeCount       = "tripBrakeCount";
+    public static final String FLD_tripClutchCount      = "tripClutchCount";
+    public static final DBField TripSummary[] = {
+        new DBField(FLD_tripStartTime     , Long.TYPE    , DBField.TYPE_UINT32      , I18N.getString(EventData.class,"EventData.fld.tripStartTime"     , "Trip Start Time"       ), "format=time"),
+        new DBField(FLD_tripStopTime      , Long.TYPE    , DBField.TYPE_UINT32      , I18N.getString(EventData.class,"EventData.fld.tripStopTime"      , "Trip Stop Time"        ), "format=time"),
+        new DBField(FLD_tripDistanceKM    , Double.TYPE  , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.tripDistanceKM"    , "Trip Distance KM"      ), "format=#0.0 units=distance"),
+        new DBField(FLD_tripIdleHours     , Double.TYPE  , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.tripIdleHours"     , "Trip Idle Hours"       ), "format=#0.0"),
+        new DBField(FLD_tripPtoHours      , Double.TYPE  , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.tripPtoHours"      , "Trip PTO Hours"        ), "format=#0.0"),
+        new DBField(FLD_tripMaxSpeedKPH   , Double.TYPE  , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.tripMaxSpeedKPH"   , "Trip Max Speed"        ), "format=#0.0 units=speed"),
+        new DBField(FLD_tripMaxRpm        , Long.TYPE    , DBField.TYPE_UINT32      , I18N.getString(EventData.class,"EventData.fld.tripMaxRPM"        , "Trip Max RPM"          ), ""),
+        new DBField(FLD_tripStartLatitude , Double.TYPE  , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.tripStartLatitude" , "Trip Start Latitude"   ), "format=#0.00000"),
+        new DBField(FLD_tripStartLongitude, Double.TYPE  , DBField.TYPE_DOUBLE      , I18N.getString(EventData.class,"EventData.fld.tripStartLongitude", "Trip Start Longitude"  ), "format=#0.00000"),
+        new DBField(FLD_tripElapsedSeconds, Long.TYPE    , DBField.TYPE_INT32       , I18N.getString(EventData.class,"EventData.fld.tripElapsedSeconds", "Trip Elapsed Seconds"  ), ""),
+        new DBField(FLD_tripBrakeCount    , Long.TYPE    , DBField.TYPE_INT32       , I18N.getString(EventData.class,"EventData.fld.tripBrakeCount"    , "Trip Brake Presses"    ), ""),
+        new DBField(FLD_tripClutchCount   , Long.TYPE    , DBField.TYPE_INT32       , I18N.getString(EventData.class,"EventData.fld.tripClutchCount"   , "Trip Clutch Presses"   ), ""),
+    };
+
     // End-Of-Day summary (Antx)
     // startupInit.EventData.EndOfDaySummary=true
     public static final String FLD_dayEngineStarts      = "dayEngineStarts";    
@@ -864,7 +903,8 @@ public class EventData
             DBField postalFld = factory.getField(FLD_postalCode);
             EventData.PostalColumnLength  = (postalFld != null)? postalFld.getStringLength() : 0;
             // "COUNT(*)" not allowed if InnoDB
-            factory.setAllowInnoDBCOUNT(false);
+            boolean countOK = RTConfig.getBoolean(DBConfig.PROP_EventData_allowInnoDBCountWithWhere,false);
+            factory.setAllowInnoDBCOUNT(countOK);
         }
         return factory;
     }
@@ -1337,11 +1377,19 @@ public class EventData
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the Raw Packet data for this event (if available)
+    *** @return The Raw Packet data for this event (for blank if not available)
+    **/
     public String getRawData()
     {
         return this.getFieldValue(FLD_rawData, "");
     }
-    
+
+    /**
+    *** Sets the Raw Packet data for this event (if available)
+    *** @param v The Raw Packet data for this event
+    **/
     public void setRawData(String v)
     {
         this.setFieldValue(FLD_rawData, StringTools.trim(v));
@@ -1470,11 +1518,19 @@ public class EventData
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the latitude for this event
+    *** @return The latitude for this event
+    **/
     public double getLatitude()
     {
         return this.getFieldValue(FLD_latitude, 0.0);
     }
-    
+
+    /**
+    *** Sets the latitude for this event
+    *** @param v The latitude for this event
+    **/
     public void setLatitude(double v)
     {
         this.setFieldValue(FLD_latitude, v);
@@ -1483,11 +1539,19 @@ public class EventData
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the longitude for this event
+    *** @return The longitude for this event
+    **/
     public double getLongitude()
     {
         return this.getFieldValue(FLD_longitude, 0.0);
     }
-    
+
+    /**
+    *** Sets the longitude for this event
+    *** @param v The longitude for this event
+    **/
     public void setLongitude(double v)
     {
         this.setFieldValue(FLD_longitude, v);
@@ -2197,7 +2261,7 @@ public class EventData
     // ------------------------------------------------------------------------
 
     /**
-    *** Gets the current battery level
+    *** Gets the current battery level (as a percent)
     *** @return The current battery level
     **/
     public double getBatteryLevel()
@@ -2210,7 +2274,8 @@ public class EventData
         //   battLevelPercent = (currentBattVolts - BATTERY_VOLTS_MIN) / (BATTERY_VOLTS_MAX - BATTERY_VOLTS_MIN);
         //   if (battLevelPercent > 1.0) { battLevelPercent = 1.0; }
         //   if (battLevelPercent < 0.0) { battLevelPercent = 0.0; }
-        return this.getFieldValue(FLD_batteryLevel, 0.0);
+        double V = this.getFieldValue(FLD_batteryLevel, 0.0);
+        return V;
     }
     
     /**
@@ -2219,6 +2284,7 @@ public class EventData
     **/
     public void setBatteryLevel(double v)
     {
+        //if (v > 1.1) { v = v / 100.0; }
         this.setFieldValue(FLD_batteryLevel, v);
     }
 
@@ -2241,6 +2307,26 @@ public class EventData
     public void setBatteryVolts(double v)
     {
         this.setFieldValue(FLD_batteryVolts, v);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Gets the battery temperature (C)
+    *** @return The battery temperature (C)
+    **/
+    public double getBatteryTemp()
+    {
+        return this.getFieldValue(FLD_batteryTemp, INVALID_TEMPERATURE);
+    }
+
+    /**
+    *** Sets the battery temperature (C)
+    *** @param v The battery temperature (C)
+    **/
+    public void setBatteryTemp(double v)
+    {
+        this.setFieldValue(FLD_batteryTemp, v);
     }
 
     // ------------------------------------------------------------------------
@@ -2907,10 +2993,19 @@ public class EventData
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the ambient air temperature (C)
+    *** @return The ambient air temperature (C)
+    **/
     public double getAmbientTemp()
     {
         return this.getFieldValue(FLD_ambientTemp, INVALID_TEMPERATURE);
     }
+
+    /**
+    *** Sets the ambient air temperature (C)
+    *** @param v The ambient air temperature (C)
+    **/
     public void setAmbientTemp(double v)
     {
         this.setFieldValue(FLD_ambientTemp, v);
@@ -2918,10 +3013,19 @@ public class EventData
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the cabin temperature (C)
+    *** @return The cabin temperature (C)
+    **/
     public double getCabinTemp()
     {
         return this.getFieldValue(FLD_cabinTemp, INVALID_TEMPERATURE);
     }
+
+    /**
+    *** Sets the cabin temperature (C)
+    *** @param v The cabin air temperature (C)
+    **/
     public void setCabinTemp(double v)
     {
         this.setFieldValue(FLD_cabinTemp, v);
@@ -3141,6 +3245,131 @@ public class EventData
     }
 
     // Analog fields above
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // Trip Summary fields below
+
+    /* Trip Start timestamp */
+    public long getTripStartTime()
+    {
+        return this.getFieldValue(FLD_tripStartTime, 0L);
+    }
+    public void setTripStartTime(long v)
+    {
+        this.setFieldValue(FLD_tripStartTime, ((v >= 0L)? v : 0L));
+    }
+
+    /* Trip Stop timestamp */
+    public long getTripStopTime()
+    {
+        return this.getFieldValue(FLD_tripStopTime, 0L);
+    }
+    public void setTripStopTime(long v)
+    {
+        this.setFieldValue(FLD_tripStopTime, ((v >= 0L)? v : 0L));
+    }
+
+    /* Trip Distance */
+    public double getTripDistanceKM()
+    {
+        return this.getFieldValue(FLD_tripDistanceKM, 0.0);
+    }
+    public void setTripDistanceKM(double v)
+    {
+        this.setFieldValue(FLD_tripDistanceKM, ((v >= 0.0)? v : 0.0));
+    }
+
+    /* Trip Idle Hours */
+    public double getTripIdleHours()
+    {
+        return this.getFieldValue(FLD_tripIdleHours, 0.0);
+    }
+    public void setTripIdleHours(double v)
+    {
+        this.setFieldValue(FLD_tripIdleHours, ((v >= 0.0)? v : 0.0));
+    }
+
+    /* Trip PTO Hours */
+    public double getTripPtoHours()
+    {
+        return this.getFieldValue(FLD_tripPtoHours, 0.0);
+    }
+    public void setTripPtoHours(double v)
+    {
+        this.setFieldValue(FLD_tripPtoHours, ((v >= 0.0)? v : 0.0));
+    }
+
+    /* Trip Max Speed km/h */
+    public double getTripMaxSpeedKPH()
+    {
+        return this.getFieldValue(FLD_tripMaxSpeedKPH, 0.0);
+    }
+    public void setTripMaxSpeedKPH(double v)
+    {
+        this.setFieldValue(FLD_tripMaxSpeedKPH, ((v >= 0.0)? v : 0.0));
+    }
+
+    /* Trip Max RPM */
+    public long getTripMaxRpm()
+    {
+        return this.getFieldValue(FLD_tripMaxRpm, 0L);
+    }
+    public void setTripMaxRpm(long v)
+    {
+        this.setFieldValue(FLD_tripMaxRpm, ((v >= 0L)? v : 0L));
+    }
+
+    /* Trip Start Latitude */
+    public double getTripStartLatitude()
+    {
+        return this.getFieldValue(FLD_tripStartLatitude, 0.0);
+    }
+    public void setTripStartLatitude(double v)
+    {
+        this.setFieldValue(FLD_tripStartLatitude, v);
+    }
+
+    /* Trip Start Longitude */
+    public double getTripStartLongitude()
+    {
+        return this.getFieldValue(FLD_tripStartLongitude, 0.0);
+    }
+    public void setTripStartLongitude(double v)
+    {
+        this.setFieldValue(FLD_tripStartLongitude, v);
+    }
+
+    /* Trip Elapsed Seconds */
+    public long getTripElapsedSeconds()
+    {
+        return this.getFieldValue(FLD_tripElapsedSeconds, 0L);
+    }
+    public void setTripElapsedSeconds(long v)
+    {
+        this.setFieldValue(FLD_tripElapsedSeconds, ((v >= 0L)? v : 0L));
+    }
+
+    /* Trip Brake Count */
+    public long getTripBrakeCount()
+    {
+        return this.getFieldValue(FLD_tripBrakeCount, 0L);
+    }
+    public void setTripBrakeCount(long v)
+    {
+        this.setFieldValue(FLD_tripBrakeCount, ((v >= 0L)? v : 0L));
+    }
+
+    /* Trip Clutch Count */
+    public long getTripClutchCount()
+    {
+        return this.getFieldValue(FLD_tripClutchCount, 0L);
+    }
+    public void setTripClutchCount(long v)
+    {
+        this.setFieldValue(FLD_tripClutchCount, ((v >= 0L)? v : 0L));
+    }
+
+    // Trip Summary fields above
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
     // Day Summary fields below
@@ -3733,6 +3962,15 @@ public class EventData
 
     // ------------------------------------------------------------------------
     // Driver message
+
+    /**
+    *** Returns true if a driver message is defined
+    *** @return True if a driver message is defined
+    **/
+    public boolean hasDriverMessage()
+    {
+        return !StringTools.isBlank(this.getDriverMessage());
+    }
 
     /**
     *** Gets the driver message
@@ -4436,6 +4674,8 @@ public class EventData
     }
 
     // ------------------------------------------------------------------------
+    
+    private RTProperties attachRTProp = null;
 
     /**
     *** Gets the attachment MIME type (used with "attachData")
@@ -4453,6 +4693,18 @@ public class EventData
     public void setAttachType(String v)
     {
         this.setFieldValue(FLD_attachType, StringTools.trim(v));
+        this.attachRTProp = null;
+    }
+    
+    /** 
+    *** Returns true if the attachment type matches the specified type
+    *** @param type  The target attachment type
+    *** @return True if match, false otherwise
+    **/
+    public boolean isAttachType(String type)
+    {
+        String attachType = this.getAttachType();
+        return attachType.equalsIgnoreCase(type);
     }
 
     /**
@@ -4482,6 +4734,7 @@ public class EventData
     public void setAttachData(byte[] v)
     {
         this.setFieldValue(FLD_attachData, ((v != null)? v : new byte[0]));
+        this.attachRTProp = null;
     }
 
     /**
@@ -4498,6 +4751,29 @@ public class EventData
             this.setAttachType(StringTools.isBlank(mimeType)? 
                 mimeType : HTMLTools.getMimeTypeFromData(data,null));
             this.setAttachData(data);
+        }
+    }
+
+    /**
+    *** Gets the attachment as an RTProperties instance.
+    *** @return The attachment data converted to an RTProperties instance, or null if
+    ***         unable to convert attachment to an RTProperties instance.
+    **/
+    public RTProperties getAttachRTProperties()
+    {
+        if (this.attachRTProp != null) {
+            // -- already cached
+            return this.attachRTProp;
+        } else
+        if (this.hasAttachData() && this.isAttachType(HTMLTools.CONTENT_TYPE_RTPROP)) {
+            // -- convert to RTProperties
+            byte   rtpB[] = this.getAttachData();
+            String rtpS   = StringTools.toStringValue(rtpB);
+            this.attachRTProp = new RTProperties(rtpS);
+            return this.attachRTProp;
+        } else {
+            // -- invalid attachement type for RTProperties
+            return null;
         }
     }
 
@@ -7198,10 +7474,14 @@ public class EventData
         }
 
         /* count events in range */
-        long count = EventData.getRecordCount(acctID,devID,delFromTime,-1L);
-        if (count <= 0L) {
-            // already empty range
+        long count = EventData.getRecordCount(acctID,devID,delFromTime,-1L); // -1 for InnoDB?
+        if (count == 0L) {
+            // -- already empty range
             return 0L;
+        } else
+        if (count < 0L) { // InnoDB
+            // -- unable to count (InnoDB?)
+            Print.logWarn("Unable to count events (InnoDB?) ... continuing ...");
         }
 
         /* SQL statement */
@@ -7235,7 +7515,10 @@ public class EventData
     // ------------------------------------------------------------------------
     
     /**
-    *** Delete events which are in the future
+    *** Delete events which are in the future.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.  
+    ***       Old events will still be deleted, however it will still go through the
+    ***       motions of attempting to delete events, event if the range is empty.
     *** @param acctID      The Account ID
     *** @param devID       The Device ID
     *** @param oldTimeSec  The time in the past before which (exclusive) events will be deleted.  
@@ -7306,8 +7589,8 @@ public class EventData
         }
 
         /* count events in range */
-        long count = EventData.getRecordCount(acctID,devID,-1L,(oldTimeSec - 1L));
-        if (count <= 0L) {
+        long count = EventData.getRecordCount(acctID,devID,-1L,(oldTimeSec - 1L)); // -1 for InnoDB?
+        if (count == 0L) {
             // already empty range
             if (msg != null) {
                 if (msg.length() > 0) { msg.append(", "); }
@@ -7319,6 +7602,10 @@ public class EventData
                 }
             }
             return 0L;
+        } else
+        if (count < 0L) { // InnoDB
+            // -- unable to count (InnoDB?)
+            Print.logWarn("Unable to count events (InnoDB?) ... continuing ...");
         }
 
         /* SQL statement */
@@ -7345,7 +7632,7 @@ public class EventData
         }
 
         /* return count */
-        return count;
+        return count; // -1 for InnoDB
 
     }
 
@@ -7532,6 +7819,7 @@ public class EventData
     public  static final String KEY_DRIVER_DESC[]   = new String[] { "driverDesc" , "driver", "driverName"  };  // "Joe Smith"
     public  static final String KEY_DRIVER_BADGE[]  = new String[] { "driverBadgeID"    , "driverBadge"     };  // "X123"
     public  static final String KEY_DRIVER_LICENSE[]= new String[] { "driverLicense"                        };  // "N123456789"
+    public  static final String KEY_DRIVER_PHONE[]  = new String[] { "driverPhone"                          };  // "9015551212"
 
     private static final String KEY_INPUT_MASK[]    = new String[] { "inputMask"                            };  // "0001010"
     private static final String KEY_INPUT_BIT[]     = new String[] { "inputBit"                             };  // "Off"
@@ -7640,10 +7928,18 @@ public class EventData
             } else {
                 Device device = ed.getDevice();
                 if (arg.equalsIgnoreCase("id") || (device == null)) {
+                    // -- device-id
                     return ed.getDeviceID();
                 } else {
-                    // "desc"
-                    return device.getDescription();
+                    // -- description
+                    String desc = device.getDescription();
+                    if (!StringTools.isBlank(desc)) {
+                        // -- display the device id
+                        return desc;
+                    } else {
+                        // -- description is blank, at least display the device-id
+                        return "(" + ed.getDeviceID() + ")";
+                    }
                 }
             }
         } else
@@ -8300,6 +8596,24 @@ public class EventData
                 // return blank
                 return "";
             }
+        } else
+        if (EventData._keyMatch(key,EventData.KEY_DRIVER_PHONE)) {
+            if (getTitle) {
+                return i18n.getString("EventData.key.driverPhone", "Driver Phone");
+            } else {
+                String driverID = ed.getDriverID(true); // fix 2.5.4-B28
+                if (!StringTools.isBlank(driverID)) {
+                    Driver driver = ed.getDriver(true);
+                    if (driver != null) {
+                        return driver.getContactPhone();
+                    } else {
+                        Print.logDebug("Unable to read Driver: " + driverID);
+                        return "";
+                    }
+                }
+                // return blank
+                return "";
+            }
         }
 
         /* digital input values */
@@ -8770,14 +9084,20 @@ public class EventData
             Print.sysPrintln("");
             try {
                 long nowTime = DateTime.getCurrentTimeSec();
-                long count = EventData.getRecordCount(
+                long count = EventData.getRecordCount( // -1 for InnoDB?
                     null, null,
                     nowTime - deltaSec, nowTime);
-                String fmtEPS   = StringTools.format(((double)count/(double)deltaSec), "0.0000000");
-                String fmtHours = StringTools.format(((double)deltaSec/3600.0), "0.00");
-                Print.sysPrintln("Event Time Range : " + fmtHours + " hours");
-                Print.sysPrintln("Total Events     : " + count);
-                Print.sysPrintln("Events Per Second: " + fmtEPS);
+                if (count >= 0L) {
+                    // -- count obtained
+                    String fmtEPS   = StringTools.format(((double)count/(double)deltaSec), "0.0000000");
+                    String fmtHours = StringTools.format(((double)deltaSec/3600.0), "0.00");
+                    Print.sysPrintln("Event Time Range : " + fmtHours + " hours");
+                    Print.sysPrintln("Total Events     : " + count);
+                    Print.sysPrintln("Events Per Second: " + fmtEPS);
+                } else { // InnoDB
+                    // -- unable to obtain count
+                    Print.sysPrintln("Unable to count events (InnoDB?)");
+                }
             } catch (DBException dbe) {
                 Print.logException("Retrieving record count for EventData table", dbe);
             }

@@ -145,6 +145,12 @@
 //     -Added STATUS_RFID_TAG_#, STATUS_SHUTDOWN_CANCELLED
 //  2013/11/11  Martin D. Flynn
 //     -Added STATUS_DRIVER_SLEEP, STATUS_DRIVER_WAKE
+//  2014/03/03  Martin D. Flynn
+//     -Added STATUS_TRIP_SUMMARY, STATUS_GPS_LOST
+//  2014/05/05  Martin D. Flynn
+//     -Added STATUS_FUEL_DIRTY, STATUS_FUEL_SENSOR, STATUS_TAMPER_[ON|OFF]
+//     -Added STATUS_TEMPERATURE_OK, STATUS_DOOR_[LOCK|UNLOCK]
+//     -Added STATUS_MOTION_EN_ROUTE synonym for STATUS_MOTION_IN_MOTION
 // ----------------------------------------------------------------------------
 package org.opengts.db;
 
@@ -330,6 +336,7 @@ public class StatusCodes
     //      Device start of motion
 
     public static final int STATUS_MOTION_IN_MOTION     = 0xF112;   // 61714
+    public static final int STATUS_MOTION_EN_ROUTE      = 0xF112;   // 61714
     // Description:
     //      Device in-motion interval
 
@@ -340,6 +347,10 @@ public class StatusCodes
     public static final int STATUS_MOTION_DORMANT       = 0xF114;   // 61716
     // Description:
     //      Device dormant interval (ie. not moving)
+
+    public static final int STATUS_MOTION_STOPPED       = 0xF115;   // 61717
+    // Description:
+    //      Alternate to Dormant (ie. not moving)
 
     public static final int STATUS_MOTION_IDLE          = 0xF116;   // 61718
     // Description:
@@ -448,7 +459,7 @@ public class StatusCodes
 
     public static final int STATUS_GEOFENCE_ARRIVE      = 0xF210;   // 61968
     // Description:
-    //      Device arrived at geofence
+    //      Device arrived at geofence/geozone
 
     public static final int STATUS_CORRIDOR_ARRIVE      = 0xF213;   // 61971
     // Description:
@@ -460,7 +471,7 @@ public class StatusCodes
 
     public static final int STATUS_GEOFENCE_DEPART      = 0xF230;   // 62000
     // Description:
-    //      Device departed geofence
+    //      Device departed geofence/geozone
 
     public static final int STATUS_CORRIDOR_DEPART      = 0xF233;   // 62003
     // Description:
@@ -775,6 +786,10 @@ public class StatusCodes
     // Description:
     //      Temperature exceeded higher range
 
+    public static final int STATUS_TEMPERATURE_OK       = 0xF7F0;   // 63472
+    // Description:
+    //      All temperature averages [aver/aver/aver/...]
+
     public static final int STATUS_TEMPERATURE          = 0xF7F1;   // 63473
     // Description:
     //      All temperature averages [aver/aver/aver/...]
@@ -971,7 +986,7 @@ public class StatusCodes
     public static final int STATUS_TOWING_STOP          = 0xF872;   // 63602
     // Description:
     //      Vehicle stopped being towed
-    
+
     // --------------------------------
 
     public static final int STATUS_INTRUSION_ON         = 0xF881;   // 63617
@@ -980,8 +995,18 @@ public class StatusCodes
 
     public static final int STATUS_INTRUSION_OFF        = 0xF882;   // 63618
     // Description:
-    //      Intrusion abated
-    
+    //      Intrusion aborted
+
+    // --------------------------------
+
+    public static final int STATUS_TAMPER_ON            = 0xF885;   // 63621
+    // Description:
+    //      Tamper detected
+
+    public static final int STATUS_TAMPER_OFF           = 0xF886;   // 63622
+    // Description:
+    //      Tamper aborted
+
     // --------------------------------
 
     public static final int STATUS_BREACH_ON            = 0xF889;   // 63625
@@ -990,27 +1015,47 @@ public class StatusCodes
 
     public static final int STATUS_BREACH_OFF           = 0xF88A;   // 63626
     // Description:
-    //      Breach abated
-    
+    //      Breach aborted
+
     // --------------------------------
 
     public static final int STATUS_VIBRATION_ON         = 0xF891;   // 63633
     // Description:
-    //      Breach abated
+    //      Vibration on
 
     public static final int STATUS_VIBRATION_OFF        = 0xF892;   // 63634
     // Description:
-    //      Breach abated
-    
+    //      Vibration off
+
+    // --------------------------------
+
+    public static final int STATUS_DOOR_LOCK            = 0xF895;   // 63637
+    // Description:
+    //      Door lock
+
+    public static final int STATUS_DOOR_UNLOCK          = 0xF896;   // 63638
+    // Description:
+    //      Door unlock
+
     // --------------------------------
 
     public static final int STATUS_PTO_ON               = 0xF899;   // 63641
     // Description:
-    //      Breach abated
+    //      PTO on
 
     public static final int STATUS_PTO_OFF              = 0xF89A;   // 63642
     // Description:
-    //      Breach abated
+    //      PTO off
+
+    // --------------------------------
+
+    public static final int STATUS_ONLINE               = 0xF89D;   // 63645
+    // Description:
+    //      Online
+
+    public static final int STATUS_OFFLINE              = 0xF89E;   // 63646
+    // Description:
+    //      Offline
 
 // ----------------------------------------------------------------------------
 // Carjacking status: 0xF8B0 to 0xF8BF
@@ -1134,6 +1179,14 @@ public class StatusCodes
     // Description:
     //      Low fuel alert
 
+    public static final int STATUS_FUEL_DIRTY           = 0xF95A;   // 63834
+    // Description:
+    //      Fuel contaminated/dirty
+
+    public static final int STATUS_FUEL_SENSOR          = 0xF95E;   // 63838
+    // Description:
+    //      Fuel sensor failed/bad
+
     public static final int STATUS_EXCESS_ACCEL         = 0xF960;   // 63840
     public static final int STATUS_EXCESS_ACCEL_2       = 0xF961;   // 63841
     public static final int STATUS_EXCESS_ACCEL_3       = 0xF962;   // 63842
@@ -1144,6 +1197,10 @@ public class StatusCodes
 // Device custom status
 
     public static final int STATUS_DAY_SUMMARY          = 0xFA00;   // 64000
+    // Description:
+    //      End-Of-Day Summary
+
+    public static final int STATUS_TRIP_SUMMARY         = 0xFA40;   // 64064
     // Description:
     //      End-Of-Day Summary
 
@@ -1172,6 +1229,10 @@ public class StatusCodes
     public static final int STATUS_IP_ADDRESS           = 0xFD01;   // 64769
     // Description:
     //      IP Address changed
+
+    public static final int STATUS_SIM_CARD             = 0xFD03;   // 64771
+    // Description:
+    //      SIM Card changed
 
     public static final int STATUS_BATTERY_VOLTS        = 0xFD0A;   // 64778
     // Description:
@@ -1240,6 +1301,10 @@ public class StatusCodes
     public static final int STATUS_GPS_RESTORED         = 0xFD26;   // 64806
     // Description:
     //      GPS receiver restore detected
+
+    public static final int STATUS_GPS_LOST             = 0xFD27;   // 64807
+    // Description:
+    //      GPS receiver unable to obtain fix
 
     public static final int STATUS_DIAGNOSTIC           = 0xFD30;   // 64816
     // Description:
@@ -1530,9 +1595,10 @@ public class StatusCodes
         new Code(STATUS_RFID_TAG_2          , "RFID.2"       , I18N.getString(StatusCodes.class,"StatusCodes.rfid_2"          ,"RFID_2"          )       ),
 
         new Code(STATUS_MOTION_START        , "MOT.START"    , I18N.getString(StatusCodes.class,"StatusCodes.start"           ,"Start"           ), true ), // (on ) 
-        new Code(STATUS_MOTION_IN_MOTION    , "MOT.INMOTION" , I18N.getString(StatusCodes.class,"StatusCodes.inMotion"        ,"InMotion"        )       ),
+        new Code(STATUS_MOTION_EN_ROUTE     , "MOT.ENROUTE"  , I18N.getString(StatusCodes.class,"StatusCodes.inMotion"        ,"EnRoute"         )       ),
         new Code(STATUS_MOTION_STOP         , "MOT.STOP"     , I18N.getString(StatusCodes.class,"StatusCodes.stop"            ,"Stop"            ), true ), // (off) 
         new Code(STATUS_MOTION_DORMANT      , "MOT.DORMANT"  , I18N.getString(StatusCodes.class,"StatusCodes.dormant"         ,"Dormant"         )       ),
+        new Code(STATUS_MOTION_STOPPED      , "MOT.STOPPED"  , I18N.getString(StatusCodes.class,"StatusCodes.stopped"         ,"Stopped"         )       ),
         new Code(STATUS_MOTION_IDLE         , "MOT.IDLE"     , I18N.getString(StatusCodes.class,"StatusCodes.idle"            ,"Idle"            )       ),
         new Code(STATUS_MOTION_EXCESS_IDLE  , "MOT.IDLE.X"   , I18N.getString(StatusCodes.class,"StatusCodes.excessIdle"      ,"Excess_Idle"     ), true ),
         new Code(STATUS_MOTION_OVER_SPEED_1 , "MOT.SPEED.X1" , I18N.getString(StatusCodes.class,"StatusCodes.speeding"        ,"Speeding"        ), true ),
@@ -1809,11 +1875,14 @@ public class StatusCodes
         new Code(STATUS_FUEL_REFILL         , "FUEL.REFILL"  , I18N.getString(StatusCodes.class,"StatusCodes.fuelRefill"      ,"Fuel_Refill"     ), true ),
         new Code(STATUS_FUEL_THEFT          , "FUEL.THEFT"   , I18N.getString(StatusCodes.class,"StatusCodes.fuelTheft"       ,"Fuel_Theft"      ), true ),
         new Code(STATUS_LOW_FUEL            , "FUEL.LOW"     , I18N.getString(StatusCodes.class,"StatusCodes.fuelLow"         ,"Fuel_Low"        ), true ),
+        new Code(STATUS_FUEL_DIRTY          , "FUEL.DIRTY"   , I18N.getString(StatusCodes.class,"StatusCodes.fuelDirty"       ,"Fuel_Dirty"      )       ),
+        new Code(STATUS_FUEL_SENSOR         , "FUEL.SENSOR"  , I18N.getString(StatusCodes.class,"StatusCodes.fuelSensor"      ,"Fuel_Sensor"     )       ),
         new Code(STATUS_EXCESS_ACCEL        , "OBD.ACCEL"    , I18N.getString(StatusCodes.class,"StatusCodes.excessAccel"     ,"Excess_Accel"    ), true ),
         new Code(STATUS_EXCESS_ACCEL_2      , "OBD.ACCEL.2"  , I18N.getString(StatusCodes.class,"StatusCodes.excessAccel.2"   ,"Excess_Accel_2"  ), true ),
         new Code(STATUS_EXCESS_ACCEL_3      , "OBD.ACCEL.3"  , I18N.getString(StatusCodes.class,"StatusCodes.excessAccel.3"   ,"Excess_Accel_3"  ), true ),
 
         new Code(STATUS_DAY_SUMMARY         , "SUMMARY.DAY"  , I18N.getString(StatusCodes.class,"StatusCodes.daySummary"      ,"Day_Summary"     )       ),
+        new Code(STATUS_TRIP_SUMMARY        , "SUMMARY.TRIP" , I18N.getString(StatusCodes.class,"StatusCodes.tripSummary"     ,"Trip_Summary"    )       ),
 
         new Code(STATUS_TIRE_TEMP_RANGE     , "TIRE.TEMP"    , I18N.getString(StatusCodes.class,"StatusCodes.tireTempRange"   ,"Tire_Temp_Range" ), true ),
         new Code(STATUS_TIRE_PRESSURE_RANGE , "TIRE.PRESSURE", I18N.getString(StatusCodes.class,"StatusCodes.tirePressRange"  ,"Tire_Pressure"   ), true ),
@@ -1821,6 +1890,7 @@ public class StatusCodes
         new Code(STATUS_TIRE_BATTERY_LOW    , "TIRE.BATTERY" , I18N.getString(StatusCodes.class,"StatusCodes.tireBatteryLow"  ,"Tire_Battery_Low"), true ),
 
         new Code(STATUS_IP_ADDRESS          , "IP.ADDRESS"   , I18N.getString(StatusCodes.class,"StatusCodes.ipAddress"       ,"IP_Address"      )       ),
+        new Code(STATUS_SIM_CARD            , "SIM.CARD"     , I18N.getString(StatusCodes.class,"StatusCodes.simCard  "       ,"SIM_Card"        )       ),
         new Code(STATUS_BATTERY_VOLTS       , "BATT.VOLTS"   , I18N.getString(StatusCodes.class,"StatusCodes.battVolts"       ,"Battery_Volts"   )       ),
         new Code(STATUS_BACKUP_VOLTS        , "BATT.BACKUP"  , I18N.getString(StatusCodes.class,"StatusCodes.battBackup"      ,"Backup_Volts"    )       ),
         new Code(STATUS_BATT_CHARGE_ON      , "BATT.CHARGE"  , I18N.getString(StatusCodes.class,"StatusCodes.battCharging"    ,"Battery_Charge"  )       ),
@@ -1838,6 +1908,7 @@ public class StatusCodes
         new Code(STATUS_GPS_ANTENNA_SHORT   , "GPS.ANT.SHORT", I18N.getString(StatusCodes.class,"StatusCodes.gpsAntennaShort" ,"GPS_AntShort"    ), true ),
         new Code(STATUS_GPS_JAMMING         , "GPS.JAMMING"  , I18N.getString(StatusCodes.class,"StatusCodes.gpsJamming"      ,"GPS_Jamming"     ), true ),
         new Code(STATUS_GPS_RESTORED        , "GPS.RESTORED" , I18N.getString(StatusCodes.class,"StatusCodes.gpsRestored"     ,"GPS_Restored"    ), true ), // (on ) 
+        new Code(STATUS_GPS_LOST            , "GPS.LOST"     , I18N.getString(StatusCodes.class,"StatusCodes.gpsLost"         ,"GPS_Lost"        ), true ), // (off) 
         new Code(STATUS_DIAGNOSTIC          , "DIAGNOSTIC"   , I18N.getString(StatusCodes.class,"StatusCodes.diagnostic"      ,"Diagnostic"      )       ),
         new Code(STATUS_CONNECTION_FAILURE  , "CONN.FAILURE" , I18N.getString(StatusCodes.class,"StatusCodes.connectFailure"  ,"Connect_Failure" ), true ), // (off) 
         new Code(STATUS_CONNECTION_RESTORED , "CONN.RESTORE" , I18N.getString(StatusCodes.class,"StatusCodes.connectRestore"  ,"Connect_Restore" )       ), // (on ) 

@@ -35,8 +35,20 @@
 // ----------------------------------------------------------------------------
 package org.opengts.war.report.presentation;
 
-import java.util.*;
-import java.io.*;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.Collection;
+import java.util.Set;
+import java.util.Map;
+import java.util.Vector;
+import java.util.Iterator;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -536,10 +548,10 @@ public class ReportTable
                         reportID + ".html", 
                         HTMLTools.MIME_HTML());
                     SendMail.SmtpProperties smtpProps = privLabel.getSmtpProperties();
-                    SendMail.send(frEmail,toEmail,subj,body.toString(),attach,smtpProps);
-                    Print.logInfo("Email sent to: " + toEmail);
-                    rptMsg = "EMail sent: " + toEmail;
-                    sent   = true;
+                    SendMail.send(frEmail,toEmail,subj,body.toString(),attach,smtpProps,false);
+                    Print.logDebug("Email queued/sent to: " + toEmail);
+                    rptMsg = "EMail queued/sent: " + toEmail;
+                    sent   = true; // or queued
                 }
             } catch (Throwable t) { // NoClassDefFoundException, ClassNotFoundException
                 // this will fail if JavaMail support for SendMail is not available.

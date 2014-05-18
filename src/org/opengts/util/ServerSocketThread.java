@@ -250,10 +250,10 @@ public class ServerSocketThread
     {
         InetAddress bind = (bindAddr != null)? bindAddr : ServerSocketThread.getDefaultBindAddress();
         if (bind != null) {
-            // bind to specific interface
+            // -- bind to specific interface
             return new DatagramSocket(new InetSocketAddress(bind,port));
         } else {
-            // bind to all interfaces
+            // -- bind to all interfaces
             return new DatagramSocket(port);
         }
     }
@@ -262,11 +262,11 @@ public class ServerSocketThread
     *** Creates a DatagramSocket bound to the default local interface
     *** @return The created DatagramSocket
     **/
-    public static DatagramSocket createDatagramSocket(int port)
-        throws SocketException
-    {
-        return ServerSocketThread.createDatagramSocket((InetAddress)null, port);
-    }
+    //public static DatagramSocket createDatagramSocket(int port)
+    //    throws SocketException
+    //{
+    //    return ServerSocketThread.createDatagramSocket((InetAddress)null, port);
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -281,10 +281,17 @@ public class ServerSocketThread
         try {
             return new ServerSocket(port, ListenBacklog, bind);
         } catch (IllegalArgumentException iae) {
-            // IE. "Port value out of range"
+            // -- IE. "Port value out of range"
             throw new IOException(iae);
+        } catch (java.net.BindException be) {
+            // -- IE. "Can't assign requested address"
+            Print.logError("Bind Address: " + bind);
+            throw be;
+        } catch (IOException ioe) {
+            // -- re-throw IOException
+            throw ioe;
         } catch (Throwable th) {
-            // catch all
+            // -- catch all
             throw new IOException(th);
         }
     }
@@ -655,7 +662,7 @@ public class ServerSocketThread
         boolean threadRunning = this.isAlive(); // ServerSocketThread running?
 
         /* ClientSocket with specific InputStream */
-        ClientSocket clientSocket = new ClientSocket(dataInput, isDuplex, !isDuplex);
+        ClientSocket clientSocket = new ClientSocket(dataInput, isDuplex, !isDuplex); // InputStream
 
         /* run inline */
         /*
@@ -709,25 +716,38 @@ public class ServerSocketThread
             /* wait for client session */
             try {
                 if (this.serverSocket != null) {
-                    // TCP
-                    clientSocket = new ClientSocket(this.serverSocket.accept()); // block until connection
+                    // -- TCP
+                    clientSocket = new ClientSocket(this.serverSocket.accept()); // (block) TCP
                 } else
                 if (this.datagramSocket != null) {
-                    // UDP
+                    // -- UDP
                     byte b[] = new byte[ServerSocketThread.this.getMaximumPacketLength()];
                     DatagramPacket dp = new DatagramPacket(b, b.length);
-                    this.datagramSocket.receive(dp); // block until connection
-                    clientSocket = new ClientSocket(dp);
-                    if (LogEnable) { 
-                        Print.logInfo("DatagramPacket.getAddress()=" + dp.getAddress() + ", getSocketAddress()="+dp.getSocketAddress()); 
-                        //Print.logInfo("DatagramSocket.getInetAddress()=" + this.datagramSocket.getInetAddress() + ", getRemoteSocketAddress()="+this.datagramSocket.getRemoteSocketAddress()); 
+                    this.datagramSocket.receive(dp); // (block)
+                    // TODO: figure out how to get the local IP address to which the client sent this packet
+                    // -- BSD  : IP_RECVIF, IP_RECVDSTADDR
+                    // -- Linux: IP_PKTINFO
+                    // - http://man7.org/linux/man-pages/man7/ip.7.html
+                    // - http://stackoverflow.com/questions/3940612/c-dgram-socket-get-the-receiver-address
+                    clientSocket = new ClientSocket(dp); // UDP
+                    if (LogEnable) {
+                        try {
+                            InetAddress   localAddr  = this.datagramSocket.getLocalAddress(); // fixed value
+                            SocketAddress localSock  = this.datagramSocket.getLocalSocketAddress(); // fixed value
+                            InetAddress   remoteAddr = dp.getAddress();
+                            SocketAddress remoteSock = dp.getSocketAddress();
+                            Print.logInfo("Datagram: local="+localAddr+"["+localSock+"], remote="+remoteAddr+"["+remoteSock+"]"); 
+                            //Print.logInfo("Datagram: inetAddress="+this.datagramSocket.getInetAddress() + ", remoteSocket="+this.datagramSocket.getRemoteSocketAddress()); 
+                        } catch (Throwable th) { // IllegalArgumentException
+                            // -- ignore
+                        }
                     }
                 } else {
                     Print.logStackTrace("ServerSocketThread has not been properly initialized");
                     break;
                 }
             } catch (SocketException se) {
-                // shutdown support
+                // -- shutdown support
                 if (this.serverSocket != null) {
                     // TCP
                     int port = this.serverSocket.getLocalPort(); // should be same as 'this.listenPort'
@@ -1691,14 +1711,17 @@ public class ServerSocketThread
         private boolean        isInpStream = false;
         private boolean        mimicTCP    = false; // InputStream
         private boolean        mimicUDP    = false; // InputStream
+        // -- Constructor
         public ClientSocket(Socket tcpClient) {
             this.tcpClient   = tcpClient;
             this.isOpen      = true;
         }
+        // -- Constructor
         public ClientSocket(DatagramPacket udpClient) {
             this.udpClient   = udpClient;
             this.isOpen      = true;
         }
+        // -- Constructor
         public ClientSocket(InputStream inStream, boolean mimicTCP, boolean mimicUDP) {
             //this.udpClient = new DatagramPacket(new byte[1], 1); // placeholder to mimic UDP
             this.inpStream   = inStream;
@@ -1707,21 +1730,27 @@ public class ServerSocketThread
             this.mimicTCP    = mimicTCP;
             this.mimicUDP    = mimicUDP;
         }
+        // -- true if TCP
         public boolean isTCP() {
             return (this.tcpClient != null)? true : false;
         }
+        // -- true if UDP
         public boolean isUDP() {
             return (this.udpClient != null)? true : false;
         }
+        // -- true if input stream
         public boolean isInputStream() {
             return this.isInpStream;
         }
+        // -- true if simulated TCP input stream
         public boolean isInputStreamTCP() {
             return this.isInpStream && this.mimicTCP;
         }
+        // -- true if simulated UDP input stream
         public boolean isInputStreamUDP() {
             return this.isInpStream && this.mimicUDP;
         }
+        // -- return session type String
         public String getSessionType() {
             if (this.isTCP()) {
                 return "TCP";
@@ -1735,24 +1764,26 @@ public class ServerSocketThread
                 return "UNKNOWN";
             }
         }
+        // -- return number of available bytes to read
         public int available() {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return 0;
             }
-            // return number of bytes available to read
+            // -- return number of bytes available to read
             try {
                 return this.getInputStream().available();
             } catch (Throwable t) {
                 return 0;
             }
         }
+        // -- return remote client IP address
         public InetAddress getInetAddress() {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return null;
             }
-            // return client remote address
+            // -- return client remote address
             if (this.isTCP()) {
                 return this.tcpClient.getInetAddress();
             } else 
@@ -1774,12 +1805,13 @@ public class ServerSocketThread
                 return null;
             }
         }
+        // -- return remote client port
         public int getPort() {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return -1;
             }
-            // get client remote port
+            // -- get client remote port
             if (this.isTCP()) {
                 return this.tcpClient.getPort();
             } else 
@@ -1792,12 +1824,13 @@ public class ServerSocketThread
                 return -1;
             }
         }
+        // -- return local port
         public int getLocalPort() {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return -1;
             }
-            // return local client port
+            // -- return local client port
             return ServerSocketThread.this.getLocalPort();
             /*
             if (this.isTCP()) {
@@ -1819,12 +1852,49 @@ public class ServerSocketThread
             }
             */
         }
+        // -- return remote client IP address
+        public InetAddress getLocalInetAddress() {
+            if (this.isTCP()) {
+                try {
+                    SocketAddress sa = this.tcpClient.getLocalSocketAddress();
+                    if (sa instanceof InetSocketAddress) {
+                        return ((InetSocketAddress)sa).getAddress();
+                    } else {
+                        return null;
+                    }
+                } catch (Throwable th) { // IllegalArgumentException
+                    return null;
+                }
+            } else
+            if (this.isUDP()) {
+                // -- Java Bug: Java does not provide a way to get the specific 
+                // -  local address the remote client connected.  
+                // -  Only an issue when the UDP DatagramSocket is bound to "ANY".
+                // -  (See IP_PKTINFO above for additional info)
+                /*
+                try {
+                    SocketAddress sa = this.udpClient.getLocalSocketAddress();
+                    if (sa instanceof InetSocketAddress) {
+                        return ((InetSocketAddress)sa).getAddress();
+                    } else {
+                        return null;
+                    }
+                } catch (Throwable th) { // IllegalArgumentException
+                    return null;
+                }
+                */
+                return null;
+            } else {
+                return null;
+            }
+        }
+        // -- return output stream
         public OutputStream getOutputStream() throws IOException {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return null;
             }
-            // return output stream (UDP does not have an output stream)
+            // -- return output stream (UDP does not have an output stream)
             if (this.isTCP()) {
                 return this.tcpClient.getOutputStream();
             } else
@@ -1837,12 +1907,13 @@ public class ServerSocketThread
                 return null;
             }
         }
+        // -- return input stream
         public InputStream getInputStream() throws IOException {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return null;
             }
-            // return input stream
+            // -- return input stream
             if (this.isTCP()) {
                 return this.tcpClient.getInputStream();
             } else 
@@ -1858,30 +1929,32 @@ public class ServerSocketThread
                 return null;
             }
         }
+        // -- set socket timeout
         public void setSoTimeout(int timeoutSec) throws SocketException {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return;
             }
-            // set read timeout (TCP only)
+            // -- set read timeout (TCP only)
             if (this.isTCP()) {
                 this.tcpClient.setSoTimeout(timeoutSec);
             } else
             if (this.isUDP()) {
-                // n/a
+                // -- n/a
             } else
             if (this.isInputStream()) {
-                // n/a
+                // -- n/a
             } else {
-                // n/a
+                // -- n/a
             }
         }
+        // -- set socket linger-on-close
         public void setSoLinger(int timeoutSec) throws SocketException {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return;
             }
-            // set linger on close (TCP only)
+            // -- set linger on close (TCP only)
             if (this.isTCP()) {
                 if (timeoutSec <= 0) {
                     this.tcpClient.setSoLinger(false, 0); // no linger
@@ -1890,44 +1963,46 @@ public class ServerSocketThread
                 }
             } else
             if (this.isUDP()) {
-                // n/a
+                // -- n/a
             } else
             if (this.isInputStream()) {
-                // n/a
+                // -- n/a
             } else {
-                // n/a
+                // -- n/a
             }
         }
+        // -- set socket linger-on-close
         public void setSoLinger(boolean on, int timeoutSec) throws SocketException {
-            // check if closed
+            // -- check if closed
             if (!this.isOpen) {
                 return;
             }
-            // set linger on close (TCP only)
+            // -- set linger on close (TCP only)
             if (this.isTCP()) {
                 if (timeoutSec <= 0) { on = false; }
                 this.tcpClient.setSoLinger(on, timeoutSec);
             } else
             if (this.isUDP()) {
-                // n/a
+                // -- n/a
             } else
             if (this.isInputStream()) {
-                // n/a
+                // -- n/a
             } else {
-                // n/a
+                // -- n/a
             }
         }
+        // -- close socket
         public void close() throws IOException {
             if (this.isTCP()) {
                 this.tcpClient.close();
             } else
             if (this.isUDP()) {
-                // n/a
+                // -- n/a
             } else
             if (this.isInputStream()) {
-                // n/a
+                // -- n/a
             } else {
-                // n/a
+                // -- n/a
             }
             this.isOpen = false;
         }
@@ -1997,7 +2072,7 @@ public class ServerSocketThread
 
         //public ServerSessionThread(Socket client) {
         //    super("ClientSession");
-        //    this.client = new ClientSocket(client);
+        //    this.client = new ClientSocket(client); // TCP?
         //    this.start();
         //}
 
@@ -2141,7 +2216,7 @@ public class ServerSocketThread
         // --------------------------------------------------------------------
 
         public boolean tcpWrite(byte data[]) {
-            // this is intended to be called by a external thread/handler
+            // -- this is intended to be called by a external thread/handler
             boolean rtn = false;
             if ((data != null) && (data.length > 0)) {
                 synchronized (this.runLock) {
@@ -2160,7 +2235,8 @@ public class ServerSocketThread
 
         /* EXPERIMENTAL */
         public boolean udpWrite(byte data[]) {
-            // this is intended to be called by a external thread/hndler
+            // -- this is intended to be called by a external thread/hndler
+            InetAddress bindAddr = null; // TODO:
             boolean rtn = false;
             if ((data != null) && (data.length > 0)) {
                 synchronized (this.runLock) {
@@ -2174,7 +2250,7 @@ public class ServerSocketThread
                         try {
                             InetAddress inetAddr = this.client.getInetAddress();
                             int rp = this.getRemotePort();
-                            this._sendUDPResponse(inetAddr, rp, data);
+                            this._sendUDPResponse(bindAddr, inetAddr, rp, data);
                             rtn = true;
                         } catch (Throwable th) {
                             rtn = false;
@@ -2333,10 +2409,11 @@ public class ServerSocketThread
             }
 
             /* remote client IP address/port */
-            InetAddress inetAddr = clientSock.getInetAddress();
-            int       remotePort = clientSock.getPort();
+            InetAddress  inetAddr = clientSock.getInetAddress();
+            int        remotePort = clientSock.getPort();
+            InetAddress localAddr = clientSock.getLocalInetAddress(); // null, due to Java bug
             if (clientSock.isTCP() || clientSock.isUDP()) {
-                if (LogEnable) { Print.logInfo("Remote client port: " + inetAddr + ":" + remotePort + "[" + clientSock.getLocalPort() + "]"); }
+                if (LogEnable) { Print.logInfo("Remote client port: " + inetAddr + ":" + remotePort + " [to " + localAddr + ":" + clientSock.getLocalPort() + "]"); }
             }
 
             /* session timeout */
@@ -2347,7 +2424,7 @@ public class ServerSocketThread
             /* client session handler (creates new instance if necessary) */
             ClientPacketHandler clientHandler = ServerSocketThread.this.getClientPacketHandler();
             if (clientHandler != null) {
-                // set a handle to this session thread
+                // -- set a handle to this session thread
                 clientHandler.setSessionInfo(this);
                 synchronized (ServerSocketThread.this.activeSessionList) {
                     ServerSocketThread.this.activeSessionList.add(clientHandler);
@@ -2439,7 +2516,7 @@ public class ServerSocketThread
                                 byte response[] = clientHandler.getHandlePacket(line);
                                 if ((response != null) && (response.length > 0)) {
                                     if (clientSock.isTCP()) {
-                                        // TCP: Send response over socket connection
+                                        // -- TCP: Send response over socket connection
                                         if (LogEnable) {
                                             if (!StringTools.isPrintableASCII(response)) {
                                             Print.logInfo("TCP Resp Hex: 0x%s", StringTools.toHexString(response)); 
@@ -2449,13 +2526,14 @@ public class ServerSocketThread
                                         this._tcpWrite(output, response);   // TCP write: synchronous
                                     } else
                                     if (clientSock.isUDP()) {
-                                        // UDP: Send response via datagram ('ServerSocketThread.this.datagramSocket' is non-null)
+                                        // -- UDP: Send response via datagram ('ServerSocketThread.this.datagramSocket' is non-null)
                                         int rp = this._getRemotePort(clientSock,clientHandler.getResponsePort());
                                         try {
-                                            this._sendUDPResponse(inetAddr, rp, response); // possible IOException
+                                            InetAddress clientBindAddr = clientSock.getLocalInetAddress(); // null, due to Java bug
+                                            this._sendUDPResponse(clientBindAddr, inetAddr, rp, response); // possible IOException
                                         } catch (IOException ioeUDP) {
                                             Print.logException("Sending UDP response ["+inetAddr+":"+rp+"]", ioeUDP); 
-                                            // exception ignored for now
+                                            // -- exception ignored for now
                                         }
                                     } else
                                     if (clientSock.isInputStream()) {
@@ -2577,8 +2655,9 @@ public class ServerSocketThread
                         } else
                         if (clientSock.isUDP()) {
                             // UDP: Send response via datagram ('ServerSocketThread.this.datagramSocket' is non-null)
+                            InetAddress clientBindAddr = clientSock.getLocalInetAddress(); // null, due to Java bug
                             int rp = this._getRemotePort(clientSock,clientHandler.getResponsePort());
-                            this._sendUDPResponse(inetAddr, rp, finalPacket);
+                            this._sendUDPResponse(clientBindAddr, inetAddr, rp, finalPacket);
                         } else 
                         if (clientSock.isInputStream()) {
                             if (LogEnable) { Print.logInfo("Ignoring InputStream finalPacket: 0x" + StringTools.toHexString(finalPacket)); }
@@ -2707,7 +2786,8 @@ public class ServerSocketThread
 
         /*
         private void sendBytes(ClientSocket clientSock, byte resp[]) throws IOException {
-            // not currently used
+            // -- not currently used
+            InetAddress bindAddr = null;
             if (clientSock == null) {
                 // ignore
             } else
@@ -2719,7 +2799,7 @@ public class ServerSocketThread
                 // UDP: Send response via datagram 
                 InetAddress inetAddr = clientSock.getInetAddress();
                 int rp = this._getRemotePort(clientSock);
-                this._sendUDPResponse(inetAddr, rp, resp);
+                this._sendUDPResponse(bindAddr, inetAddr, rp, resp);
             } else
             if (clientSock.isInputStream()) {
                 // ignore
@@ -2729,32 +2809,39 @@ public class ServerSocketThread
         }
         */
 
-        private void _sendUDPResponse(InetAddress clientAddr, int clientPort, byte pkt[]) throws IOException {
-            // "ServerSocketThread.this.datagramSocket" is non-null for UDP sessions
+        private void _sendUDPResponse(InetAddress clientBindAddr, InetAddress clientAddr, int clientPort, byte pkt[]) 
+            throws IOException {
+            // -- "ServerSocketThread.this.datagramSocket" is non-null for UDP sessions
             if ((pkt == null) || (pkt.length == 0)) {
                 //if (LogEnable) { Print.logInfo("No response requested"); }
             } else
             if (clientPort <= 0) {
                 Print.logWarn("Unable to send packet Datagram: unknown port");
             } else {
-                // get datagram socket
+                // -- get datagram socket
                 boolean closeSocket = false;
                 DatagramSocket dgSocket = null;
                 //if (COPY_DATAGRAM_SOCKET) {
                 //    dgSocket = ServerSocketThread.this.datagramSocket;
                 //    closeSocket = false;
                 //} else
+                if (clientBindAddr != null) {
+                    // -- WARN: routing is dependent on proper bind address
+                    dgSocket = ServerSocketThread.createDatagramSocket(clientBindAddr,0);
+                    closeSocket = true;
+                } else
                 if (ACK_FROM_LISTEN_PORT) {
+                    // -- ACK returned through main DatagramSocket
                     dgSocket = ServerSocketThread.this.datagramSocket; // preferred (non-null for UDP)
                     closeSocket = false;
                 } else {
-                    // WARN: may not be routed properly
-                    dgSocket = ServerSocketThread.createDatagramSocket(0);
+                    // -- WARN: may not be routed properly
+                    dgSocket = ServerSocketThread.createDatagramSocket(null,0);
                     closeSocket = true;
                 }
-                // construct datagram packet
+                // -- construct datagram packet
                 DatagramPacket respPkt = new DatagramPacket(pkt, pkt.length, clientAddr, clientPort);
-                // send
+                // -- send
                 int retry = 1;
                 for (;retry > 0; retry--) {
                     if (LogEnable) {
@@ -3369,6 +3456,21 @@ public class ServerSocketThread
     public static void sendDatagram(InetAddress host, int port, byte data[])
         throws IOException
     {
+        InetAddress bind = null; // bind to any
+        ServerSocketThread.sendDatagram(bind, host, port, data);
+    }
+
+    /**
+    *** Sends a datagram to the specified host:port
+    *** @param bind  The local bind address
+    *** @param host  The destination host
+    *** @param port  The destination port
+    *** @param data  The data to send
+    *** @throws IOException  if an IO error occurs
+    **/
+    public static void sendDatagram(InetAddress bind, InetAddress host, int port, byte data[])
+        throws IOException
+    {
         if (host == null) {
             throw new IOException("Invalid destination host");
         } else
@@ -3376,13 +3478,27 @@ public class ServerSocketThread
             throw new IOException("Data buffer is null");
         } else {
             DatagramPacket sendPacket = new DatagramPacket(data, data.length, host, port);
-            DatagramSocket datagramSocket = ServerSocketThread.createDatagramSocket(0);
+            DatagramSocket datagramSocket = ServerSocketThread.createDatagramSocket(bind,0);
             datagramSocket.send(sendPacket);
         }
     }
-    
+
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    public static void main(String argv[])
+    {
+        RTConfig.setCommandLineArgs(argv);
+        int port = RTConfig.getInt("port",1234);
+        InetAddress bindAddr = null;
+        try {
+            ServerSocketThread sst = new ServerSocketThread(bindAddr, port, false/*ssl?*/);
+            sst.setName("TCPListener_" + port);
+            sst.start();
+        } catch (IOException ioe) {
+            Print.logException("Error",ioe);
+        }
+    }
 
 }

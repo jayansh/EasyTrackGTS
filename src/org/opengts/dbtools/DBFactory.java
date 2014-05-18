@@ -232,12 +232,13 @@ public class DBFactory<gDBR extends DBRecord>
     public static final int SQLERR_SYNTAX_ERROR         =  1064;
     public static final int SQLERR_TABLE_NOTLOCKED      =  1100;
     public static final int SQLERR_TABLE_NONEXIST       =  1146;
-    
+
     // SQLServer
     public static final int MSQL_ERR_INVALID_OBJECT     =   208; 
     public static final int MSQL_ERR_CANT_DROP_TABLE    =  3701; 
     public static final int MSQL_ERR_LOGIN_EXISTS       = 15025;  // "The server principal 'zzzz' already exists"
     public static final int MSQL_ERR_USER_EXISTS        = 15023;  // "User, group, or role 'zzzz' already exists"
+  //public static final int MSQL_ERR_UNKNOWN_COLUMN     =     ?;  // does not appear to be supported by MSQL 
 
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -730,9 +731,9 @@ public class DBFactory<gDBR extends DBRecord>
         DBField colTable[];
         try {;
             colTable = this.getExistingColumns(refreshColumns);
-            if (colTable == null) {
+            if (ListTools.isEmpty(colTable)) {
                 if (displayErrors) {
-                    Print.logInfo("ERROR - " + utableName + ": Reading table columns not supported!");
+                    Print.logInfo("ERROR - " + utableName + ": Existing table columns list is empty (not supported?)");
                 }
                 return false;
             }

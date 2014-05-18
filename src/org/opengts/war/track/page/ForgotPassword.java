@@ -37,6 +37,8 @@
 //     -Use Account "getDefaultUser()", if specified User-ID is blank
 //  2012/12/24  Martin D. Flynn
 //     -Change "form" target to "_self" (rather than "_top")
+//     -Decreased minimum passord request retry from 20 minutes to 5 minutes.
+//      (see MIN_PASS_QUERY_DELTA_SEC)
 // ----------------------------------------------------------------------------
 package org.opengts.war.track.page;
 
@@ -78,7 +80,7 @@ public class ForgotPassword
 
     // ------------------------------------------------------------------------
 
-    private static final long    MIN_PASS_QUERY_DELTA_SEC   = DateTime.MinuteSeconds(20L);
+    private static final long    MIN_PASS_QUERY_DELTA_SEC   = DateTime.MinuteSeconds(5L);
     
     public  static final String  COMMAND_EMAIL              = "email";
     
@@ -150,7 +152,8 @@ public class ForgotPassword
         /* invalid ContactEmail? */
         if (StringTools.isBlank(contactEmail)) {
             Print.logWarn("No Contact Email specified");
-            return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.noContactEmailSpecified","No contact email specified.");
+            return SECURE_RESPONSE? invalidError : 
+                i18n.getString("ForgotPassword.noContactEmailSpecified","No contact email specified.");
         }
         
         /* list of owned accounts */
@@ -159,11 +162,13 @@ public class ForgotPassword
             acctID = Account.getAccountIDsForContactEmail(contactEmail);
             if (ListTools.isEmpty(acctID)) {
                 Print.logWarn("No Accounts owned by specified Contact Email");
-                return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.noAccountsForContactEmail","No Account listed for this contact email.");
+                return SECURE_RESPONSE? invalidError : 
+                    i18n.getString("ForgotPassword.noAccountsForContactEmail","No Account listed for this contact email.");
             }
         } catch (DBException dbe) {
             Print.logException("Error reading Account", dbe);
-            return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.errorReadingAccount","Internal error reading Account.");
+            return SECURE_RESPONSE? internError : 
+                i18n.getString("ForgotPassword.errorReadingAccount","Internal error reading Account.");
         }
 
         /* Subject/Body */
@@ -195,11 +200,13 @@ public class ForgotPassword
         String to   = contactEmail;
         if (StringTools.isBlank(from)) {
             Print.logError("No 'From' email address specified");
-            return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.missingFromAddress","Internal email configuration error ['From'].");
+            return SECURE_RESPONSE? internError : 
+                i18n.getString("ForgotPassword.missingFromAddress","Internal email configuration error ['From'].");
         } else
         if (StringTools.isBlank(to)) {
             Print.logError("No 'To' email address specified");
-            return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.missingToAddress","Internal email configuration error ['To'].");
+            return SECURE_RESPONSE? internError : 
+                i18n.getString("ForgotPassword.missingToAddress","Internal email configuration error ['To'].");
         } else {
             String cc   = null;
             String bcc  = null;
@@ -290,11 +297,13 @@ public class ForgotPassword
             account = Account.getAccount(accountID);
             if (account == null) {
                 Print.logWarn("Account doesn't exist: " + accountID);
-                return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.accountNotExist","Specified Account does not exist.");
+                return SECURE_RESPONSE? invalidError : 
+                    i18n.getString("ForgotPassword.accountNotExist","Specified Account does not exist.");
             }
         } catch (Throwable t) {
             Print.logWarn("Error reading Account: " + accountID);
-            return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.errorReadingAccount","Internal error reading Account.");
+            return SECURE_RESPONSE? internError : 
+                i18n.getString("ForgotPassword.errorReadingAccount","Internal error reading Account.");
         }
 
         /* default user */
@@ -310,12 +319,14 @@ public class ForgotPassword
                 user = User.getUser(account, userID);
                 if (user == null) {
                     Print.logWarn("User doesn't exist: " + userID);
-                    return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.userNotExist","Specified User does not exist.");
+                    return SECURE_RESPONSE? invalidError : 
+                        i18n.getString("ForgotPassword.userNotExist","Specified User does not exist.");
                 }
                 hasUser = true;
             } catch (Throwable t) {
                 Print.logWarn("Error reading User: " + userID);
-                return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.errorReadingUser","Internal error reading User.");
+                return SECURE_RESPONSE? internError : 
+                    i18n.getString("ForgotPassword.errorReadingUser","Internal error reading User.");
             }
         }
 
@@ -324,18 +335,21 @@ public class ForgotPassword
         long deltaSinceLastQuery = DateTime.getCurrentTimeSec() - passwdQueryTime;
         if (deltaSinceLastQuery < MIN_PASS_QUERY_DELTA_SEC) {
             Print.logWarn("Too soon since last password query: " + accountID);
-            return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.requestTooSoon","Too soon since last password request.");
+            return /* SECURE_RESPONSE? invalidError : */ 
+                i18n.getString("ForgotPassword.requestTooSoon","Too soon since last password request.");
         }
 
         /* contact email matches? */
         String emailAddress = hasUser? user.getContactEmail() : account.getContactEmail();
         if (StringTools.isBlank(emailAddress)) {
             Print.logWarn("No contact email address on file");
-            return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.noContactEmailOnFile","No contact email address on file for this account.\\nPlease contact the system administrator for assistance");
+            return SECURE_RESPONSE? invalidError : 
+                i18n.getString("ForgotPassword.noContactEmailOnFile","No contact email address on file for this account.\\nPlease contact the system administrator for assistance");
         } else
         if (!contactEmail.equals(emailAddress)) {
             Print.logWarn("Invalid contact email address: " + contactEmail + " [" + emailAddress + "]");
-            return SECURE_RESPONSE? invalidError : i18n.getString("ForgotPassword.invalidContactEmail","Specified contact email does not match email on file.");
+            return SECURE_RESPONSE? invalidError : 
+                i18n.getString("ForgotPassword.invalidContactEmail","Specified contact email does not match email on file.");
         }
 
         /* get password */
@@ -359,7 +373,8 @@ public class ForgotPassword
             }
         }
 
-        /* send password */
+        /* email subject/body */
+        String gtsIdName = DBConfig.getServiceAccountName("GPS Tracking");
         String subj = hasUser? 
             i18n.getString("ForgotPassword.userLogin","User Login ...") : 
             i18n.getString("ForgotPassword.accountLogin","Account Login ...");
@@ -370,17 +385,22 @@ public class ForgotPassword
             "Please do not respond to this email.\n"+
             "If you are not the intended recipient, Please disregard this email.\n"+
             "\n"+
-            "Thank you.\n", decodedPass);
+            "Thank you.\n", 
+            decodedPass);
+
+        /* send password */
         //Print.logInfo("EMail body:\n" + body);
         String from = privLabel.getEMailAddress(PrivateLabel.EMAIL_TYPE_PASSWORD);
         String to   = emailAddress;
         if (StringTools.isBlank(from)) {
             Print.logError("No 'From' email address specified");
-            return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.missingFromAddress","Internal email configuration error ['From'].");
+            return SECURE_RESPONSE? internError : 
+                i18n.getString("ForgotPassword.missingFromAddress","Internal email configuration error ['From'].");
         } else
         if (StringTools.isBlank(to)) {
             Print.logError("No 'To' email address specified");
-            return SECURE_RESPONSE? internError : i18n.getString("ForgotPassword.missingToAddress","Internal email configuration error ['To'].");
+            return SECURE_RESPONSE? internError : 
+                i18n.getString("ForgotPassword.missingToAddress","Internal email configuration error ['To'].");
         } else {
             String cc   = null;
             String bcc  = null;

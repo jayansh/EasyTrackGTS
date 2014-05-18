@@ -1,4 +1,4 @@
-Version: 2.5.3
+Version: 2.5.5
 ================================================================================================
 This document contains database schema information for the tables defined within the OpenGTS
 system.  Optional tables (if any) will be indicated by the term "[optional]" next to the table
@@ -37,35 +37,38 @@ This table defines the top level Account specific information.
    8 pressureUnits          Pressure Units                 TINYINT UNSIGNED                     
    9 economyUnits           Economy Units                  TINYINT UNSIGNED                     
   10 temperatureUnits       Temperature Units              TINYINT UNSIGNED                     
-  11 latLonFormat           Latitude/Longitude Format      TINYINT UNSIGNED                     
-  12 geocoderMode           Geocoder Mode                  TINYINT UNSIGNED                     
-  13 privateLabelName       PrivateLabel Name              VARCHAR(32)                          
-  14 isBorderCrossing       Is BorderCrossing Enabled      TINYINT                              
-  15 retainedEventAge       Retained Event Age (sec)       INT UNSIGNED                         
-  16 maximumDevices         Maximum number of devices      INT                                  
-  17 totalPingCount         Total 'Ping' Count             SMALLINT UNSIGNED                    
-  18 maxPingCount           Maximum 'Ping' Count           SMALLINT UNSIGNED                    
-  19 autoAddDevices         AutoAdd Devices                TINYINT                              
-  20 dcsPropertiesID        DCS Properties ID              VARCHAR(32)                          
-  21 smsEnabled             SMS Enabled                    TINYINT                              
-  22 smsProperties          SMS Properties                 VARCHAR(200)                         
-  23 emailProperties        EMail Properties               VARCHAR(250)                         
-  24 expirationTime         Expiration Time                INT UNSIGNED                         
-  25 defaultUser            Default User ID                VARCHAR(32)                          
-  26 password               Password                       VARCHAR(32)                          
-  27 contactName            Contact Name                   VARCHAR(64) [utf8]                   
-  28 contactPhone           Contact Phone                  VARCHAR(32)                          
-  29 contactEmail           Contact EMail Address          VARCHAR(128)                 email   
-  30 timeZone               Time Zone                      VARCHAR(32)                          
-  31 passwdChangeTime       Last Password Change Time      INT UNSIGNED                         
-  32 passwdQueryTime        Last Password Query Time       INT UNSIGNED                         
-  33 lastLoginTime          Last Login Time                INT UNSIGNED                         
-  34 isActive               Is Active                      TINYINT                              
-  35 displayName            Display Name                   VARCHAR(40) [utf8]                   
-  36 description            Description                    VARCHAR(128) [utf8]                  
-  37 notes                  Notes                          TEXT [utf8]                          
-  38 lastUpdateTime         Last Update Time               INT UNSIGNED                         
-  39 creationTime           Creation Time                  INT UNSIGNED                         
+  11 currencyUnits          Currency Units                 VARCHAR(8)                           
+  12 fuelCostPerLiter       Fuel Cost Per Liter            DOUBLE                               
+  13 latLonFormat           Latitude/Longitude Format      TINYINT UNSIGNED                     
+  14 geocoderMode           Geocoder Mode                  TINYINT UNSIGNED                     
+  15 privateLabelName       PrivateLabel Name              VARCHAR(32)                          
+  16 isBorderCrossing       Is BorderCrossing Enabled      TINYINT                              
+  17 retainedEventAge       Retained Event Age (sec)       INT UNSIGNED                         
+  18 maximumDevices         Maximum number of devices      INT                                  
+  19 totalPingCount         Total 'Ping' Count             SMALLINT UNSIGNED                    
+  20 maxPingCount           Maximum 'Ping' Count           SMALLINT UNSIGNED                    
+  21 autoAddDevices         AutoAdd Devices                TINYINT                              
+  22 dcsPropertiesID        DCS Properties ID              VARCHAR(32)                          
+  23 smsEnabled             SMS Enabled                    TINYINT                              
+  24 smsProperties          SMS Properties                 VARCHAR(200)                         
+  25 emailProperties        EMail Properties               VARCHAR(250)                         
+  26 expirationTime         Expiration Time                INT UNSIGNED                         
+  27 allowWebService        Allow Web-Service              TINYINT                              
+  28 defaultUser            Default User ID                VARCHAR(32)                          
+  29 password               Password                       VARCHAR(32)                          
+  30 contactName            Contact Name                   VARCHAR(64) [utf8]                   
+  31 contactPhone           Contact Phone                  VARCHAR(32)                          
+  32 contactEmail           Contact EMail Address          VARCHAR(128)                 email   
+  33 timeZone               Time Zone                      VARCHAR(32)                          
+  34 passwdChangeTime       Last Password Change Time      INT UNSIGNED                         
+  35 passwdQueryTime        Last Password Query Time       INT UNSIGNED                         
+  36 lastLoginTime          Last Login Time                INT UNSIGNED                         
+  37 isActive               Is Active                      TINYINT                              
+  38 displayName            Display Name                   VARCHAR(40) [utf8]                   
+  39 description            Description                    VARCHAR(128) [utf8]                  
+  40 notes                  Notes                          TEXT [utf8]                          
+  41 lastUpdateTime         Last Update Time               INT UNSIGNED                         
+  42 creationTime           Creation Time                  INT UNSIGNED                         
 
 
 ================================================================================================
@@ -168,96 +171,98 @@ typically represents something that is being 'tracked', such as a Vehicle.
    8 vehicleID              VIN                            VARCHAR(24)                          
    9 licensePlate           License Plate                  VARCHAR(24)                          
   10 licenseExpire          License Expiration Day         INT UNSIGNED                         
-  11 driverID               Driver ID                      VARCHAR(32)                          
-  12 driverStatus           Driver Status                  INT UNSIGNED                         
-  13 fuelCapacity           Fuel Capacity                  DOUBLE                               
-  14 fuelEconomy            Approx. Fuel Economy           DOUBLE                               
-  15 fuelRatePerHour        Approx. Fuel Rate per Hour     DOUBLE                               
-  16 speedLimitKPH          Max Speed km/h                 DOUBLE                               
-  17 planDistanceKM         Planned Trip Distance          DOUBLE                               
-  18 installTime            Install Time                   INT UNSIGNED                         
-  19 resetTime              Reset Time                     INT UNSIGNED                         
-  20 expirationTime         Expiration Time                INT UNSIGNED                         
-  21 uniqueID               Unique ID                      VARCHAR(40)                  altIndex
-  22 deviceCode             Server ID                      VARCHAR(24)                          
-  23 deviceType             Device Type                    VARCHAR(24)                          
-  24 pushpinID              Pushpin ID                     VARCHAR(32)                          
-  25 displayColor           Display Color                  VARCHAR(16)                          
-  26 serialNumber           Serial Number                  VARCHAR(24)                          
-  27 simPhoneNumber         SIM Phone Number               VARCHAR(24)                          
-  28 simID                  SIM ID                         VARCHAR(24)                          
-  29 smsEmail               SMS EMail Address              VARCHAR(64)                          
-  30 imeiNumber             IMEI Number                    VARCHAR(24)                          
-  31 dataKey                Data Key                       TEXT                                 
-  32 ignitionIndex          Ignition I/O Index             SMALLINT                             
-  33 codeVersion            Code Version                   VARCHAR(32)                          
-  34 featureSet             Feature Set                    VARCHAR(64)                          
-  35 ipAddressValid         Valid IP Addresses             VARCHAR(128)                         
-  36 lastTotalConnectTime   Last Total Connect Time        INT UNSIGNED                         
-  37 lastDuplexConnectTime  Last Duplex Connect Time       INT UNSIGNED                         
-  38 pendingPingCommand     Pending Ping Command           TEXT                                 
-  39 lastPingTime           Last 'Ping' Time               INT UNSIGNED                         
-  40 totalPingCount         Total 'Ping' Count             SMALLINT UNSIGNED                    
-  41 maxPingCount           Maximum 'Ping' Count           SMALLINT UNSIGNED                    
-  42 commandStateMask       Command State Mask             INT UNSIGNED                         
-  43 expectAck              Expecting an ACK               TINYINT                              
-  44 expectAckCode          Expected ACK Status Code       INT UNSIGNED                         
-  45 lastAckCommand         Last Command Expecting ACK     TEXT                                 
-  46 lastAckTime            Last Received 'ACK' Time       INT UNSIGNED                         
-  47 dcsPropertiesID        DCS Properties ID              VARCHAR(32)                          
-  48 dcsConfigMask          DCS Configuration Mask         INT UNSIGNED                         
-  49 dcsConfigString        DCS Configuration String       VARCHAR(80)                          
-  50 dcsCommandHost         DCS Command Host               VARCHAR(32)                          
-  51 supportsDMTP           Supports DMTP                  TINYINT                              
-  52 supportedEncodings     Supported Encodings            TINYINT UNSIGNED                     
-  53 unitLimitInterval      Accounting Time Interval Min   SMALLINT UNSIGNED                    
-  54 maxAllowedEvents       Max Events per Interval        SMALLINT UNSIGNED                    
-  55 totalProfileMask       Total Profile Mask             BLOB                                 
-  56 totalMaxConn           Max Total Conn per Interval    SMALLINT UNSIGNED                    
-  57 totalMaxConnPerMin     Max Total Conn per Minute      SMALLINT UNSIGNED                    
-  58 duplexProfileMask      Duplex Profile Mask            BLOB                                 
-  59 duplexMaxConn          Max Duplex Conn per Interval   SMALLINT UNSIGNED                    
-  60 duplexMaxConnPerMin    Max Duplex Conn per Minute     SMALLINT UNSIGNED                    
-  61 lastTcpSessionID       Last TCP Session ID            VARCHAR(32)                          
-  62 ipAddressCurrent       Current IP Address             VARCHAR(32)                          
-  63 remotePortCurrent      Current Remote Port            SMALLINT UNSIGNED                    
-  64 listenPortCurrent      Current Listen Port            SMALLINT UNSIGNED                    
-  65 lastInputState         Last Input State               INT UNSIGNED                         
-  66 lastOutputState        Last Output State              INT UNSIGNED                         
-  67 statusCodeState        StatusCode On/Off State        INT UNSIGNED                         
-  68 lastBatteryLevel       Last Battery Level             DOUBLE                               
-  69 lastFuelLevel          Last Fuel Level                DOUBLE                               
-  70 lastFuelTotal          Last Fuel Total Liters         DOUBLE                               
-  71 lastOilLevel           Last Oil Level                 DOUBLE                               
-  72 lastValidLatitude      Last Valid Latitude            DOUBLE                               
-  73 lastValidLongitude     Last Valid Longitude           DOUBLE                               
-  74 lastValidHeading       Last Valid Heading             DOUBLE                               
-  75 lastValidSpeedKPH      Last Valid SpeedKPH            DOUBLE                               
-  76 lastGPSTimestamp       Last Valid GPS Timestamp       INT UNSIGNED                         
-  77 lastEventTimestamp     Last Event Timestamp           INT UNSIGNED                         
-  78 lastCellServingInfo    Last Serving Cell Info         VARCHAR(100)                         
-  79 lastDistanceKM         Last Distance km               DOUBLE                               
-  80 lastOdometerKM         Last Odometer km               DOUBLE                               
-  81 odometerOffsetKM       Odometer Offset km             DOUBLE                               
-  82 lastEngineOnHours      Last Engine On Hours           DOUBLE                               
-  83 lastEngineOnTime       Last Engine On Time            INT UNSIGNED                         
-  84 lastEngineOffTime      Last Engine Off Time           INT UNSIGNED                         
-  85 lastEngineHours        Last Engine Hours              DOUBLE                               
-  86 engineHoursOffset      Engine Hours Offset            DOUBLE                               
-  87 lastIgnitionOnHours    Last Ignition On Hours         DOUBLE                               
-  88 lastIgnitionOnTime     Last Ignition On Time          INT UNSIGNED                         
-  89 lastIgnitionOffTime    Last Ignition Off Time         INT UNSIGNED                         
-  90 lastIgnitionHours      Last Ignition Hours            DOUBLE                               
-  91 lastStopTime           Last Stop  Time                INT UNSIGNED                         
-  92 lastStartTime          Last Start Time                INT UNSIGNED                         
-  93 lastMalfunctionLamp    Last MIL                       TINYINT                              
-  94 lastFaultCode          Last Fault Code                VARCHAR(96)                          
-  95 isActive               Is Active                      TINYINT                              
-  96 displayName            Display Name                   VARCHAR(40) [utf8]                   
-  97 description            Description                    VARCHAR(128) [utf8]                  
-  98 notes                  Notes                          TEXT [utf8]                          
-  99 lastUpdateTime         Last Update Time               INT UNSIGNED                         
- 100 creationTime           Creation Time                  INT UNSIGNED                         
+  11 insuranceExpire        Insurance Expiration Day       INT UNSIGNED                         
+  12 driverID               Driver ID                      VARCHAR(32)                          
+  13 driverStatus           Driver Status                  INT UNSIGNED                         
+  14 fuelCapacity           Fuel Capacity                  DOUBLE                               
+  15 fuelEconomy            Approx. Fuel Economy           DOUBLE                               
+  16 fuelRatePerHour        Approx. Fuel Rate per Hour     DOUBLE                               
+  17 fuelCostPerLiter       Approx. Fuel Cost per Liter    DOUBLE                               
+  18 speedLimitKPH          Max Speed km/h                 DOUBLE                               
+  19 planDistanceKM         Planned Trip Distance          DOUBLE                               
+  20 installTime            Install Time                   INT UNSIGNED                         
+  21 resetTime              Reset Time                     INT UNSIGNED                         
+  22 expirationTime         Expiration Time                INT UNSIGNED                         
+  23 uniqueID               Unique ID                      VARCHAR(40)                  altIndex
+  24 deviceCode             Server ID                      VARCHAR(24)                          
+  25 deviceType             Device Type                    VARCHAR(24)                          
+  26 pushpinID              Pushpin ID                     VARCHAR(32)                          
+  27 displayColor           Display Color                  VARCHAR(16)                          
+  28 serialNumber           Serial Number                  VARCHAR(24)                          
+  29 simPhoneNumber         SIM Phone Number               VARCHAR(24)                          
+  30 simID                  SIM ID                         VARCHAR(24)                          
+  31 smsEmail               SMS EMail Address              VARCHAR(64)                          
+  32 imeiNumber             IMEI Number                    VARCHAR(24)                          
+  33 dataKey                Data Key                       TEXT                                 
+  34 ignitionIndex          Ignition I/O Index             SMALLINT                             
+  35 codeVersion            Code Version                   VARCHAR(32)                          
+  36 featureSet             Feature Set                    VARCHAR(64)                          
+  37 ipAddressValid         Valid IP Addresses             VARCHAR(128)                         
+  38 lastTotalConnectTime   Last Total Connect Time        INT UNSIGNED                         
+  39 lastDuplexConnectTime  Last Duplex Connect Time       INT UNSIGNED                         
+  40 pendingPingCommand     Pending Ping Command           TEXT                                 
+  41 lastPingTime           Last 'Ping' Time               INT UNSIGNED                         
+  42 totalPingCount         Total 'Ping' Count             SMALLINT UNSIGNED                    
+  43 maxPingCount           Maximum 'Ping' Count           SMALLINT UNSIGNED                    
+  44 commandStateMask       Command State Mask             INT UNSIGNED                         
+  45 expectAck              Expecting an ACK               TINYINT                              
+  46 expectAckCode          Expected ACK Status Code       INT UNSIGNED                         
+  47 lastAckCommand         Last Command Expecting ACK     TEXT                                 
+  48 lastAckTime            Last Received 'ACK' Time       INT UNSIGNED                         
+  49 dcsPropertiesID        DCS Properties ID              VARCHAR(32)                          
+  50 dcsConfigMask          DCS Configuration Mask         INT UNSIGNED                         
+  51 dcsConfigString        DCS Configuration String       VARCHAR(80)                          
+  52 dcsCommandHost         DCS Command Host               VARCHAR(32)                          
+  53 supportsDMTP           Supports DMTP                  TINYINT                              
+  54 supportedEncodings     Supported Encodings            TINYINT UNSIGNED                     
+  55 unitLimitInterval      Accounting Time Interval Min   SMALLINT UNSIGNED                    
+  56 maxAllowedEvents       Max Events per Interval        SMALLINT UNSIGNED                    
+  57 totalProfileMask       Total Profile Mask             BLOB                                 
+  58 totalMaxConn           Max Total Conn per Interval    SMALLINT UNSIGNED                    
+  59 totalMaxConnPerMin     Max Total Conn per Minute      SMALLINT UNSIGNED                    
+  60 duplexProfileMask      Duplex Profile Mask            BLOB                                 
+  61 duplexMaxConn          Max Duplex Conn per Interval   SMALLINT UNSIGNED                    
+  62 duplexMaxConnPerMin    Max Duplex Conn per Minute     SMALLINT UNSIGNED                    
+  63 lastTcpSessionID       Last TCP Session ID            VARCHAR(32)                          
+  64 ipAddressCurrent       Current IP Address             VARCHAR(32)                          
+  65 remotePortCurrent      Current Remote Port            SMALLINT UNSIGNED                    
+  66 listenPortCurrent      Current Listen Port            SMALLINT UNSIGNED                    
+  67 lastInputState         Last Input State               INT UNSIGNED                         
+  68 lastOutputState        Last Output State              INT UNSIGNED                         
+  69 statusCodeState        StatusCode On/Off State        INT UNSIGNED                         
+  70 lastBatteryLevel       Last Battery Level             DOUBLE                               
+  71 lastFuelLevel          Last Fuel Level                DOUBLE                               
+  72 lastFuelTotal          Last Fuel Total Liters         DOUBLE                               
+  73 lastOilLevel           Last Oil Level                 DOUBLE                               
+  74 lastValidLatitude      Last Valid Latitude            DOUBLE                               
+  75 lastValidLongitude     Last Valid Longitude           DOUBLE                               
+  76 lastValidHeading       Last Valid Heading             DOUBLE                               
+  77 lastValidSpeedKPH      Last Valid SpeedKPH            DOUBLE                               
+  78 lastGPSTimestamp       Last Valid GPS Timestamp       INT UNSIGNED                         
+  79 lastEventTimestamp     Last Event Timestamp           INT UNSIGNED                         
+  80 lastCellServingInfo    Last Serving Cell Info         VARCHAR(100)                         
+  81 lastDistanceKM         Last Distance km               DOUBLE                               
+  82 lastOdometerKM         Last Odometer km               DOUBLE                               
+  83 odometerOffsetKM       Odometer Offset km             DOUBLE                               
+  84 lastEngineOnHours      Last Engine On Hours           DOUBLE                               
+  85 lastEngineOnTime       Last Engine On Time            INT UNSIGNED                         
+  86 lastEngineOffTime      Last Engine Off Time           INT UNSIGNED                         
+  87 lastEngineHours        Last Engine Hours              DOUBLE                               
+  88 engineHoursOffset      Engine Hours Offset            DOUBLE                               
+  89 lastIgnitionOnHours    Last Ignition On Hours         DOUBLE                               
+  90 lastIgnitionOnTime     Last Ignition On Time          INT UNSIGNED                         
+  91 lastIgnitionOffTime    Last Ignition Off Time         INT UNSIGNED                         
+  92 lastIgnitionHours      Last Ignition Hours            DOUBLE                               
+  93 lastStopTime           Last Stop  Time                INT UNSIGNED                         
+  94 lastStartTime          Last Start Time                INT UNSIGNED                         
+  95 lastMalfunctionLamp    Last MIL                       TINYINT                              
+  96 lastFaultCode          Last Fault Code                VARCHAR(96)                          
+  97 isActive               Is Active                      TINYINT                              
+  98 displayName            Display Name                   VARCHAR(40) [utf8]                   
+  99 description            Description                    VARCHAR(128) [utf8]                  
+ 100 notes                  Notes                          TEXT [utf8]                          
+ 101 lastUpdateTime         Last Update Time               INT UNSIGNED                         
+ 102 creationTime           Creation Time                  INT UNSIGNED                         
 
 
 ================================================================================================
@@ -446,39 +451,40 @@ This table defines Account specific geozones/geofences.
   14 shapeColor             Shape Color                    VARCHAR(12)                          
   15 zoneType               Zone Type                      TINYINT UNSIGNED                     
   16 radius                 Radius Meters                  INT UNSIGNED                         
-  17 latitude1              Latitude 1                     DOUBLE                               
-  18 longitude1             Longitude 1                    DOUBLE                               
-  19 latitude2              Latitude 2                     DOUBLE                               
-  20 longitude2             Longitude 2                    DOUBLE                               
-  21 latitude3              Latitude 3                     DOUBLE                               
-  22 longitude3             Longitude 3                    DOUBLE                               
-  23 latitude4              Latitude 4                     DOUBLE                               
-  24 longitude4             Longitude 4                    DOUBLE                               
-  25 latitude5              Latitude 5                     DOUBLE                               
-  26 longitude5             Longitude 5                    DOUBLE                               
-  27 latitude6              Latitude 6                     DOUBLE                               
-  28 longitude6             Longitude 6                    DOUBLE                               
-  29 latitude7              Latitude 7                     DOUBLE                               
-  30 longitude7             Longitude 7                    DOUBLE                               
-  31 latitude8              Latitude 8                     DOUBLE                               
-  32 longitude8             Longitude 8                    DOUBLE                               
-  33 latitude9              Latitude 9                     DOUBLE                               
-  34 longitude9             Longitude 9                    DOUBLE                               
-  35 latitude10             Latitude 10                    DOUBLE                               
-  36 longitude10            Longitude 10                   DOUBLE                               
-  37 clientUpload           Client Upload                  TINYINT                              
-  38 clientID               Client ID                      INT UNSIGNED                 altIndex
-  39 groupID                DeviceGroup                    VARCHAR(32)                          
-  40 streetAddress          Street Address                 VARCHAR(90) [utf8]                   
-  41 city                   City                           VARCHAR(40) [utf8]                   
-  42 stateProvince          State/Province                 VARCHAR(40) [utf8]                   
-  43 postalCode             Postal Code                    VARCHAR(16) [utf8]                   
-  44 country                Country                        VARCHAR(40) [utf8]                   
-  45 subdivision            Subdivision                    VARCHAR(32) [utf8]                   
-  46 displayName            Display Name                   VARCHAR(40) [utf8]                   
-  47 description            Description                    VARCHAR(128) [utf8]                  
-  48 lastUpdateTime         Last Update Time               INT UNSIGNED                         
-  49 creationTime           Creation Time                  INT UNSIGNED                         
+  17 vertices               Vertices                       TEXT                                 
+  18 latitude1              Latitude 1                     DOUBLE                               
+  19 longitude1             Longitude 1                    DOUBLE                               
+  20 latitude2              Latitude 2                     DOUBLE                               
+  21 longitude2             Longitude 2                    DOUBLE                               
+  22 latitude3              Latitude 3                     DOUBLE                               
+  23 longitude3             Longitude 3                    DOUBLE                               
+  24 latitude4              Latitude 4                     DOUBLE                               
+  25 longitude4             Longitude 4                    DOUBLE                               
+  26 latitude5              Latitude 5                     DOUBLE                               
+  27 longitude5             Longitude 5                    DOUBLE                               
+  28 latitude6              Latitude 6                     DOUBLE                               
+  29 longitude6             Longitude 6                    DOUBLE                               
+  30 latitude7              Latitude 7                     DOUBLE                               
+  31 longitude7             Longitude 7                    DOUBLE                               
+  32 latitude8              Latitude 8                     DOUBLE                               
+  33 longitude8             Longitude 8                    DOUBLE                               
+  34 latitude9              Latitude 9                     DOUBLE                               
+  35 longitude9             Longitude 9                    DOUBLE                               
+  36 latitude10             Latitude 10                    DOUBLE                               
+  37 longitude10            Longitude 10                   DOUBLE                               
+  38 clientUpload           Client Upload                  TINYINT                              
+  39 clientID               Client ID                      INT UNSIGNED                 altIndex
+  40 groupID                DeviceGroup                    VARCHAR(32)                          
+  41 streetAddress          Street Address                 VARCHAR(90) [utf8]                   
+  42 city                   City                           VARCHAR(40) [utf8]                   
+  43 stateProvince          State/Province                 VARCHAR(40) [utf8]                   
+  44 postalCode             Postal Code                    VARCHAR(16) [utf8]                   
+  45 country                Country                        VARCHAR(40) [utf8]                   
+  46 subdivision            Subdivision                    VARCHAR(32) [utf8]                   
+  47 displayName            Display Name                   VARCHAR(40) [utf8]                   
+  48 description            Description                    VARCHAR(128) [utf8]                  
+  49 lastUpdateTime         Last Update Time               INT UNSIGNED                         
+  50 creationTime           Creation Time                  INT UNSIGNED                         
 
 
 ================================================================================================

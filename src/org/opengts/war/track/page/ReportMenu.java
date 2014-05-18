@@ -690,7 +690,7 @@ public class ReportMenu
                 IDDescription.SortBy sortBy = DeviceChooser.getSortBy(privLabel);
                 if (isGroup) {
                     // fleet group selection
-                    String grpAllDesc  = DeviceGroup.GetDeviceGroupAll(locale);
+                    String grpAllDesc  = DeviceGroup.GetDeviceGroupAllTitle(reqState.getCurrentAccount(), locale);
                     String grpTitles[] = reqState.getDeviceGroupTitles();
                     out.write("<b>"+i18n.getString("ReportMenu.deviceGroup","{0}:",grpTitles)+"</b><br>\n");
                     if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Fleet

@@ -40,6 +40,8 @@
 //     -Modified "setAllFieldValues" to accept a list of specific fields to set.
 //  2012/04/11  Martin D. Flynn
 //     -Added check for invalid Double/Float values to "toStringValue(...)"
+//  2014/03/03  Martin D. Flynn
+//     -Case insentitive check for "column" on missing columns.
 // ----------------------------------------------------------------------------
 package org.opengts.dbtools;
 
@@ -610,27 +612,29 @@ public class DBFieldValues
                     } catch (SQLException sqe) {
                         // we want to ignore "Column 'xxxx' not found" errors [found: SQLState:S0022;ErrorCode:0]
                         int errCode = sqe.getErrorCode(); // in the test we performed, this was '0' (thus useless)
+                        String errMsg = sqe.getMessage();
                         String tblColName = utableName + "." + fld[i].getName();
                         if (errCode == DBFactory.SQLERR_UNKNOWN_COLUMN) {
                             // this is the errorCode that is supposed to be returned
                             long errCnt = fld[i].incrementErrorCount();
-                            if ((errCnt % 50L) == 1L) {
+                            if ((errCnt % 120L) == 1L) {
                                 Print.logException("Unknown Column: '" + tblColName + "'", sqe);
                             }
                         } else
-                        if (sqe.getMessage().indexOf("Column") >= 0) {
+                        if (errMsg.toLowerCase().indexOf("column") >= 0) {
                             // if it says anything about the "Column"
                             // IE: "Column 'batteryVolts' not found."
+                            // IE: "The column name batteryVolts is not valid"
                             if (DBField.IgnoreColumnError(utableName, fld[i].getName())) {
                                 // ignore errors
                                 // db.ignoreColumnError.Device.driverStatus=true
                             } else
                             if (RTConfig.isDebugMode() && logMissingCols) {
-                                Print.logError("Column '" +  tblColName + "'? " + sqe);
+                                Print.logWarn("Column '" +  tblColName + "'? " + sqe);
                             } else {
                                 long errCnt = fld[i].incrementErrorCount();
-                                if (((errCnt % 50L) == 1L) && logMissingCols) {
-                                    Print.logError("Column '" +  tblColName + "'? " + sqe);
+                                if (((errCnt % 120L) == 1L) && logMissingCols) {
+                                    Print.logWarn("Column '" +  tblColName + "'? " + sqe);
                                 }
                             }
                         } else {

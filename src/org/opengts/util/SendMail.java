@@ -65,6 +65,7 @@ public class SendMail
 {
 
     // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     private static long SleepMSBetweenEMails = 0L;
 
@@ -85,6 +86,7 @@ public class SendMail
         }
     }
 
+    // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     public  static final String SendMailArgs_className  = "org.opengts.util.SendMailArgs";
@@ -117,7 +119,8 @@ public class SendMail
     {
         return (GetSendMailArgs_class() != null);
     }
-    
+
+    // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     public  static final String EXAMPLE_DOT_COM         = "example.com";
@@ -134,7 +137,73 @@ public class SendMail
             return false;
         }
     }
-    
+
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Save specified SendMail Args to outbox
+    **/
+    public static boolean SaveToOutbox(SendMail.Args args)
+    {
+        // -- extract Args
+        String                       from = args.getFrom();           // never null
+        String                       to[] = args.getTo();             // never null
+        String                       cc[] = args.getCc();             // never null
+        String                      bcc[] = args.getBcc();            // never null
+        String                    subject = args.getSubject();        // never null
+        String                    msgBody = args.getBody();           // never null
+        Properties                headers = args.getHeaders();        // never null
+        SendMail.Attachment        attach = args.getAttachment();     // may be null
+        SendMail.SmtpProperties smtpProps = args.getSmtpProperties(); // never null
+        if (StringTools.isBlank(from)) {
+            // -- no 'From' address
+            return false;
+        } else
+        if ((to == null) || (to.length <= 0)) {
+            // -- no 'To' address
+            return false;
+        }
+        // -- convert to String
+        String toStr        = StringTools.join(to,",");
+        String ccStr        = StringTools.join(cc,",");
+        String bccStr       = StringTools.join(bcc,",");
+        String attachStr    = (attach    != null)? attach.toString() : "";
+        String smtpPropsStr = (smtpProps != null)? smtpProps.toString() : "";
+        String headersStr   = (headers   != null)? (new RTProperties(headers)).toString() : "";
+        // TODO:
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+    *** SendMailException
+    **/
+    public static class SendMailException
+        extends Exception
+    {
+        private boolean retrySend = false;
+        public SendMailException(String msg) {
+            super(msg);
+        }
+        public SendMailException(Throwable cause) {
+            super(cause);
+        }
+        public SendMailException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+        public SendMailException setRetry(boolean retry) {
+            this.retrySend = retry;
+            return this;
+        }
+        public boolean getRetry() {
+            return this.retrySend;
+        }
+    }
+
+    // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
     // Custom "X" headers
 
@@ -147,7 +216,7 @@ public class SendMail
     public  static final String X_StatusCode            = "X-StatusCode";
     public  static final String X_AlarmRule             = "X-AlarmRule";
     public  static final String X_GPSLocation           = "X-GPSLocation";
- 
+
     // ------------------------------------------------------------------------
 
     public  static final byte   MAGIC_GIF_87a[]         = HTMLTools.MAGIC_GIF_87a;
@@ -155,6 +224,7 @@ public class SendMail
     public  static final byte   MAGIC_JPEG[]            = HTMLTools.MAGIC_JPEG;
     public  static final byte   MAGIC_PNG[]             = HTMLTools.MAGIC_PNG; 
 
+    // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     public  static final String THREAD_NONE             = "none";
@@ -249,6 +319,7 @@ public class SendMail
     }
 
     // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /* SendMail ThreadPool */
     // SendMail.ThreadPool.maximumPoolSize=20
@@ -266,6 +337,7 @@ public class SendMail
         ThreadPool_SendMail_QueSize);
         
     // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Convenience method for sending notification regarding internal errors
     
     //public static void sendError(String subject, String msgBody)
@@ -279,6 +351,7 @@ public class SendMail
     //    }
     //}
 
+    // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
@@ -298,6 +371,7 @@ public class SendMail
     }
 
     // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
     *** Sends a system notification email to the defined system admin email address
@@ -305,9 +379,10 @@ public class SendMail
     *** @param msgBody  The email message body
     *** @return True if email is sent
     **/
-    public boolean sendSysadmin(String subject, String msgBody)
+    public static boolean sendSysadmin(String subject, String msgBody)
     {
         SendMail.SmtpProperties smtpProps = new SendMail.SmtpProperties();
+        boolean retrySend = false;
 
         /* "To:" */
         String to   = smtpProps.getSysadminEmail();
@@ -324,8 +399,53 @@ public class SendMail
         }
 
         /* send */
-        return send(from, to, subject, msgBody, smtpProps);
+        return SendMail.send(from, to, subject, msgBody, smtpProps, retrySend);
 
+    }
+
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Sends an email
+    *** @param from      The sender of the email
+    *** @param to        A comma-separated list of email recipients.
+    *** @param subject   The email subject.
+    *** @param msgBody   The email message body.
+    *** @param smtpProps The custom SMTP properties
+    *** @return True if email is queued/sent
+    **/
+    public static boolean send(
+        String from, String to, 
+        String subject, String msgBody,
+        SmtpProperties smtpProps)
+    {
+        String ato[]  = (to != null)? StringTools.parseStringArray(to ,',') : null;
+        String acc[]  = null;
+        String abcc[] = null;
+        return SendMail.send(null,from,ato,acc,abcc,subject,msgBody,null/*attach*/,smtpProps,false);
+    }
+
+    /**
+    *** Sends an email
+    *** @param from      The sender of the email
+    *** @param to        A comma-separated list of email recipients.
+    *** @param subject   The email subject.
+    *** @param msgBody   The email message body.
+    *** @param smtpProps The custom SMTP properties
+    *** @param queRetry  True to queue to outbox on connection/auth failure.
+    *** @return True if email is queued/sent
+    **/
+    public static boolean send(
+        String from, String to, 
+        String subject, String msgBody,
+        SmtpProperties smtpProps,
+        boolean queRetry)
+    {
+        String ato[]  = (to != null)? StringTools.parseStringArray(to ,',') : null;
+        String acc[]  = null;
+        String abcc[] = null;
+        return SendMail.send(null,from,ato,acc,abcc,subject,msgBody,null/*attach*/,smtpProps,queRetry);
     }
 
     // ------------------------------------------------------------------------
@@ -336,27 +456,9 @@ public class SendMail
     *** @param to       A comma-separated list of email recipients.
     *** @param subject  The email subject.
     *** @param msgBody  The email message body.
-    *** @return True if email is sent
-    **/
-    public static boolean send(
-        String from, String to, 
-        String subject, String msgBody,
-        SmtpProperties smtpProps)
-    {
-        String ato[]  = (to != null)? StringTools.parseStringArray(to ,',') : null;
-        String acc[]  = null;
-        String abcc[] = null;
-        return send(null,from,ato,acc,abcc,subject,msgBody,null/*attach*/,smtpProps);
-    }
-
-    /**
-    *** Sends an email
-    *** @param from     The sender of the email
-    *** @param to       A comma-separated list of email recipients.
-    *** @param subject  The email subject.
-    *** @param msgBody  The email message body.
     *** @param attach   An email attachment
-    *** @return True if email is sent
+    *** @param smtpProps The custom SMTP properties
+    *** @return True if email is queued/sent
     **/
     public static boolean send(
         String from, String to, 
@@ -367,7 +469,57 @@ public class SendMail
         String ato[]  = (to  != null)? StringTools.parseStringArray(to ,',') : null;
         String acc[]  = null;
         String abcc[] = null;
-        return send(null,from,ato,acc,abcc,subject,msgBody,attach,smtpProps);
+        return SendMail.send(null,from,ato,acc,abcc,subject,msgBody,attach,smtpProps,false);
+    }
+
+    /**
+    *** Sends an email
+    *** @param from     The sender of the email
+    *** @param to       A comma-separated list of email recipients.
+    *** @param subject  The email subject.
+    *** @param msgBody  The email message body.
+    *** @param attach   An email attachment
+    *** @param smtpProps The custom SMTP properties
+    *** @param queRetry  True to queue to outbox on connection/auth failure.
+    *** @return True if email is queued/sent
+    **/
+    public static boolean send(
+        String from, String to, 
+        String subject, String msgBody, 
+        Attachment attach,
+        SmtpProperties smtpProps,
+        boolean queRetry)
+    {
+        String ato[]  = (to  != null)? StringTools.parseStringArray(to ,',') : null;
+        String acc[]  = null;
+        String abcc[] = null;
+        return SendMail.send(null,from,ato,acc,abcc,subject,msgBody,attach,smtpProps,queRetry);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Sends an email
+    *** @param from     The sender of the email
+    *** @param to       A comma-separated list of 'To:' email recipients.
+    *** @param cc       A comma-separated list of 'Cc:' email recipients.
+    *** @param bcc      A comma-separated list of 'Bcc:' email recipients.
+    *** @param subject  The email subject.
+    *** @param msgBody  The email message body.
+    *** @param attach   An email attachment
+    *** @param smtpProps The custom SMTP properties
+    *** @return True if email is queued/sent
+    **/
+    public static boolean send(
+        String from, String to, String cc, String bcc,
+        String subject, String msgBody, 
+        Attachment attach,
+        SmtpProperties smtpProps)
+    {
+        String ato[]  = (to  != null)? StringTools.parseStringArray(to ,',') : null;
+        String acc[]  = (cc  != null)? StringTools.parseStringArray(cc ,',') : null;
+        String abcc[] = (bcc != null)? StringTools.parseStringArray(bcc,',') : null;
+        return SendMail.send(null,from,ato,acc,abcc,subject,msgBody,attach,smtpProps,false);
     }
 
     /**
@@ -379,29 +531,36 @@ public class SendMail
     *** @param subject  The email subject.
     *** @param msgBody  The email message body.
     *** @param attach   An email attachment
-    *** @return True
+    *** @param smtpProps The custom SMTP properties
+    *** @param queRetry True to queue to outbox on connection/auth failure.
+    *** @return True if email is queued/sent
     **/
     public static boolean send(
         String from, String to, String cc, String bcc,
         String subject, String msgBody, 
         Attachment attach,
-        SmtpProperties smtpProps)
+        SmtpProperties smtpProps,
+        boolean queRetry)
     {
         String ato[]  = (to  != null)? StringTools.parseStringArray(to ,',') : null;
         String acc[]  = (cc  != null)? StringTools.parseStringArray(cc ,',') : null;
         String abcc[] = (bcc != null)? StringTools.parseStringArray(bcc,',') : null;
-        return send(null,from,ato,acc,abcc,subject,msgBody,attach,smtpProps);
+        return SendMail.send(null,from,ato,acc,abcc,subject,msgBody,attach,smtpProps,queRetry);
     }
+
+    // ------------------------------------------------------------------------
 
     /**
     *** Sends an email
-    *** @param from     The sender of the email
-    *** @param to       An array of 'To:' email recipients.
-    *** @param cc       An array of 'Cc:' email recipients.
-    *** @param bcc      An array of 'Bcc:' email recipients.
-    *** @param subject  The email subject.
-    *** @param msgBody  The email message body.
-    *** @param attach   An email attachment
+    *** @param from      The sender of the email
+    *** @param to        An array of 'To:' email recipients.
+    *** @param cc        An array of 'Cc:' email recipients.
+    *** @param bcc       An array of 'Bcc:' email recipients.
+    *** @param subject   The email subject.
+    *** @param msgBody   The email message body.
+    *** @param attach    An email attachment
+    *** @param smtpProps The custom SMTP properties
+    *** @param queRetry  An email attachment
     *** @return True
     **/
     public static boolean send(
@@ -409,9 +568,10 @@ public class SendMail
         String from, String to[], String cc[], String bcc[], 
         String subject, String msgBody, 
         Attachment attach,
-        SmtpProperties smtpProps)
+        SmtpProperties smtpProps,
+        boolean queRetry)
     {
-        Args args = new Args(headers,from,to,cc,bcc,subject,msgBody,attach,smtpProps);
+        Args args = new SendMail.Args(headers,from,to,cc,bcc,subject,msgBody,attach,smtpProps,queRetry);
         SendMailRunnable smr = new SendMailRunnable(args);
         boolean showThreadModel = SendMail.GetShowThreadModel();
         switch (SendMail.GetThreadModel()) {
@@ -431,7 +591,7 @@ public class SendMail
                     Print.logDebug("Starting new SendMail thread");
                 }
                 (new Thread(smr)).start();
-                break;
+                return true;
             case _THREAD_DEBUG :
                 Print.logDebug("Debug SendMail (email not sent)");
                 Print.logDebug(smr.getArgs().toString());
@@ -442,9 +602,8 @@ public class SendMail
                     Print.logDebug("Running SendMail in thread pool");
                 }
                 ThreadPool_SendMail.run(smr);
-                break;
+                return true;
         }
-        return true; // send(args);
     }
 
     /**
@@ -453,42 +612,64 @@ public class SendMail
     private static class SendMailRunnable
         implements Runnable
     {
-        private Args    args = null;
-        private boolean emailSent = false;
+        private Args      args      = null;
+        private Throwable sendError = null;
+        private boolean   emailSent = false;
+        private boolean   retrySend = false;
         public SendMailRunnable(Args args) {
             this.args = args;
-            this.emailSent = false;
         }
         public Args getArgs() {
             return this.args;
         }
         public void run() {
-            if (this.args != null) {
-                // -- send email
+            // -- no args?
+            if (this.args == null) {
+                // -- exit now
+                return;
+            }
+            // -- send email
+            long startMS = System.currentTimeMillis();
+            try {
                 //this.emailSent = SendMailArgs.send(this.args);
-                long startMS = System.currentTimeMillis();
-                try {
-                    Class sendMailArgs = GetSendMailArgs_class();
-                    MethodAction ma = new MethodAction(sendMailArgs, "send", Args.class);
-                    this.emailSent = ((Boolean)ma.invoke(this.args)).booleanValue();
-                } catch (Throwable th) {
-                    Print.logDebug("Email 'send' failed: " + th);
-                    this.emailSent = false;
-                }
-                long endMS = System.currentTimeMillis();
-                // -- sleep after sending email?
-                if (SendMail.SleepMSBetweenEMails > 0L) {
-                    long deltaMS = SendMail.SleepMSBetweenEMails - (endMS - startMS);
-                    if (deltaMS > 0L) {
-                        long sleepMS = Math.min(deltaMS, 30000L);
-                        // hack to slow down emails being sent for SMTP servers that cannot handle the volume
-                        try { Thread.sleep(sleepMS); } catch (Throwable th) {/*ignore*/}
-                    }
+                Class sendMailArgs = GetSendMailArgs_class();
+                MethodAction ma = new MethodAction(sendMailArgs, "send", Args.class);
+                ma.invoke(this.args); 
+                this.emailSent = true; // successful if we are here
+            } catch (SendMail.SendMailException sme) {
+                // -- failed to send email
+                Print.logInfo("Email 'send' failed: " + sme);
+                this.sendError = sme;
+                this.emailSent = false;
+                this.retrySend = sme.getRetry();
+            } catch (Throwable th) {
+                // -- catch-all, should not occur
+                Print.logInfo("Email 'send' failed: " + th);
+                this.sendError = th;
+                this.emailSent = false;
+                this.retrySend = false;
+            }
+            // -- retry?
+            if (!this.emailSent && this.retrySend && this.args.getQueueRetry()) {
+                // -- save to outbox
+                SendMail.SaveToOutbox(this.args);
+            }
+            // -- sleep after sending email?
+            long endMS = System.currentTimeMillis();
+            if (SendMail.SleepMSBetweenEMails > 0L) {
+                // -- hack to slow down emails being sent for SMTP servers that cannot handle the volume
+                long deltaMS = SendMail.SleepMSBetweenEMails - (endMS - startMS);
+                if (deltaMS > 0L) {
+                    long sleepMS = Math.min(deltaMS, 30000L);
+                    try { Thread.sleep(sleepMS); } catch (Throwable th) {/*ignore*/}
                 }
             }
         }
         public boolean emailSent() {
             return this.emailSent;
+        }
+        public boolean retrySend() {
+            return this.retrySend;
         }
     }
 
@@ -541,12 +722,28 @@ public class SendMail
         private String     name   = DFT_ATTACHMENT_NAME;
         private String     type   = DFT_ATTACHMENT_TYPE;
         public Attachment(byte data[]) {
+            // -- attachment data only, default name/type
             this(data, null, null);
         }
         public Attachment(byte data[], String name, String type) {
+            // -- explicit attachment components
             this.data = data;
-            this.name = ((name != null) && !name.equals(""))? name : DFT_ATTACHMENT_NAME;
-            this.type = ((type != null) && !type.equals(""))? type : DFT_ATTACHMENT_TYPE;
+            this.name = !StringTools.isBlank(name)? name : DFT_ATTACHMENT_NAME;
+            this.type = !StringTools.isBlank(type)? type : DFT_ATTACHMENT_TYPE;
+        }
+        public Attachment(String csvData) {
+            // -- reconstruct attachment from String
+            // "name,mime,0x1234567890"
+            String d[] = StringTools.split(csvData,',');
+            this.name = (d.length > 0)? d[0] : null;
+            this.type = (d.length > 1)? d[1] : null;
+            this.data = (d.length > 2)? StringTools.parseHex(d[2],null) : null;
+            if (StringTools.isBlank(this.name)) {
+                this.name = DFT_ATTACHMENT_NAME;
+            }
+            if (StringTools.isBlank(this.type)) {
+                this.type = DFT_ATTACHMENT_TYPE;
+            }
         }
         public byte[] getBytes() {
             return this.data;
@@ -559,6 +756,16 @@ public class SendMail
         }
         public String getType() {
             return this.type;
+        }
+        public String toString() {
+            // "name,mime,0x1234567890"
+            StringBuffer sb = new StringBuffer();
+            sb.append(this.getName()).append(",");
+            sb.append(this.getType()).append(",");
+            if (this.getSize() > 0) {
+                sb.append("0x").append(StringTools.toHexString(this.getBytes()));
+            }
+            return sb.toString();
         }
     }
 
@@ -579,11 +786,20 @@ public class SendMail
         private String         msgBody      = null;
         private Attachment     attachment   = null;
         private SmtpProperties smtpProps    = null;
+        private boolean        queRetry     = false;
+        //public Args(Properties headers, 
+        //    String from, String to[], String cc[], String bcc[], 
+        //    String subject, String msgBody, 
+        //    Attachment attach,
+        //    SmtpProperties smtpProps) {
+        //    this(headers,from,to,cc,bcc,subject,msgBody,attach,smtpProps,false/*retry?*/);
+        //}
         public Args(Properties headers, 
             String from, String to[], String cc[], String bcc[], 
             String subject, String msgBody, 
             Attachment attach,
-            SmtpProperties smtpProps) {
+            SmtpProperties smtpProps,
+            boolean queRetry) {
             this.headers    = (headers != null)? headers : new Properties();
             this.from       = from;
             this.to         = to;
@@ -592,7 +808,8 @@ public class SendMail
             this.subject    = subject;
             this.msgBody    = msgBody;
             this.attachment = attach;
-            this.smtpProps  = (smtpProps != null)? smtpProps : new SmtpProperties();
+            this.smtpProps  = (smtpProps != null)? smtpProps : new SendMail.SmtpProperties();
+            this.queRetry   = queRetry;
         }
         public Properties getHeaders() {
             return this.headers;
@@ -620,6 +837,9 @@ public class SendMail
         }
         public SmtpProperties getSmtpProperties() {
             return this.smtpProps;
+        }
+        public boolean getQueueRetry() {
+            return this.queRetry;
         }
         public String toString() {
             StringBuffer sb = new StringBuffer().append("\n");
@@ -897,7 +1117,8 @@ public class SendMail
     {
         RTConfig.setCommandLineArgs(argv);
         SendMail.SetThreadModel(SendMail.THREAD_CURRENT);
-        SmtpProperties smtpDft = new SmtpProperties(); // default properties
+        SmtpProperties smtpDft = new SendMail.SmtpProperties(); // default properties
+        boolean retrySend = false;
 
         /* validate email address */
         if (RTConfig.hasProperty(ARG_ADDR)) {
@@ -990,7 +1211,7 @@ public class SendMail
         Print.sysPrintln("   From   : " + fromAddr);
         Print.sysPrintln("   To     : " + toAddr);
         Print.sysPrintln("   Subject: " + subject);
-        if (SendMail.send(fromAddr,toAddr,subject,body,attach,smtpDft)) {
+        if (SendMail.send(fromAddr,toAddr,subject,body,attach,smtpDft,retrySend)) {
             Print.sysPrintln("... sent");
         } else {
             Print.sysPrintln("... Unable to send EMail");

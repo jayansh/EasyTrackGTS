@@ -22,7 +22,7 @@
 //  2007/11/28  Martin D. Flynn
 //     -Integrated use of 'ReportColumn'
 //  2009/09/23  Clifton Flynn, Martin D. Flynn
-//     -Added SOAP xml support
+//     -Added web-service xml support
 // ----------------------------------------------------------------------------
 package org.opengts.war.report.presentation;
 

@@ -637,7 +637,8 @@ public class DBAdmin
     *** @param utableName The specific untranslated table name for which the schema will be printed.
     ***                   If null, the schema for all tables will be printed.
     **/
-    public static void printTableSchema(int docWidth, String header[], String utableName)
+    private static void _printTableSchema(int docWidth, String header[], 
+        String utableName, boolean existing)
     {
         // 'utableName' is non-null if the caller wants to print the schema for a specific table
 
@@ -665,25 +666,30 @@ public class DBAdmin
         for (Iterator<String> i = factMap.keyIterator(); i.hasNext();) {
             String tn = i.next();
             if (!StringTools.isBlank(utableName) && !tn.equalsIgnoreCase(utableName)) {
-                // skip this table 
+                // -- skip this table 
                 continue;
             }
             tablesFound++;
 
             /* table factory */
             DBFactory<? extends DBRecord> f = (DBFactory<? extends DBRecord>)factMap.get(tn);
-            
+            if (f == null) {
+                Print.sysPrintln("Unable to find DBFactory for table name: " + tn);
+                continue;
+            }
+            String factUTableName = f.getUntranslatedTableName();
+
             /* table exists */
             boolean tableExists = false;
             try {
                 if (f.tableExists()) {
                     tableExists = true;
                 } else {
-                    //Print.sysPrintln("Table does not exist '" + f.getUntranslatedTableName() + "'");
+                    //Print.sysPrintln("Table does not exist '" + factUTableName + "'");
                     //continue;
                 }
             } catch (DBException dbe) {
-                //Print.logError("Unable to print schema for table '" + f.getUntranslatedTableName() + "'");
+                //Print.logError("Unable to print schema for table '" + factUTableName + "'");
                 //continue;
             }
 
@@ -693,19 +699,23 @@ public class DBAdmin
                 // for now, omit all optional tables.
                 continue;
             }
-            
+
             /* attributes */
             StringBuffer attr = new StringBuffer();
-            attr.append(" [");
-            attr.append(isRequired?"required":"optional");
-            //attr.append(tableExists?",exists" :",missing");
-            attr.append("]");
+            if (existing) {
+                attr.append(" [existing]");
+            } else {
+                attr.append(" [");
+                attr.append(isRequired?"required":"optional");
+                //attr.append(tableExists?",exists" :",missing");
+                attr.append("]");
+            }
 
             /* table header */
             Print.sysPrintln("");
             Print.sysPrintln("");
             Print.sysPrintln(StringTools.replicateString("=",docWidth+1));
-            Print.sysPrintln("Table: " + f.getUntranslatedTableName() + attr);
+            Print.sysPrintln("Table: " + factUTableName + attr);
             Print.sysPrintln("Class: " + StringTools.className(f.getRecordClass()));
             Print.sysPrintln("");
             DBAdmin._printHeaderText(f.getDescription(locale), docWidth);
@@ -715,8 +725,20 @@ public class DBAdmin
             DBAdmin._printSchemaRow("##", "Column", "Description", "SQL Type", "Key");
             DBAdmin._printSchemaRow(null,     null,          null,       null,  null);
 
+            /* get fields */
+            DBField colDef[] = null;
+            if (existing) {
+                try {
+                    colDef = f.getExistingColumns(false);
+                } catch (DBException dbe) {
+                    Print.sysPrintln("Table does not exist: " + factUTableName);
+                    colDef = new DBField[0];
+                }
+            } else {
+                colDef = f.getFields();
+            }
+
             /* fields */
-            DBField colDef[] = f.getFields();
             for (int c = 0; c < colDef.length; c++) {
                 String  index   = String.valueOf(c + 1);
                 String  name    = colDef[c].getName();
@@ -750,7 +772,27 @@ public class DBAdmin
         Print.sysPrintln("");
         
     }
-    
+
+    /**
+    *** Print the database schema for the managed tables
+    *** @param utableName The specific untranslated table name for which the schema will be printed.
+    ***                   If null, the schema for all tables will be printed.
+    **/
+    public static void printTableSchema(int docWidth, String header[], String utableName)
+    {
+        DBAdmin._printTableSchema(docWidth, header, utableName, false/*defined*/);
+    }
+
+    /**
+    *** Print the database schema for the managed tables
+    *** @param utableName The specific untranslated table name for which the schema will be printed.
+    ***                   If null, the schema for all tables will be printed.
+    **/
+    public static void printTableColumns(int docWidth, String header[], String utableName)
+    {
+        DBAdmin._printTableSchema(docWidth, header, utableName, true/*existing*/);
+    }
+
     // ------------------------------------------------------------------------
 
     /**
@@ -829,6 +871,7 @@ public class DBAdmin
     public  static final String ARG_TABLES[]    = new String[] { "tables"    };
     public  static final String ARG_TABLENAME[] = new String[] { "tableName" , "name" };
     public  static final String ARG_SCHEMA[]    = new String[] { "schema"    };
+    public  static final String ARG_COLUMNS[]   = new String[] { "columns"   };
     public  static final String ARG_DUMP[]      = new String[] { "dump"      };
     public  static final String ARG_WHERE[]     = new String[] { "where"     };
     public  static final String ARG_VALIDATE[]  = new String[] { "validate"  };
@@ -1347,6 +1390,15 @@ public class DBAdmin
             execCmd++;
             String schemaTable = RTConfig.getString(ARG_SCHEMA,null);
             DBAdmin.printTableSchema(95, null, schemaTable);
+            //return DBAdminExec.EXIT; // go no further
+        }
+
+        /* columns: print existing table columns */
+        // bin/exe DBAdmin -columns[=<table>]
+        if (RTConfig.hasProperty(ARG_COLUMNS)) {
+            execCmd++;
+            String columnsTable = RTConfig.getString(ARG_COLUMNS,null);
+            DBAdmin.printTableColumns(95, null, columnsTable);
             //return DBAdminExec.EXIT; // go no further
         }
 

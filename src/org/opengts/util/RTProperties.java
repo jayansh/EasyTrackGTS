@@ -114,6 +114,9 @@
 //     -Added support for "prop?=value" where "prop" is not set if currently undefined.
 //  2013/05/28  Martin D. Flynn
 //     -Fixed merging of property files when there are more than one "key" or "#key=" match.
+//  2014/03/03  Martin D. Flynn
+//     -Fixed setting of value when -key doesn't specify a trailing '=', and the next
+//      arg doesn't specify a prefixing '-' (2.5.4-B08)
 // ----------------------------------------------------------------------------
 package org.opengts.util;
 
@@ -240,6 +243,8 @@ public class RTProperties
     public  boolean             DEBUG                   = false;
 
     private String              cfgDirRoot              = null;
+    
+    private Vector<URL>         loadedURLs              = null;
 
     private Map<Object,Object>  cfgProperties           = null;
     private boolean             ignoreCase              = false;
@@ -345,6 +350,7 @@ public class RTProperties
 
                 /* key/value */
                 String kv = argv[i];
+                // -- remove leading/trailing quote characters
                 if (kv.startsWith("'") && kv.endsWith("'")) {
                     kv = kv.substring(1, kv.length() - 1);
                 } else
@@ -386,7 +392,7 @@ public class RTProperties
                             // assume this should be the value for the key
                             // (ie. "-arg1 val1 -arg2 val2")
                             i++; // advance argument pointer
-                            val = kv;
+                            val = argv[i]; // was "kv" [v2.5.4-B08]
                         }
                         
                     }
@@ -491,6 +497,32 @@ public class RTProperties
 
     // ------------------------------------------------------------------------
 
+    /** 
+    *** Gets the list of URLs loaded into this RTProperties instance
+    *** @return The list of URLs loaded into this RTProperties instance, or null
+    ***         if no URLs were used to load this instance.
+    **/
+    public java.util.List<URL> getLoadedURLs()
+    {
+        return this.loadedURLs;
+    }
+
+    /**
+    *** Adds a url to the list of loaded URLs
+    *** @param url The URL to add
+    **/
+    private void _addLoadedURL(URL url)
+    {
+        if (url != null) {
+            if (this.loadedURLs == null) {
+                this.loadedURLs = new Vector<URL>();
+            }
+            this.loadedURLs.add(url);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
     /**
     *** Returns true if the key case on lookups is to be ignored
     *** @return True if the key case on lookups is to be ignored
@@ -505,7 +537,7 @@ public class RTProperties
     *** is an <code>OrderedMap</code>.
     *** @param ignCase True ignore key-case on lookups, false otherwise
     **/
-    public void setIgnoreKeyCase(boolean ignCase)
+    public RTProperties setIgnoreKeyCase(boolean ignCase)
     {
         this.ignoreCase = ignCase;
         Map props = this.getProperties();
@@ -515,6 +547,7 @@ public class RTProperties
         if (ignCase) {
             Print.logWarn("Backing map is not an 'OrderedMap', case insensitive keys not in effect");
         }
+        return this;
     }
 
     // ------------------------------------------------------------------------
@@ -1132,7 +1165,7 @@ public class RTProperties
         for (Iterator<?> i = this.keyIterator(); i.hasNext();) {
             String mkKey = i.next().toString();
             if (mkKey.endsWith(keyEnd)) {
-                String key = getString(mkKey, null);
+                String key = this.getString(mkKey, null);
                 if (key != null) { // <-- will never be null anyway
                     String mvKey = mkKey.substring(0, mkKey.length() - keyEnd.length()) + valEnd;
                     String val = this.getString(mvKey, "");
@@ -1446,6 +1479,9 @@ public class RTProperties
     private String _setProperties(InputStream in, boolean inclName, URL inputURL)
         throws IOException
     {
+
+        /* clear list of loaded config files/urls */
+        this.loadedURLs = null;
 
         /* create temporary Properties holder */
         OrderedProperties props = new OrderedProperties(inputURL);
@@ -3385,9 +3421,9 @@ public class RTProperties
     //private static final String KEY_IFDEF_              = "%ifDef-";          // 
     //private static final String KEY_IFNOTDEF_           = "%ifNotDef-";       // 
     private static final int    MAX_INCLUDE_RECURSION   = 3; // reasonable max recursion (including 'main ' file)
-    
+
     /**
-    *** OrderedProperties class
+    *** OrderedProperties class (inner class)
     **/
     public class OrderedProperties
         extends Properties
@@ -3407,6 +3443,7 @@ public class RTProperties
             this.recursionLevel = recursion;
             this.orderedMap     = new OrderedMap<String,String>();
             this.inputURL       = inputURL;
+            RTProperties.this._addLoadedURL(inputURL);
         }
         
         public void setParentProperties(OrderedProperties parent) {
@@ -3508,6 +3545,7 @@ public class RTProperties
                                 // unrecognized URL, leave as-is
                             }
                             if (url != null) {
+                                // -- including "url"
                                 boolean isXML = RTProperties.IsXML(url);
                                 if (this.debugMode) {
                                     Print.logInfo("(DEBUG) Including URL: ["+vs+"] " + url);
@@ -3519,6 +3557,7 @@ public class RTProperties
                                 props.loadProperties(props, uis, isXML); // <-- fixed to properly reference "%configURL"
                                 props.remove(RTKey.CONFIG_URL);               // remove CONFIG_URL before saving to parent properties
                                 this.orderedMap.putAll(props.getOrderedMap());
+                                // -- TODO: add "url" to list of loaded config files.
                             }
                         } catch (MalformedURLException mue) {
                             Print.logException("Invalid URL: " + url, mue);
@@ -3910,11 +3949,20 @@ public class RTProperties
             "g=o",
         });
         */
-        
+
+        String s = "ver=gtcfre-1.5.1&app=1.4.4%2FTrial&gtc=8q6hphqveyqut3kiwr9yjxrph9mclp3&cmd=appvers";
+        Print.logInfo("Decoded RTP Before: " + s);
+        RTProperties rtp = new RTProperties(s, '&');
+        rtp.setPropertySeparatorChar(' ');
+        Print.logInfo("Decoded RTP After : " + rtp);
+        Print.logInfo("Command: " + rtp.getString(new String[]{"cmd","command"},"?"));
+
+        /*
         RTProperties rtp = new RTProperties("[mdf] -test=\"Hello World\" -another=test hello= world=");
         Print.sysPrintln("RTP] " + rtp);
         rtp.printProperties("Test RTProperties:");
-        
+        */
+
     }
 
 }

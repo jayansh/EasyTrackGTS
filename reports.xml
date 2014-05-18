@@ -60,6 +60,7 @@
     === by specifying "ReportDefinition." before the property name.  For example to override
     === the "columnLatLon" property, you could add the following definition to one of the loaded 
     === runtime config files: IE.
+    ===    ReportDefinition.columnIndexMapLink=true
     ===    ReportDefinition.columnLatLon=false
     ===    ReportDefinition.TripReport.showFuelTotal=true
     -->
@@ -70,6 +71,8 @@
       <Property key="columnPushpin"                         >false</Property>
       <Property key="columnLatLon"                          >true</Property>
       <Property key="columnBattery"                         >true</Property>
+      <Property key="columnInputState8"                     >true</Property>
+      <Property key="columnInputState16"                    >false</Property>
       <Property key="columnOdometer"                        >true</Property>
       <Property key="columnReportDistance"                  >false</Property>
       <Property key="columnFuelUsage"                       >false</Property>
@@ -126,6 +129,7 @@
       <Property key="TripReport.showIdleElapsed"            >false</Property>
       <Property key="TripReport.showFuelTotal"              >false</Property>
       <Property key="TripReport.showFuelTrip"               >true</Property>
+      <Property key="TripReport.showFuelTripCost"           >false</Property>
       <Property key="TripReport.showFuelEconomy"            >true</Property>
       <Property key="TripReport.estimateFuelTotal"          >false</Property>
       <Property key="TripReport.kilometersPerLiter"         >0.0</Property>  <!-- 20mpg: mpg * 0.425 = 8.5 km/L -->
@@ -291,7 +295,9 @@
        ===   battery                - "24%"
        ===   batteryVolts           - "3.65"
        ===   batteryPercent         - "24%"
-       ===   inputState             - "10010000"    (binary input state)
+       ===   batteryTemp            - "24.5"
+       ===   inputState             - "10010000"    (8-bit binary input state)
+       ===   inputState:16          - "0001000010010000" (16-bit binary input state)
        ===   inputBit:0             - "On"          (arg is bit index)
        ===   outputState            - "10010000"    (binary output state)
        ===   outputBit:0            - "On"          (arg is bit index)
@@ -403,7 +409,20 @@
        ===   stopStatus             - "103"
        ===   stopStatusDesc         - "Active"
        ===   stopIndex              - "1"
+       ===   tripStartDateTime      - "2007/03/08 23:31:47"
+       ===   tripStopDateTime       - "2007/03/08 23:31:47"
+       ===   tripDistance:0         - "4587"     (units specified on column header)
+       ===   tripIdleHours          - "12:34:46"
+       ===   tripMaxSpeed           - "47"          (units specified on column header)
+       ===   tripMaxRPM             - "1352"
+       ===   tripStartLatitude:4    - "49.1234"
+       ===   tripStartLongitude:4   - "-140.1234"
+       ===   tripElapsed:0          - "12:34:56"    (HH:MM:SS) 
+       ===   tripElapsed:1          - "12:34"       (HH:MM) 
+       ===   tripElapsed:2          - "12.56"       (HHH.hh)  
+       ===   tripElapsed:3          - "12.6"        (HHH.h)  
        ===   attachURL              - "./Attach.jpeg?d=DEVICE&ts=TIMESTAMP&sc=CODE"
+       ===   attachProp:varName     - "Value"
        ===   dataSource             - "gprs"
        ===   rawData                - "imei=1234567890&rmc=$GPRMC,..."
        -->
@@ -829,12 +848,14 @@
          <Column name="altitude"                        />
          <Column name="odometer"            arg="0"     />
          <Column name="reportDistance"      arg="0"     ifTrue="columnReportDistance"/>
-         <Column name="inputState"                      />
+         <Column name="inputState"          arg="8"     ifTrue="columnInputState8"/>
+         <Column name="inputState"          arg="16"    ifTrue="columnInputState16"/>
          <Column name="address"                         />
          <Column name="geozoneDesc"                     />
          <Column name="subdivision"                     />
          <Column name="batteryPercent"                  />
          <Column name="batteryVolts"                    />
+         <Column name="batteryTemp"                     />
          <!-- J1708/J1939/OBDII fields -->
          <Column name="malfunctionLamp"                 />
          <Column name="fuelLevel"                       />
@@ -923,7 +944,8 @@
          <Column name="address"                         />
          <Column name="geozoneDesc"                     ifTrue="columnGeozoneDesc"/>
          <Column name="attachURL"                       ifTrue="columnAttachURL"/>
-         <!-- <Column name="createDateTime"                  /> -->
+         <!-- <Column name="createDateTime"             /> -->
+         <!-- Column name="attachProp" arg="testValue:F1">Test\nNumber</Column -->
       </Columns>
       <Constraints>
          <SelectionLimit type="first">2000</SelectionLimit>
@@ -1078,7 +1100,8 @@
          <Column name="time"                            />
          <Column name="statusDesc"          arg="color" />
          <Column name="geoPoint"            arg="5"     ifTrue="columnLatLon"/>
-         <Column name="inputState"                      />
+         <Column name="inputState"          arg="8"     ifTrue="columnInputState8"/>
+         <Column name="inputState"          arg="16"    ifTrue="columnInputState16"/>
          <Column name="address"                         />
       </Columns>
       <Constraints>
@@ -1512,6 +1535,7 @@
          <Column name="stopDateTime"                />   <!-- "Stop Time"           -->
          <Column name="fuelEconomy"         arg="1" ifTrue="columnFuelEconomy"/>  <!-- "Fuel Econ" (at stop) -->
          <Column name="stopGeoPoint"        arg="4" ifTrue="columnLatLon"/>       <!-- "Lat/Lon" (at stop)   -->
+         <Column name="stopOdometer"        arg="1" ifTrue="columnOdometer"/>     <!-- "Odometer" (at stop)   -->
          <Column name="stopAddress"                 />   <!-- "Address" (at stop)   -->
          <Column name="idleElapse"                  i18n="ReportsXML.fleetMotion.tripIdleElapsed">Trip Idle\nElapsed</Column>
          <Column name="stopElapse"                  />   <!-- "Stop Elapsed Time"   -->
@@ -1626,6 +1650,7 @@
          <Column name="odomDelta"           arg="1" />
          <Column name="fuelTotal"           arg="1" ifTrue="TripReport.showFuelTotal"/>
          <Column name="fuelTrip"            arg="2" ifTrue="TripReport.showFuelTrip"/>
+         <Column name="fuelTrip"            arg="$" ifTrue="TripReport.showFuelTripCost"/>
          <Column name="fuelEconomy"         arg="1" ifTrue="TripReport.showFuelEconomy"/>
          <Column name="fuelEconomyType"             ifTrue="TripReport.showFuelEconomyType"/>
          <Column name="driverId"                    ifTrue="TripReport.showDriver"/>
@@ -1652,6 +1677,13 @@
             <Description i18n="ReportsXML.TripReport.engine">Based on Engine Start/Stop Status Codes</Description>
             <Property key="tripStartType">engine</Property>
             <Property key="stopOnIgnitionOff">true</Property>
+            </Option>
+         <Option name="motion0" ifTrue="optionTripStartType_motion">
+            <Description i18n="ReportsXML.TripReport.motion0">Based on 0 Minute Minimum Stop</Description>
+            <Property key="tripStartType">motion</Property>
+            <Property key="minimumStoppedTime">0</Property> <!-- seconds -->
+            <Property key="minimumSpeedKPH">3.0</Property>
+            <Property key="stopOnIgnitionOff">false</Property>
             </Option>
          <Option name="motion5" ifTrue="optionTripStartType_motion">
             <Description i18n="ReportsXML.TripReport.motion5">Based on 5 Minute Minimum Stop</Description>
@@ -2371,6 +2403,7 @@
          <Column name="odomDelta"           arg="1" />
          <Column name="fuelTotal"           arg="1" ifTrue="TripReport.showFuelTotal"/>
          <Column name="fuelTrip"            arg="2" ifTrue="TripReport.showFuelTrip"/>
+         <Column name="fuelTrip"            arg="$" ifTrue="TripReport.showFuelTripCost"/>
          <Column name="fuelEconomy"         arg="1" ifTrue="TripReport.showFuelEconomy"/>
          <Column name="fuelEconomyType"             ifTrue="TripReport.showFuelEconomyType"/>
          <Column name="driverId"                    ifTrue="TripReport.showDriver"/>
@@ -2397,6 +2430,13 @@
             <Description i18n="ReportsXML.TripReportGroup.engine">Based on Engine Start/Stop Status Codes</Description>
             <Property key="tripStartType">engine</Property>
             <Property key="stopOnIgnitionOff">true</Property>
+            </Option>
+         <Option name="motion0" ifTrue="optionTripStartType_motion">
+            <Description i18n="ReportsXML.TripReportGroup.motion0">Based on 0 Minute Minimum Stop</Description>
+            <Property key="tripStartType">motion</Property>
+            <Property key="minimumStoppedTime">0</Property> <!-- seconds -->
+            <Property key="minimumSpeedKPH">3.0</Property>
+            <Property key="stopOnIgnitionOff">false</Property>
             </Option>
          <Option name="motion5" ifTrue="optionTripStartType_motion">
             <Description i18n="ReportsXML.TripReportGroup.motion5">Based on 5 Minute Minimum Stop</Description>
@@ -2462,6 +2502,7 @@
          <Column name="stopDateTime"                />   <!-- "Stop Time"           -->
          <Column name="fuelEconomy"         arg="1" ifTrue="columnFuelEconomy"/>  <!-- "Fuel Econ" (at stop) -->
          <Column name="stopGeoPoint"        arg="4" ifTrue="columnLatLon"/>       <!-- "Lat/Lon" (at stop)   -->
+         <Column name="stopOdometer"        arg="1" ifTrue="columnOdometer"/>     <!-- "Odometer" (at stop)   -->
          <Column name="stopAddress"                 />   <!-- "Address" (at stop)   -->
          <Column name="idleElapse"                  i18n="ReportsXML.fleetMotion.tripIdleElapsed">Trip Idle\nElapsed</Column>
          <Column name="stopElapse"                  />   <!-- "Stop Elapsed Time"   -->
@@ -2979,6 +3020,13 @@
             <Description i18n="ReportsXML.fleetMotion.engine">Based on Engine Start/Stop Status Codes</Description>
             <Property key="tripStartType">engine</Property>
             <Property key="stopOnIgnitionOff">true</Property>
+            </Option>
+         <Option name="motion0" ifTrue="optionTripStartType_motion">
+            <Description i18n="ReportsXML.fleetMotion.motion0">Based on 0 Minute Minimum Stop</Description>
+            <Property key="tripStartType">motion</Property>
+            <Property key="minimumStoppedTime">0</Property> <!-- seconds -->
+            <Property key="minimumSpeedKPH">3.0</Property>
+            <Property key="stopOnIgnitionOff">false</Property>
             </Option>
          <Option name="motion5" ifTrue="optionTripStartType_motion">
             <Description i18n="ReportsXML.fleetMotion.motion5">Based on 5 Minute Minimum Stop</Description>
@@ -3559,7 +3607,8 @@
          <Column name="statusCount"         arg="0xF116"/> <!-- STATUS_MOTION_IDLE         -->
          <Column name="statusCount"         arg="0xF118"/> <!-- STATUS_MOTION_EXCESS_IDLE  -->
       </Columns>
-      <Property key="PROP_countStatusCodes">0xF11A,0xF930,0xF960,0xF937,0xF116,0xF118</Property> <!-- speeding,braking,acceleration,cornering,idle,excessIdle -->
+      <Property key="includeDeltaValues">true</Property>
+      <Property key="countStatusCodes">0xF11A,0xF930,0xF960,0xF937,0xF116,0xF118</Property> <!-- speeding,braking,acceleration,cornering,idle,excessIdle -->
    </Report>
 
    <!-- OPTIONAL REPORT: may not be supported in all releases -->

@@ -193,7 +193,7 @@ public class Resource
         }
         public Key(String acctId, String strKey) {
             super.setKeyValue(FLD_accountID , ((acctId != null)? acctId.toLowerCase() : ""));
-            super.setKeyValue(FLD_resourceID, ((strKey != null)? strKey.toLowerCase() : ""));
+            super.setKeyValue(FLD_resourceID, ((strKey != null)? strKey               : ""));
         }
         public DBFactory<Resource> getFactory() {
             return Resource.getFactory();
@@ -511,6 +511,7 @@ public class Resource
         this.setStringValue("");
         super.setRuntimeDefaultValues();
     }
+
     // ------------------------------------------------------------------------
 
     /* return the AccountID/ResourceID */

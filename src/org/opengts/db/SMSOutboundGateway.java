@@ -42,6 +42,9 @@
 //     -Added specific error check for "clickatell.com" in "httpURL" mode.
 //  2013/11/11  Martin D. Flynn
 //     -Generalized replacement variable handling in the http-based SMS gateway.
+//  2014/03/03  Martin D. Flynn
+//     -Fixed "EncodeUrlReplacementVars" to allow "smsPhone" to override SIM 
+//      phone number specified in the "device" record [2.5.4-B14]
 // ----------------------------------------------------------------------------
 package org.opengts.db;
 
@@ -255,6 +258,7 @@ public abstract class SMSOutboundGateway
     //  %{authID}   - SmsRTProperties: "authID="
     //  %{message}  - replaced with the SMS text to send to the device
     public  static final String REPL_mobile[]   = new String[] { "%{mobile}"  , "{MOBILE}"  , "${mobile}"   };
+    public  static final String REPL_1mobile[]  = new String[] { "%{1mobile}" , "{1MOBILE}" , "${1mobile}"  };
     public  static final String REPL_sender[]   = new String[] { "%{sender}"  , "{SENDER}"  , "${sender}"   };
     public  static final String REPL_dataKey[]  = new String[] { "%{dataKey}" , "{DATAKEY}" , "${dataKey}"  };
     public  static final String REPL_uniqueID[] = new String[] { "%{uniqueID}", "{UNIQUEID}", "${uniqueID}" };
@@ -336,21 +340,27 @@ public abstract class SMSOutboundGateway
 
         /* no Account/Device? */
         if ((account == null) && (device == null)) {
-            return httpURL;
+            return httpURL; // return as-is
         } else
         if (account == null) {
             account = device.getAccount();
         }
 
+        /* set default "sender" */
+        String sender = null;
+        if (account != null) {
+            sender = account.getContactPhone();
+            AddUrlRtpArg(urlRTP, "sender", sender);
+        }
+
         /* Account-based replacement vars */
-        String sender   = null;
         String user     = null;
         String password = null;
         String authID   = null;
         if (account != null) {
             RTProperties smsRTP = account.getSmsRTProperties(); // never null
             // - extract specific properties (for "REPLACE" below)
-            sender   = smsRTP.getString("sender"  ,""); // account.getContactPhone());
+            sender   = smsRTP.getString("sender"  ,sender);
             user     = smsRTP.getString("user"    ,""); // SMS authorization
             password = smsRTP.getString("password","");
             authID   = smsRTP.getString("authID"  ,"");
@@ -366,30 +376,20 @@ public abstract class SMSOutboundGateway
             */
         }
 
-        /* Device-based replacement values */
-        String mobile   = null;
-        String mobile_1 = null;
-        String dataKey  = null;
-        String uniqueID = null;
-        String modemID  = null;
-        String simID    = null;
-        String imeiNum  = null;
-        String serial   = null;
-        if (device != null) {
-            mobile   = device.getSimPhoneNumber();
-            mobile_1 = (mobile.startsWith("1") || (mobile.length() != 10))? mobile : ("1" + mobile);
-            dataKey  = device.getDataKey();
-            uniqueID = device.getUniqueID();
-            modemID  = device.getModemID();
-            simID    = device.getSimID();
-            imeiNum  = device.getImeiNumber();
-            serial   = device.getSerialNumber();
-        } else {
-            mobile   = StringTools.trim(smsPhone);
-            mobile_1 = (mobile.startsWith("1") || (mobile.length() != 10))? mobile : ("1" + mobile);
-        }
+        /* SIM phone number [v2.5.4-B14] */
+        String devSPN   = (device != null)? device.getSimPhoneNumber() : "";
+        String mobile   = !StringTools.isBlank(smsPhone)? StringTools.trim(smsPhone) : devSPN;
+        String mobile_1 = ((mobile==null)||mobile.startsWith("1")||(mobile.length()!=10))? mobile : ("1"+mobile);
         AddUrlRtpArg(urlRTP, "mobile"  , mobile  );
         AddUrlRtpArg(urlRTP, "1mobile" , mobile_1); // "1" + areaCode(3) + prefix(3) + suffix(4)
+
+        /* Device-based replacement values */
+        String dataKey  = (device != null)? device.getDataKey()      : null;
+        String uniqueID = (device != null)? device.getUniqueID()     : null;
+        String modemID  = (device != null)? device.getModemID()      : null;
+        String simID    = (device != null)? device.getSimID()        : null;
+        String imeiNum  = (device != null)? device.getImeiNumber()   : null;
+        String serial   = (device != null)? device.getSerialNumber() : null;
         AddUrlRtpArg(urlRTP, "dataKey" , dataKey );
         AddUrlRtpArg(urlRTP, "uniqueID", uniqueID);
         AddUrlRtpArg(urlRTP, "modemID" , modemID );
@@ -413,6 +413,7 @@ public abstract class SMSOutboundGateway
         /* OBSOLETE: set URL replacement vars */
         // only necessary if the obsolete non %{VAR} format has been used
         httpURL = REPLACE(httpURL, REPL_mobile  , URIArg.encodeArg(mobile  ));  // SIM phone number
+        httpURL = REPLACE(httpURL, REPL_1mobile , URIArg.encodeArg(mobile_1));  // 1 + SIM phone number
         httpURL = REPLACE(httpURL, REPL_message , URIArg.encodeArg(message ));  // command string
         httpURL = REPLACE(httpURL, REPL_sender  , URIArg.encodeArg(sender  ));  // Account contact phone number
         httpURL = REPLACE(httpURL, REPL_user    , URIArg.encodeArg(user    ));  // SMS auth user
@@ -603,9 +604,9 @@ public abstract class SMSOutboundGateway
         //   - This outbound SMS method sends the SMS text in an HTTP "GET" request to the URL 
         //     specified on the property "SmsGatewayHandler.httpURL.url".  The following replacement
         //     variables may be specified in the URL string:
-        //       ${sender}  - replaced with the Account "contactPhone" field contents
-        //       ${mobile}  - replaced with the Device "simPhoneNumber" field contents
-        //       ${message} - replaced with the SMS text/command to be sent to the device.
+        //       %{sender}  - replaced with the Account "contactPhone" field contents
+        //       %{mobile}  - replaced with the Device "simPhoneNumber" field contents
+        //       %{message} - replaced with the SMS text/command to be sent to the device.
         //     It is expected that the server handling the request understands how to parse and
         //     interpret the various fields in the URL.
         //   - The "httpURL" outbound SMS gateway handler will also work for Clickatell http-mode.

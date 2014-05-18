@@ -3500,6 +3500,14 @@ public class RTConfig
         //RTConfig.getCommandLineProperties().printProperties("");
         Print.logDebug("DebugMode is true");
 
+        /* display args */
+        if (RTConfig.hasProperty("args") || RTConfig.hasProperty("argv")) {
+            for (int i = 0; i < argv.length; i++) {
+                Print.sysPrintln(i+") " + argv[i]);
+            }
+            System.exit(0);
+        }
+
         /* test */
         if (RTConfig.hasProperty("test")) {
             Print.sysPrintln("Value = " + RTConfig.getString("value",null));

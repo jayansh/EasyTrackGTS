@@ -29,7 +29,7 @@
 //  2009/09/23  Martin D. Flynn
 //     -Changed 'getSimulateDigitalInputs' to return a mask
 //  2011/05/13  Martin D. Flynn
-//     -Added "getMinimumHDOP"
+//     -Added "getMaximumHDOP"
 //  2011/08/21  Martin D. Flynn
 //     -Added "getIgnoreDeviceOdometer()"
 //  2013/05/28  Martin D. Flynn
@@ -1107,6 +1107,8 @@ public class DCServerConfig
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
+    private String                          bindAddress             = null;
+
     private String                          dcName                  = "";
     private String                          dcDesc                  = "";
 
@@ -1148,6 +1150,7 @@ public class DCServerConfig
     public DCServerConfig()
     {
         this.getDefaultProperties();
+        this.setBindAddress(null);
         this.setName("unregistered");
         this.setDescription("Unregistered DCS");
         this.setConfigFile(null);
@@ -1164,9 +1167,13 @@ public class DCServerConfig
     /**
     *** Constructor
     **/
-    public DCServerConfig(String name, String desc, int tcpPorts[], int udpPorts[], int commandPort, long flags, String... uniqPfx)
+    public DCServerConfig(
+        String name, String desc, 
+        int tcpPorts[], int udpPorts[], int commandPort, 
+        long flags, String... uniqPfx)
     {
         this.getDefaultProperties();
+        this.setBindAddress(null);
         this.setName(name);
         this.setDescription(desc);
         this.setConfigFile(null);
@@ -1184,7 +1191,25 @@ public class DCServerConfig
     {
         // etc.
     }
-    
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Sets the server bind address
+    **/
+    protected void setBindAddress(String b)
+    {
+        this.bindAddress = StringTools.trim(b);
+    }
+
+    /**
+    *** Gets the server bind address
+    **/
+    public String getBindAddress()
+    {
+        return this.bindAddress;
+    }
+
     // ------------------------------------------------------------------------
 
     /**
@@ -4093,7 +4118,7 @@ public class DCServerConfig
     {
         return this.getPortsString(null).toString();
     }
-    
+
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 

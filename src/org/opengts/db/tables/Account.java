@@ -112,6 +112,8 @@
 //     -Added "-setPassword=" command-line option.
 //  2013/09/23  Martin D. Flynn
 //     -Changed sample data "demo" event date from "2010/03/12" to "2013/08/26".
+//  2014/03/03  Martin D. Flynn
+//     -Added FLD_allowWebService
 // ----------------------------------------------------------------------------
 package org.opengts.db.tables;
 
@@ -258,7 +260,10 @@ public class Account
 
     public static SMSDefaultState GetDefaultSmsEnabledState()
     {
-        String smsState = RTConfig.getString(DBConfig.PROP_Account_smsEnabled, "");
+        String smsState = StringTools.trim(RTConfig.getString(DBConfig.PROP_Account_smsEnabled,""));
+        if (smsState.equalsIgnoreCase("account")) {
+            return SMSDefaultState.ACCOUNT;
+        } else
         if (StringTools.isBoolean(smsState,false)) {
             return StringTools.parseBoolean(smsState,false)? 
                 SMSDefaultState.TRUE : 
@@ -644,6 +649,108 @@ public class Account
 
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
+    // Currency [ISO-4217] 
+
+    public enum Currency implements EnumTools.StringLocale {
+        USD/*"usd"*/("$"  ,"Dollar","USA"               ),
+        AUD/*"aud"*/("$"  ,"Dollar","Australia"         ),
+        NZD/*"nzd"*/("$"  ,"Dollar","New Zealand"       ),
+        CAD/*"cad"*/("$"  ,"Dollar","Canada"            ),
+        GBP/*"gbp"*/("?"  ,"Pound" ,"United Kingdom"    ), // 
+        DOP/*"dop"*/("RD$","Peso"  ,"Dominican Republic"),
+        EUR/*"eur"*/("?"  ,"Euro"  ,"Europe"            ), // France/Germany/Ireland/Italy/Luxembourg/Spain
+        INR/*"inr"*/("?"  ,"Rupee" ,"India"             ),
+        MXN/*"mxn"*/("$"  ,"Peso"  ,"Mexico"            ),
+        RUB/*"rub"*/("R"  ,"Ruble" ,"Russia"            ),
+        SAR/*"sar"*/("SR" ,"Riyal" ,"Saudi Arabia"      );
+        // ---
+        private String      ss = null;
+        private String      dd = null;
+        private String      cc = null;
+        Currency(String s, String d, String c)  { ss=s; dd=d; cc=c; }
+        public String  getCode()                { return this.name().toLowerCase(); }
+        public boolean hasSymbol()              { return (!StringTools.isBlank(ss) && !ss.equals("?")); }
+        public String  getSymbol()              { return ss; }
+        public String  getDescription()         { return dd; }
+        public String  getCountry()             { return cc; }
+        public String  toString()               { return this.getCode(); }
+        public String  toString(Locale loc)     { return this.getCode(); }
+    };
+
+    public static Currency GetCurrency(String code)
+    {
+        return EnumTools.getValueOf(Currency.class, code, Currency.USD);
+    }
+
+    // --------------------------------
+
+    /**
+    *** Returns the default currency
+    *** @return The default currency
+    **/
+    public static String GetDefaultCurrency()
+    {
+        String curr = RTConfig.getString(DBConfig.PROP_Account_defaultCurrency, null);
+        if (!StringTools.isBlank(curr)) {
+            return curr;
+        } else {
+            return Account.Currency.USD.getCode();
+        }
+    }
+
+    /**
+    *** Returns the currency units for the specified account
+    *** @param a  The account for which the currency units is returned
+    *** @return The currency units for the specified account
+    **/
+    public static String getCurrency(Account a)
+    {
+        if (a != null) {
+            return a.getCurrencyUnits();
+        } else {
+            return Account.GetDefaultCurrency();
+        }
+    }
+
+    // --------------------------------
+
+    /**
+    *** Returns the default currency symbol
+    *** @return The default currency symbol
+    **/
+    public static String GetDefaultCurrencySymbol()
+    {
+
+        /* symbol from property */
+        String dftSym = RTConfig.getString(DBConfig.PROP_Account_defaultCurrencySymbol, null);
+        if (!StringTools.isBlank(dftSym)) {
+            return dftSym;
+        }
+
+        /* from default currency */
+        String code = Account.GetDefaultCurrency();
+        Currency curr = Account.GetCurrency(code);
+        String sym = ((curr != null) && curr.hasSymbol())? curr.getSymbol() : null;
+        if (!StringTools.isBlank(sym)) {
+            return sym;
+        } else {
+            return code;
+        }
+
+    }
+
+    /**
+    *** Returns the currency symbol for the specified account
+    *** @param a The account for which the currency symbol is returned
+    *** @return The currency symbol for the specified account
+    **/
+    public static String getCurrencySymbol(Account a)
+    {
+        return Account.GetDefaultCurrencySymbol();
+    }
+
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Economy units & conversion [FLD_economyUnits]
     // mpg     = km/L * mi/km * L/g
     // km/L    = (L/100km) * 100((km/L)^2)
@@ -889,6 +996,8 @@ public class Account
     public static final String FLD_pressureUnits            = "pressureUnits";
     public static final String FLD_economyUnits             = "economyUnits";
     public static final String FLD_temperatureUnits         = "temperatureUnits";
+    public static final String FLD_currencyUnits            = "currencyUnits";
+    public static final String FLD_fuelCostPerLiter         = "fuelCostPerLiter";
     public static final String FLD_latLonFormat             = "latLonFormat";
     public static final String FLD_geocoderMode             = "geocoderMode";
     public static final String FLD_privateLabelName         = "privateLabelName";
@@ -904,6 +1013,7 @@ public class Account
     public static final String FLD_smsProperties            = "smsProperties";
     public static final String FLD_emailProperties          = "emailProperties";
     public static final String FLD_expirationTime           = "expirationTime";
+    public static final String FLD_allowWebService          = "allowWebService";
     // User fields
     public static final String FLD_defaultUser              = "defaultUser";
     public static final String FLD_password                 = "password";
@@ -927,6 +1037,8 @@ public class Account
         new DBField(FLD_pressureUnits       , Integer.TYPE  , DBField.TYPE_UINT8       , "Pressure Units"            , "edit=2 enum=Account$PressureUnits"),
         new DBField(FLD_economyUnits        , Integer.TYPE  , DBField.TYPE_UINT8       , "Economy Units"             , "edit=2 enum=Account$EconomyUnits"),
         new DBField(FLD_temperatureUnits    , Integer.TYPE  , DBField.TYPE_UINT8       , "Temperature Units"         , "edit=2 enum=Account$TemperatureUnits"),
+        new DBField(FLD_currencyUnits       , String.class  , DBField.TYPE_STRING(8)   , "Currency Units"            , "edit=2 enum=Account$Currency"),
+        new DBField(FLD_fuelCostPerLiter    , Double.TYPE   , DBField.TYPE_DOUBLE      , "Fuel Cost Per Liter"       , "edit=2"),
         new DBField(FLD_latLonFormat        , Integer.TYPE  , DBField.TYPE_UINT8       , "Latitude/Longitude Format" , "edit=2 enum=Account$LatLonFormat"),
         new DBField(FLD_geocoderMode        , Integer.TYPE  , DBField.TYPE_UINT8       , "Geocoder Mode"             , "edit=2 enum=Account$GeocoderMode"),
         new DBField(FLD_privateLabelName    , String.class  , DBField.TYPE_STRING(32)  , "PrivateLabel Name"         , "edit=2 editor=privateLabel"),
@@ -942,6 +1054,7 @@ public class Account
         new DBField(FLD_smsProperties       , String.class  , DBField.TYPE_STRING(200) , "SMS Properties"            , "edit=2"),
         new DBField(FLD_emailProperties     , String.class  , DBField.TYPE_STRING(250) , "EMail Properties"          , "edit=2"),
         new DBField(FLD_expirationTime      , Long.TYPE     , DBField.TYPE_UINT32      , "Expiration Time"           , "format=time"),
+        new DBField(FLD_allowWebService     , Boolean.TYPE  , DBField.TYPE_BOOLEAN     , "Allow Web-Service"         , "edit=2"),
         // User fields
         new DBField(FLD_defaultUser         , String.class  , DBField.TYPE_USER_ID()   , "Default User ID"           , "edit=2"),
         new DBField(FLD_password            , String.class  , DBField.TYPE_STRING(32)  , "Password"                  , "edit=2 editor=password"),
@@ -981,7 +1094,7 @@ public class Account
         new DBField(FLD_addressPostalCode   , String.class      , DBField.TYPE_STRING(20)   , "Address Postal Code"         , "edit=2 utf8=true"),
         new DBField(FLD_addressCountry      , String.class      , DBField.TYPE_STRING(20)   , "Address Country"             , "edit=2 utf8=true"),
     };
-    
+
     // Map Legend fields
     // startupInit.Account.MapLegendFieldInfo=true
     public static final String FLD_mapLegendDevice          = "mapLegendDevice";        // Device Map Legend
@@ -990,7 +1103,7 @@ public class Account
         new DBField(FLD_mapLegendDevice     , String.class      , DBField.TYPE_TEXT         , "Device Map Legend"           , "edit=2 utf8=true"),
         new DBField(FLD_mapLegendGroup      , String.class      , DBField.TYPE_TEXT         , "DeviceGroup Map Legend"      , "edit=2 utf8=true"),
     };
-    
+
     // Account Manager Fields
     // startupInit.Account.AccountManagerInfo=true
     public static final String FLD_isAccountManager         = "isAccountManager";
@@ -1303,8 +1416,8 @@ public class Account
     // ------------------------------------------------------------------------
 
     /**
-    *** Returns true if this device is to allow notifications
-    *** @return True if this device is to allow notifications
+    *** Returns true if notifications are allowed for this Account
+    *** @return True if notifications are allowed for this Account
     **/
     public boolean getAllowNotify()
     {
@@ -1313,8 +1426,8 @@ public class Account
     }
 
     /**
-    *** Sets the "Allow Notification" state for this Device
-    *** @param v The "Allow Notification" state for this Device
+    *** Sets the "Allow Notification" state for this Account
+    *** @param v The "Allow Notification" state for this Account
     **/
     public void setAllowNotify(boolean v)
     {
@@ -1634,6 +1747,27 @@ public class Account
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Returns true if web-service access is allowed for this Account
+    *** @return True if web-service access is allowed for this Account
+    **/
+    public boolean getAllowWebService()
+    {
+        Boolean v = (Boolean)this.getFieldValue(FLD_allowWebService);
+        return (v != null)? v.booleanValue() : false;
+    }
+
+    /**
+    *** Sets the "Allow Web-Service" state for this Account
+    *** @param v The "Allow Web-Service" state for this Account
+    **/
+    public void setAllowWebService(boolean v)
+    {
+        this.setFieldValue(FLD_allowWebService, v);
+    }
+
+    // ------------------------------------------------------------------------
+
     public String getAddressLine1()
     {
         String v = (String)this.getFieldValue(FLD_addressLine1);
@@ -1866,6 +2000,27 @@ public class Account
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the Fuel cost per Liter
+    *** @return The Fuel cost per Liter
+    **/
+    public double getFuelCostPerLiter()
+    {
+        Double v = (Double)this.getFieldValue(FLD_fuelCostPerLiter);
+        return (v != null)? v.doubleValue() : 0.0;
+    }
+
+    /**
+    *** Sets the Fuel cost per Liter
+    *** @param v The Fuel cost per Liter
+    **/
+    public void setFuelCostPerLiter(double v)
+    {
+        this.setFieldValue(FLD_fuelCostPerLiter, (v >= 0.0)? v : 0.0);
+    }
+
+    // ------------------------------------------------------------------------
+
     /* get the volume units for this account */
     public int getPressureUnits()
     {
@@ -1957,6 +2112,35 @@ public class Account
     public void setTemperatureUnits(String v, Locale locale)
     {
         this.setFieldValue(FLD_temperatureUnits, EnumTools.getValueOf(TemperatureUnits.class,v,locale).getIntValue());
+    }
+
+    // ------------------------------------------------------------------------
+
+    /* get the currency units for this account */
+    public String getCurrencyUnits()
+    {
+        String v = (String)this.getFieldValue(FLD_currencyUnits);
+        if (!StringTools.isBlank(v)) {
+            return v;
+        } else {
+            return Account.GetDefaultCurrency(); // "usd"
+        }
+    }
+
+    /* set the currency units */
+    public void setCurrencyUnits(String v)
+    {
+        v = StringTools.trim(v);
+        if (StringTools.isBlank(v)) {
+            v = Account.GetDefaultCurrency();
+        }
+        this.setFieldValue(FLD_currencyUnits, v);
+    }
+
+    /* set the currency units */
+    public void setCurrencyUnits(Currency v)
+    {
+        this.setFieldValue(FLD_currencyUnits, EnumTools.getValueOf(Currency.class,v).getCode());
     }
 
     // ------------------------------------------------------------------------
@@ -3741,7 +3925,8 @@ public class Account
     // ------------------------------------------------------------------------
 
     /**
-    *** Count old events for all devices within this account.
+    *** Count old events for all devices within this account.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.
     *** @param oldTimeSec  The Epoch time before which all events will be counted.
     *** @param log True to print the progress to the logging output.
     **/
@@ -3751,13 +3936,16 @@ public class Account
         String acctID  = this.getAccountID();
         String groupID = DeviceGroup.DEVICE_GROUP_ALL;
         if (log) Print.sysPrintln("Counting old events for account "+acctID+" prior to "+(new DateTime(oldTimeSec)));
-        return DeviceGroup.countOldEvents(this, groupID, oldTimeSec, log);
+        return DeviceGroup.countOldEvents(this, groupID, oldTimeSec, log); // -1 for InnoDB
     }
 
     // ------------------------------------------------------------------------
 
     /**
-    *** Delete old events for all devices within this account.
+    *** Delete old events for all devices within this account.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.  
+    ***       Old events will still be deleted, however it will still go through the
+    ***       motions of attempting to delete events, event if the range is empty.
     *** @param oldTimeSec  The EPoch time before which all events will be deleted.
     ***          If there are no events for a device after this specified time, then 
     ***          the most recent event prior to the specified time will be retained.
@@ -3769,7 +3957,7 @@ public class Account
         String acctID  = this.getAccountID();
         String groupID = DeviceGroup.DEVICE_GROUP_ALL;
         if (log) Print.sysPrintln("Deleting old events for account "+acctID+" prior to "+(new DateTime(oldTimeSec)));
-        return DeviceGroup.deleteOldEvents(this, groupID, oldTimeSec, log);
+        return DeviceGroup.deleteOldEvents(this, groupID, oldTimeSec, log); // -1 for InnoDB?
     }
 
     // ------------------------------------------------------------------------
@@ -4541,11 +4729,14 @@ public class Account
                                     double  eph  = eps * 60.0 * 60.0; // events per hour
                                     String  ephs = (eph >= 0.01)? StringTools.format(eph,"0.00") : "n/a";
                                     if (eventCnt) {
-                                        long evCnt = device.getEventCount();
+                                        long evCnt = device.getEventCount(); // -1 for InnoDB?
                                         if (evCnt > 0L) {
                                             EventData lastEv[] = device.getLatestEvents(1L,false);
                                             DateTime lastEventDt = new DateTime(lastEv[0].getTimestamp());
                                             Print.sysPrintln("    > Events: " + evCnt + "  [" + lastEventDt + "] ev/h=" + ephs);
+                                        } else 
+                                        if (evCnt < 0L) {
+                                            Print.sysPrintln("    > Events: unknown (InnoDB?)");
                                         }
                                     } else {
                                         EventData lastEv[] = device.getLatestEvents(1L,false);
@@ -4742,7 +4933,7 @@ public class Account
                         if (!StringTools.isBlank(A)) {
                             Account account = Account.getAccount(A);
                             if (account != null) {
-                                account.deleteOldEvents(oldTimeSec, true);
+                                account.deleteOldEvents(oldTimeSec, true); // InnoDB
                             } else {
                                 Print.sysPrintln("WARN: Skipping non-existent Account: " + A);
                             }
@@ -4754,7 +4945,7 @@ public class Account
                         if (!StringTools.isBlank(A)) {
                             Account account = Account.getAccount(A);
                             if (account != null) {
-                                account.countOldEvents(oldTimeSec, true);
+                                account.countOldEvents(oldTimeSec, true); // InnoDB?
                             } else {
                                 Print.sysPrintln("WARN: Skipping non-existent Account: " + A);
                             }

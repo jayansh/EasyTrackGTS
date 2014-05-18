@@ -71,6 +71,8 @@
 //  2013/04/08  Martin D. Flynn
 //     -Added DATA_DEVICE_VIN
 //     -Change massAirFlow units to grams/sec.
+//  2014/05/05  Martin D. Flynn
+//     -Added DATA_BATTERY_TEMP, DATA_ATTACHMENT_PROP
 // ----------------------------------------------------------------------------
 package org.opengts.war.report.event;
 
@@ -120,7 +122,8 @@ public class EventDataLayout
     public static final String  DATA_INDEX              = "index";
     
     public static final String  DATA_ATTACHMENT_URL     = "attachURL";
-    
+    public static final String  DATA_ATTACHMENT_PROP    = "attachProp";             // ev.getAttachData()
+
     public static final String  DATA_DEVICE_ID          = "deviceId";
     public static final String  DATA_DEVICE_DESC        = "deviceDesc";             // Device record
     public static final String  DATA_DEVICE_BATTERY     = "deviceBattery";          // Device record
@@ -167,8 +170,9 @@ public class EventDataLayout
     public static final String  DATA_BEST_ACCURACY      = "bestAccuracy";
 
     public static final String  DATA_BATTERY            = "battery";
-    public static final String  DATA_BATTERY_VOLTS      = "batteryVolts";
     public static final String  DATA_BATTERY_PERCENT    = "batteryPercent";
+    public static final String  DATA_BATTERY_VOLTS      = "batteryVolts";
+    public static final String  DATA_BATTERY_TEMP       = "batteryTemp";
 
     public static final String  DATA_INPUT_STATE        = "inputState";
     public static final String  DATA_INPUT_BIT          = "inputBit";
@@ -298,6 +302,16 @@ public class EventDataLayout
     public static final String  DATA_CREATE_AGE         = "createAge";
     public static final String  DATA_CREATE_MILLIS      = "createMillis";
 
+    public static final String  DATA_TRIP_START_DATETIME= "tripStartDateTime";
+    public static final String  DATA_TRIP_STOP_DATETIME = "tripStopDateTime";
+    public static final String  DATA_TRIP_DISTANCE      = "tripDistance";
+    public static final String  DATA_TRIP_IDLE_HOURS    = "tripIdleHours";
+    public static final String  DATA_TRIP_MAX_SPEED     = "tripMaxSpeed";
+    public static final String  DATA_TRIP_MAX_RPM       = "tripMaxRPM";
+    public static final String  DATA_TRIP_START_LAT     = "tripStartLatitude";
+    public static final String  DATA_TRIP_START_LON     = "tripStartLongitude";
+    public static final String  DATA_TRIP_ELAPSED       = "tripElapsed";
+
     public static final String  DATA_DAY_ENGINE_STARTS  = "dayEngineStarts";
     public static final String  DATA_DAY_IDLE_HOURS     = "dayIdleHours";
     public static final String  DATA_DAY_FUEL_IDLE      = "dayFuelIdle";
@@ -387,16 +401,40 @@ public class EventDataLayout
     }
 
     /* format kilometer distance */
-    protected static String formatKM(double dist, String arg, ReportData rd)
+    protected static String formatKM(double km, String arg, ReportData rd)
     {
-        if (dist > 0.0) {
-            dist = Account.getDistanceUnits(rd.getAccount()).convertFromKM(dist);
+        if (km > 0.0) {
+            double dist = Account.getDistanceUnits(rd.getAccount()).convertFromKM(km);
             return EventDataLayout.formatDouble(dist, arg, "0");
         } else {
             return "";
         }
     }
-    
+
+    protected static String formatSpeed(double kph, String arg, ReportData rd)
+    {
+        double speed = Account.getSpeedUnits(rd.getAccount()).convertFromKPH(kph);
+        return EventDataLayout.formatDouble(speed, arg, "0");
+    }
+
+    protected static String formatEconomy(double kpl, String arg, ReportData rd)
+    {
+        double econ = Account.getEconomyUnits(rd.getAccount()).convertFromKPL(kpl);
+        return EventDataLayout.formatDouble(econ, arg, "0");
+    }
+
+    protected static String formatVolume(double L, String arg, ReportData rd)
+    {
+        double vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(L);
+        return EventDataLayout.formatDouble(vol, arg, "0");
+    }
+
+    protected static String formatPressure(double kPa, String arg, ReportData rd)
+    {
+        double press = Account.getPressureUnits(rd.getAccount()).convertFromKPa(kPa);
+        return EventDataLayout.formatDouble(press, arg, "0.0");
+    }
+
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
@@ -489,6 +527,162 @@ public class EventDataLayout
                 public String getTitle(ReportData rd, ReportColumn rc) {
                     I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
                     return i18n.getString("EventDataLayout.attachment","Attachment");
+                }
+            });
+
+            // Attachment properties
+            this.addColumnTemplate(new DataColumnTemplate(DATA_ATTACHMENT_PROP) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = StringTools.trim(rc.getArg()); // "varName:fmt"
+                    int p = arg.indexOf(":");
+                    String var = (p >= 0)? arg.substring(0,p).trim() : arg;
+                    String fmt = (p >= 0)? arg.substring(p+1).trim().toUpperCase() : "";
+                    if (!StringTools.isBlank(var)) {
+                        Account acct = rd.getAccount();
+                        EventData ed = (EventData)obj;
+                        RTProperties rtp = ed.getAttachRTProperties();
+                        if (rtp != null) {
+                            // Supported data types:
+                            //  $ = String
+                            //  N = Generic Number (double/long)
+                            //  K = Kilometers (km)
+                            //  S = Speed (km/h)
+                            //  E = Fuel Economy (km/L)
+                            //  T = Temperature (C)
+                            //  V = Volume (Liters)
+                            //  P = Pressure (kPa)
+                            //  L = Latitude/Longitude (GeoPoint)
+                            //  A = Altitude (meters)
+                            //  H - Hours/seconds (hh:mm:ss)
+                            // Unsupported data types:
+                            //  M = Mass
+                            //  F = Force
+                            //  R = Area
+                            //  C = Currency
+                            if (StringTools.isBlank(fmt) || fmt.startsWith("$")) {
+                                // -- String
+                                return rtp.getString(var,"");
+                            } else
+                            if (fmt.startsWith("N")) {
+                                // -- Generic number (Long/Double)
+                                String dec = fmt.substring(1);
+                                if (StringTools.isBlank(dec)) {
+                                    // -- assume Integer/Long
+                                    long val = rtp.getLong(var,0L); // parse as Long
+                                    return String.valueOf(val);   // back to a String
+                                } else {
+                                    // -- assume Float/Double
+                                    double val = rtp.getDouble(var,0.0); // parse as Double
+                                    return EventDataLayout.formatDouble(val, dec, "0");
+                                }
+                            } else 
+                            if (fmt.startsWith("K")) {
+                                // -- Kilometers
+                                String dec = fmt.substring(1);
+                                double km  = rtp.getDouble(var,0.0); // parse as Double
+                                // -- valid km (unlikely, but allow negative)
+                                return EventDataLayout.formatKM(km, dec, rd);
+                            } else 
+                            if (fmt.startsWith("S")) {
+                                // -- SpeedKPH
+                                String dec = fmt.substring(1);
+                                double kph = rtp.getDouble(var,0.0); // parse as Double
+                                // -- valid km/h (unlikely, but allow negative)
+                                return EventDataLayout.formatSpeed(kph, dec, rd);
+                            } else 
+                            if (fmt.startsWith("E")) {
+                                // -- Economy
+                                String dec = fmt.substring(1);
+                                double kpl = rtp.getDouble(var,0.0); // parse as Double
+                                // -- valid economy (unlikely, but allow negative)
+                                return EventDataLayout.formatEconomy(kpl, dec, rd);
+                            } else 
+                            if (fmt.startsWith("T")) {
+                                // -- Temperature
+                                String dec = fmt.substring(1);
+                                double C   = rtp.getDouble(var,0.0); // parse as Double
+                                if (EventData.isValidTemperature(C)) {
+                                    // -- valid temperature
+                                    String tempS = EventDataLayout.formatTemperature(C, dec, rd, null);
+                                    return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
+                                } else {
+                                    // -- invalid temperature
+                                    return rc.getBlankFiller();
+                                }
+                            } else 
+                            if (fmt.startsWith("V")) {
+                                // -- Volume
+                                String dec = fmt.substring(1);
+                                double L   = rtp.getDouble(var,0.0); // parse as Double
+                                // -- valid volume (unlikely, but allow negative)
+                                return EventDataLayout.formatVolume(L, dec, rd);
+                            } else 
+                            if (fmt.startsWith("P")) {
+                                // -- Pressure
+                                String dec = fmt.substring(1);
+                                double kPa = rtp.getDouble(var,0.0); // parse as Double
+                                // -- valid pressure (can be negative)
+                                return EventDataLayout.formatPressure(kPa, dec, rd);
+                            } else 
+                            if (fmt.startsWith("L")) {
+                                // -- GeoPoint (lat/lon)
+                                String   dec = fmt.substring(1);
+                                GeoPoint gp  = new GeoPoint(rtp.getString(var,""));
+                                if (gp.isValid()) {
+                                    // -- valid GeoPoint
+                                    return gp.toString(dec, '/', rd.getLocale());
+                                } else {
+                                    // -- invalid GeoPoint
+                                    return rc.getBlankFiller();
+                                }
+                            } else 
+                            if (fmt.startsWith("A")) {
+                                // -- Altitude (meters)
+                                String dec = fmt.substring(1);
+                                double M   = rtp.getDouble(var,0.0); // parse as Double
+                                Account.AltitudeUnits altUnits = Account.getAltitudeUnits(acct);
+                                double alt = altUnits.convertFromMeters(M);
+                                return EventDataLayout.formatDouble(alt, dec, "0");
+                            } else
+                            if (fmt.startsWith("H")) {
+                                // -- Hours/Seconds (hh:mm:ss)
+                                String dec = fmt.substring(1);
+                                int ef = EventDataLayout.getElapsedFormat(dec, StringTools.ELAPSED_FORMAT_HHMMSS);
+                                String valS = rtp.getString(var,"");
+                                long sec = (valS.indexOf(".") < 0)? 
+                                    StringTools.parseLong(valS,0L) :              // assume seconds
+                                    Math.round(StringTools.parseDouble(valS,0.0) * 3600.0); // assume hours
+                                return new ColumnValue(EventDataLayout.formatElapsedTime(sec,ef)).setSortKey(sec);
+                            } else
+                            if (fmt.startsWith("M") ||   // Mass
+                                fmt.startsWith("F") ||   // Force
+                                fmt.startsWith("R") ||   // Area
+                                fmt.startsWith("C")   ) {// Currency
+                                // -- Generic Double
+                                String dec = fmt.substring(1);
+                                double val = rtp.getDouble(var,0.0); // parse as Double
+                                return EventDataLayout.formatDouble(val, dec, "0");
+                            } else {
+                                // -- Unknown, assume String
+                                return rtp.getString(var,"");
+                            }
+                        } else {
+                            Print.logWarn("Not an RTProperties instance");
+                        }
+                    }
+                    return "";
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    String arg = StringTools.trim(rc.getArg()); // "varName:fmt"
+                    int p = arg.indexOf(":");
+                    String var = (p >= 0)? arg.substring(0,p).trim() : arg;
+                    String fmt = (p >= 0)? arg.substring(p+1).trim() : "";
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    if (!StringTools.isBlank(var)) {
+                        return var;
+                    } else {
+                        return i18n.getString("EventDataLayout.attachmentValue","Value");
+                    }
                 }
             });
 
@@ -1323,7 +1517,6 @@ public class EventDataLayout
                     double   kPa = ed.getAppliedPressure(); // kPa (kilopascals = 1000 Newtons per Square-Meter)
                     if (kPa > 0.0) {
                         double pressure = Account.getPressureUnits(rd.getAccount()).convertFromKPa(kPa);
-                        //return StringTools.format(pressure, "#0.0");
                         return EventDataLayout.formatDouble(pressure, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -2074,7 +2267,7 @@ public class EventDataLayout
                 public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
                     String arg = rc.getArg();
                     EventData ed = (EventData)obj;
-                    int input = (int)ed.getInputMask(); // bit mask
+                    int input = (int)ed.getInputMask();  // bit mask
                     String s = StringTools.toBinaryString(input);
                     int slen = s.length();
                     int blen = StringTools.parseInt(arg,8);
@@ -2303,9 +2496,13 @@ public class EventDataLayout
                 public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
                     String arg = rc.getArg();
                     EventData ed = (EventData)obj;
-                    double thermo = ed.getAmbientTemp(); // degrees 'C'
-                    String tempS  = EventDataLayout.formatTemperature(thermo, arg, rd, null);
-                    return new ColumnValue(tempS).setSortKey((long)(thermo * 100.0));
+                    double C = ed.getAmbientTemp(); // degrees 'C'
+                    if (EventData.isValidTemperature(C)) {
+                        String tempS = EventDataLayout.formatTemperature(C, arg, rd, null);
+                        return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
+                    } else {
+                        return rc.getBlankFiller();
+                    }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
                     I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
@@ -2428,8 +2625,10 @@ public class EventDataLayout
                     double volts = ed.getBatteryVolts();
                     if (level > 0.0) {
                         if (level <= 1.0) {
+                            // -- assume range 0..1
                             return Math.round(level*100.0) + "%";           // percent
                         } else {
+                            // -- assume range 0..100
                             return EventDataLayout.formatDouble(level, arg, "0.0") + "v";   // volts
                         }
                     } else
@@ -2466,6 +2665,7 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double level = ed.getBatteryLevel();
                     if (level > 0.0) {
+                        // -- adjust to range 0..1
                         double pct100 = (level <= 1.0)? (level*100.0) : level;
                         return Math.round(pct100) + "%";    // integer percent
                     } else {
@@ -2493,6 +2693,23 @@ public class EventDataLayout
                 public String getTitle(ReportData rd, ReportColumn rc) {
                     I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
                     return i18n.getString("EventDataLayout.latestBatteryPercent","Latest\nBatt %");
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_BATTERY_TEMP) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    double C = ed.getBatteryTemp();
+                    if (EventData.isValidTemperature(C)) {
+                        String tempS = EventDataLayout.formatTemperature(C, arg, rd, null);
+                        return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.batteryTemp","Battery\nTemp.");
                 }
             });
 
@@ -2567,7 +2784,6 @@ public class EventDataLayout
                     double   vol = dev.getFuelCapacity(); // liters
                     if (vol > 0.0) {
                         vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                        //return StringTools.format(vol, "#0.0");
                         return EventDataLayout.formatDouble(vol, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -2718,7 +2934,6 @@ public class EventDataLayout
                     double  econ = ed.getFuelEconomy(); // kilometers per liter
                     if (econ > 0.0) {
                         econ = Account.getEconomyUnits(rd.getAccount()).convertFromKPL(econ);
-                        //return StringTools.format(econ, "#0.0");
                         return EventDataLayout.formatDouble(econ, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -2846,7 +3061,6 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double hours = ed.getPtoHours();
                     if (hours > 0.0) {
-                        //return StringTools.format(hours,"#0.0");
                         return EventDataLayout.formatDouble(hours, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -2901,7 +3115,7 @@ public class EventDataLayout
                     String arg = rc.getArg();
                     EventData ed = (EventData)obj;
                     double C = ed.getIntakeTemp(); // degrees 'C'
-                    if (C > 0.0) {
+                    if (EventData.isValidTemperature(C)) {
                         String tempS = EventDataLayout.formatTemperature(C, arg, rd, null);
                         return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
                     } else {
@@ -3190,7 +3404,7 @@ public class EventDataLayout
                     String arg = rc.getArg();
                     EventData ed = (EventData)obj;
                     double C = ed.getOilTemp(); // degrees 'C'
-                    if (C > 0.0) {
+                    if (EventData.isValidTemperature(C)) {
                         String tempS = EventDataLayout.formatTemperature(C, arg, rd, null); 
                         return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
                     } else {
@@ -3228,7 +3442,6 @@ public class EventDataLayout
                     double hours = ed.getEngineHours();
                     hours += dev.getEngineHoursOffset();
                     if (hours > 0) {
-                        //return StringTools.format(hours,"#0.0");
                         return EventDataLayout.formatDouble(hours, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -3245,7 +3458,6 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double hours = ed.getEngineOnHours();
                     if (hours > 0) {
-                        //return StringTools.format(hours,"#0.0");
                         return EventDataLayout.formatDouble(hours, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -3278,7 +3490,6 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double hours = ed.getIdleHours();
                     if (hours > 0.0) {
-                        //return StringTools.format(hours,"#0.0");
                         return EventDataLayout.formatDouble(hours, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -3296,7 +3507,7 @@ public class EventDataLayout
                     String arg = rc.getArg();
                     EventData ed = (EventData)obj;
                     double C = ed.getTransOilTemp(); // degrees 'C'
-                    if (C > 0.0) {
+                    if (EventData.isValidTemperature(C)) {
                         String tempS = EventDataLayout.formatTemperature(C, arg, rd, null); 
                         return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
                     } else {
@@ -3331,7 +3542,7 @@ public class EventDataLayout
                     String arg = rc.getArg();
                     EventData ed = (EventData)obj;
                     double C = ed.getCoolantTemp(); // degrees 'C'
-                    if (C > 0.0) {
+                    if (EventData.isValidTemperature(C)) {
                         String tempS = EventDataLayout.formatTemperature(C, arg, rd, null);
                         return new ColumnValue(tempS).setSortKey((long)(C * 100.0));
                     } else {
@@ -3351,7 +3562,6 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double   bgf = ed.getBrakeGForce();
                     if (bgf != 0.0) {
-                        //return StringTools.format(bgf, "#0.0");
                         return EventDataLayout.formatDouble(bgf, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -3569,6 +3779,189 @@ public class EventDataLayout
                 }
             });
 
+            // "Trip" values
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_START_DATETIME) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    long ts = ed.getTripStartTime();
+                    if (ts > 0L) {
+                        ReportLayout rl = rd.getReportLayout();
+                        TimeZone tz  = rd.getTimeZone();
+                        DateTime dt  = new DateTime(ts);
+                        String dtFmt = dt.format(rl.getDateTimeFormat(rd.getPrivateLabel()), tz);
+                        return new ColumnValue(dtFmt).setSortKey(ts);
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripStartDateTime","Trip Start\nDate/Time") + "\n${timezone}";
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_STOP_DATETIME) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    long ts = ed.getTripStopTime();
+                    if (ts > 0L) {
+                        ReportLayout rl = rd.getReportLayout();
+                        TimeZone tz  = rd.getTimeZone();
+                        DateTime dt  = new DateTime(ts);
+                        String dtFmt = dt.format(rl.getDateTimeFormat(rd.getPrivateLabel()), tz);
+                        return new ColumnValue(dtFmt).setSortKey(ts);
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripStopDateTime","Trip Stop\nDate/Time") + "\n${timezone}";
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_DISTANCE) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    double dist = ed.getTripDistanceKM(); // kilometers
+                    if (dist > 0) {
+                        return EventDataLayout.formatKM(dist, arg, rd);
+                    } else {
+                        return EventDataLayout.formatKM(dist, arg, rd);
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripDistance","Trip\nDistance") + "\n${distanceUnits}";
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_IDLE_HOURS) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String   arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    double hours = ed.getTripIdleHours();
+                    if (hours > 0.0) {
+                        return EventDataLayout.formatDouble(hours, arg, "0.0");
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripIdleHours","Trip Idle\nHours");
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_MAX_SPEED) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    double kph = ed.getTripMaxSpeedKPH(); // KPH
+                    if (kph > 0.0) {
+                        Account a = rd.getAccount();
+                        double speed = Account.getSpeedUnits(a).convertFromKPH(kph);
+                        return EventDataLayout.formatDouble(speed, arg, "0");
+                    } else {
+                        return "0   ";
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripMaxSpeed","Trip Max\nSpeed") + "\n${speedUnits}";
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_MAX_RPM) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    long rpm = ed.getTripMaxRpm();
+                    if (rpm >= 0L) {
+                        return String.valueOf(rpm);
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripMaxRpm","Trip Max\nRPM");
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_START_LAT) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    Locale locale = rd.getLocale();
+                    double lat = ed.getTripStartLatitude();
+                    arg = StringTools.trim(arg);
+                    String valStr = "";
+                    Account.LatLonFormat latlonFmt = Account.getLatLonFormat(rd.getAccount());
+                    if (arg.equalsIgnoreCase(GeoPoint.SFORMAT_DMS) || (StringTools.isBlank(arg) && latlonFmt.isDegMinSec())) {
+                        valStr = GeoPoint.formatLatitude(lat, GeoPoint.SFORMAT_DMS, locale);
+                    } else
+                    if (arg.equalsIgnoreCase(GeoPoint.SFORMAT_DM)  || (StringTools.isBlank(arg) && latlonFmt.isDegMin())) {
+                        valStr = GeoPoint.formatLatitude(lat, GeoPoint.SFORMAT_DM , locale);
+                    } else {
+                        String fmt = StringTools.isBlank(arg)? GeoPoint.SFORMAT_DEC_4 : arg;
+                        valStr = GeoPoint.formatLatitude(lat, fmt  , locale);
+                    }
+                    if (!StringTools.isBlank(valStr)) {
+                        return valStr;
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripStartLatitude","Trip Start\nLatitude");
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_START_LON) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    Locale locale = rd.getLocale();
+                    double lon = ed.getTripStartLongitude();
+                    arg = StringTools.trim(arg);
+                    String valStr = "";
+                    Account.LatLonFormat latlonFmt = Account.getLatLonFormat(rd.getAccount());
+                    if (arg.equalsIgnoreCase(GeoPoint.SFORMAT_DMS) || (StringTools.isBlank(arg) && latlonFmt.isDegMinSec())) {
+                        valStr = GeoPoint.formatLongitude(lon, GeoPoint.SFORMAT_DMS, locale);
+                    } else
+                    if (arg.equalsIgnoreCase(GeoPoint.SFORMAT_DM)  || (StringTools.isBlank(arg) && latlonFmt.isDegMin())) {
+                        valStr = GeoPoint.formatLongitude(lon, GeoPoint.SFORMAT_DM , locale);
+                    } else {
+                        String fmt = StringTools.isBlank(arg)? GeoPoint.SFORMAT_DEC_4 : arg;
+                        valStr = GeoPoint.formatLongitude(lon, fmt  , locale);
+                    }
+                    if (!StringTools.isBlank(valStr)) {
+                        return valStr;
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripStopLatitude","Trip Start\nLongitude");
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_TRIP_ELAPSED) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    EventData ed = (EventData)obj;
+                    long tripSec = ed.getTripElapsedSeconds();
+                    if (tripSec > 0L) {
+                        int fmt = EventDataLayout.getElapsedFormat(arg, StringTools.ELAPSED_FORMAT_HHMMSS);
+                        return new ColumnValue(EventDataLayout.formatElapsedTime(tripSec,fmt)).setSortKey(tripSec);
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(EventDataLayout.class);
+                    return i18n.getString("EventDataLayout.tripElapsed","Trip Elapsed");
+                }
+            });
+
             // "Day" values
             this.addColumnTemplate(new DataColumnTemplate(DATA_DAY_ENGINE_STARTS) {
                 public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
@@ -3588,7 +3981,6 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double hours = ed.getDayIdleHours();
                     if (hours > 0.0) {
-                        //return StringTools.format(hours,"#0.0");
                         return EventDataLayout.formatDouble(hours, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();
@@ -3623,7 +4015,6 @@ public class EventDataLayout
                     EventData ed = (EventData)obj;
                     double hours = ed.getDayWorkHours();
                     if (hours > 0.0) {
-                        //return StringTools.format(hours,"#0.0");
                         return EventDataLayout.formatDouble(hours, arg, "0.0");
                     } else {
                         return rc.getBlankFiller();

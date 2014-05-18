@@ -55,9 +55,12 @@ public class BufferedHttpServletResponse
             return this.baos.toByteArray();
         }
         // The following is needed for Servlet specification 3.1 support in "Tomcat 8.x"
-        //public /*abstract*/ void setWriteListener(WriteListener writeListener) {
-        //    // no-op
-        //}
+        // Cannot be enabled for Tomcat-7 because "WriteListener" does not exist
+        /* 
+        public void setWriteListener(WriteListener writeListener) { // abstract in ServletOutputStream
+            // no-op
+        }
+        */
     }
         
     // ------------------------------------------------------------------------

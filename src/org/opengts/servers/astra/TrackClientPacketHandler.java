@@ -18,12 +18,16 @@
 // ----------------------------------------------------------------------------
 // Description:
 // Astra Telematics device communication server with support for:
+//   Protocol C
 //   Protocol K
 //   Protocol M
 // ----------------------------------------------------------------------------
 // Change History:
 //  2012/11/27  Richard R. Patel
 //     -Initial release
+//  2014/02/04  Richard R. Patel
+//     -Added support for Protocol C
+//     -Added check for more packet data whilst parsing reports
 // ----------------------------------------------------------------------------
 package org.opengts.servers.astra;
 
@@ -83,10 +87,12 @@ public class TrackClientPacketHandler
     };
 
     /* Protocol identifiers */
+    private static byte PROTOCOL_C                      = 0x43;
     private static byte PROTOCOL_K                      = 0x4B;
     private static byte PROTOCOL_M                      = 0x4D;
 
     /* Report lengths */
+    private static int PROTOCOL_C_BASIC_LEN             = 33;
     private static int PROTOCOL_K_BASIC_LEN             = 38;
     private static int PROTOCOL_K_START_STOP_LEN        = 50;
     private static int PROTOCOL_M_BASIC_LEN             = 41;
@@ -179,7 +185,7 @@ public class TrackClientPacketHandler
         int packetLength = 0;
 
         /* Check the protocol identifier */
-        if ((packet[0] == PROTOCOL_K) || (packet[0] == PROTOCOL_M))
+        if ((packet[0] == PROTOCOL_C) || (packet[0] == PROTOCOL_K) || (packet[0] == PROTOCOL_M))
         {
             protocol = packet[0];
 
@@ -221,7 +227,16 @@ public class TrackClientPacketHandler
             }
 
             /* Parse packet contents and insert data into database */
-            if (protocol == PROTOCOL_K)
+            if (protocol == PROTOCOL_C)
+            {
+                if (parseInsertRecord_C(pktBytes))
+                {
+                    /* If packet parsed successfully return acknowledgment back to client device */
+                    rtn = new byte[1];
+                    rtn[0] = 0x06; // ACK
+                }
+            }
+            else if (protocol == PROTOCOL_K)
             {
                 if (parseInsertRecord_K(pktBytes))
                 {
@@ -248,6 +263,217 @@ public class TrackClientPacketHandler
             Print.logInfo("Empty packet received ...");
             return null; // no return packets are expected
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    private boolean parseInsertRecord_C(byte pktBytes[])
+    {
+        int i;
+        int index;
+        int checksum;
+        int packetChecksum;
+        int sequenceNumber;
+        int intLatitude;
+        int intLongitude;
+        int intSpeed;
+        int intHeading;
+        int intAltitude;
+        int intJourneyDist;
+        int journeyIdleTime;
+        int repReason;
+        int repStatus;
+        int statusCode;
+        int reportLen;
+        int digitals;
+        int digitalChanges;
+        int intAdc1;
+        int intAdc2;
+        int battLevel;
+        int intExtPwr;
+        int maxSpeed;
+        int[] accelData = new int[2];
+        int geoFence;
+        long fixtime;
+        double latitude;
+        double longitude;
+        double speed;
+        double heading;
+        double altitude;
+        double journeyDist;
+        double adc1;
+        double adc2;
+        double extPwr;
+        GeoPoint geoPoint;
+        boolean reportsToFollow = false;
+        String rawData = "";
+
+        /* Generate 2 byte packet checksum for all bytes except the last 2 */
+        Payload p = new Payload(pktBytes, (pktBytes.length - 2), 2);
+        packetChecksum = p.readUInt(2, 0);
+        checksum = generateCheckSum (pktBytes, pktBytes.length);
+
+        if (checksum != packetChecksum)
+        {
+            Print.logInfo("ERROR: Calculated checksum does not match packet checksum");
+            return false;
+        }
+
+        /* Parse the header to extract the IMEI */
+        index = 3;
+        p = new Payload(pktBytes, index, 7);
+        long tac = p.readULong(4, 0L, true);
+        int msn = p.readUInt(3, 0, true);
+        String imei = String.valueOf(tac) + String.valueOf(msn);
+        Print.logInfo("IMEI: " + imei);
+
+        /* Set the index to the start of the report data */
+        index += 7;
+
+        /* Find the device in the database */
+        this.device = DCServerFactory._loadDeviceByPrefixedModemID(UNIQUEID_PREFIX, imei);
+        //this.device = DCServerConfig.loadDeviceUniqueID(Main.getServerConfig(), imei);
+        if (this.device == null)
+        {
+            /* Error already logged */
+            return false;
+        }
+
+        /* Parse each report in the packet */
+        do
+        {
+            reportLen = PROTOCOL_C_BASIC_LEN;
+
+            p = new Payload(pktBytes, index, PROTOCOL_K_BASIC_LEN);
+            sequenceNumber = p.readUInt(1, 0);
+            intLatitude = p.readInt(4, 0);
+            intLongitude = p.readInt(4, 0);
+            latitude = (double)intLatitude / 1000000f;
+            longitude = (double)intLongitude / 1000000f;
+            geoPoint = new GeoPoint(latitude, longitude);
+
+            // Read Julian time - time and date in GPS seconds and convert to 
+            // seconds from Unix epoch by adding the difference between
+            // 00:00:00 6 January 1980 and 00:00:00 1 January 1970
+            // The stored time will be GMT
+            fixtime = p.readULong(4, 0L, true);
+            fixtime += 315964800L;
+
+            /* Convert speed stored as km/h divided by 2 to km/h */
+            intSpeed = p.readUInt(1, 0);
+            speed = (double)intSpeed * 2f;
+
+            /* Convert heading stored as degress divided by 2 to degrees */
+            intHeading = p.readUInt(1, 0);
+            heading = (double)intHeading * 2f;
+
+            /* Altitude in metres divided by 20 - conver to meters */
+            intAltitude = p.readUInt(1, 0);
+            altitude = (double)intAltitude * 20f;
+
+            /* Read the reason code and status code */
+            repReason = p.readUInt(2, 0);
+            repStatus = p.readUInt(1, 0);
+
+            /* Geofence: Bit 7=1 for entry, Bit 7=0 for exit. Bits 6-0=geofence index */
+            geoFence = p.readUInt(1, 0);
+            
+            /* Digitial input/output states */
+            digitals = p.readUInt(1, 0);
+
+            /* Digitial input/output state changes */
+            digitalChanges = p.readUInt(1, 0);
+
+            /* ADC2 0-2V - convert to voltage with resolution of 0.0078125V */
+            intAdc2 = p.readUInt(1, 0);
+            adc2 = (double)intAdc2 / 128f;
+            adc2 = adc2 / 1000f;
+
+            /* ADC1 0-2V - convert to voltage with resolution of 0.0078125V */
+            intAdc1 = p.readUInt(1, 0);
+            adc1 = (double)intAdc1 / 128f;
+            adc1 = adc1 / 1000f;
+
+            /* Battery level as a percentage */
+            battLevel = p.readUInt(1, 0);
+
+            /* External input voltage to 0.2V resolution - convert to actual input voltage */
+            intExtPwr = p.readUInt(1, 0);
+            extPwr = (double)intExtPwr / 5f;
+
+            // Convert max speed stored as km/h divided by 2 to km/h
+            // During a journey this is max speed since last report
+            // At the end of a journey it is the max speed during the entire journey
+            maxSpeed = p.readUInt(1, 0);
+            maxSpeed = maxSpeed * 2;
+
+            /* Read the min and max accelerometer data for X, Y and Z axes */
+            for (i = 0; i < 2; i++)
+            {
+                accelData[i] = p.readUInt(1, 0);
+            }
+
+            /* Journey distance to 0.1km resolution - convert to actual distance */
+            intJourneyDist = p.readUInt(2, 0);
+            journeyDist = (double)intJourneyDist / 10f;
+
+            /* Time in seconds that the vehicle is stationary with the ignition on */
+            journeyIdleTime = p.readUInt(2, 0);
+
+            /* (debug message) log report data */
+            if (DEBUG_MODE)
+            {
+                Print.logInfo("Seq Num: " + sequenceNumber);
+                Print.logInfo("GPS: " + geoPoint);
+                Print.logInfo("Time: " + fixtime);
+                Print.logInfo("Speed: " + speed);
+                Print.logInfo("Heading: " + heading);
+                Print.logInfo("Journey Dist: " + journeyDist);
+                Print.logInfo("Altitude: " + altitude);
+            }
+
+            /* One status code per report so determine which one is most relevant */
+            statusCode = determineGTSStatusCode(repReason, repStatus, extPwr, geoFence);
+
+            /* Extra report data to be added to rawData field ? */
+            if (addRawData)
+            {
+                rawData = "R=" + StringTools.toHexString(repReason, 16) +
+                          ";S=" + StringTools.toHexString(repStatus, 8) +
+                          ";P=" + extPwr + "V" +
+                          ";B=" + battLevel + "%" +
+                          ";D=" + StringTools.toHexString(digitals, 8) + "," + StringTools.toHexString(digitalChanges, 8) +
+                          ";A1=" + adc1 + "V" +
+                          ";A2=" + adc2 + "V" +
+                          ";M=" + maxSpeed + "km/h" +
+                          ";X=" + accelData[0] + "," + accelData[1] +
+                          ";I=" + journeyIdleTime + "s" +
+                          ";G=" + StringTools.toHexString(geoFence, 8);
+            }
+
+            /* Insert record into EventData table (odometer=0) */
+            insertEventRecord(device, 
+                    fixtime, statusCode, geoPoint,
+                    speed, heading, altitude,
+                    journeyDist, 0.0, rawData);
+
+            /* Check for more reports in the packet */
+            if ((repStatus & STATUS_REPORTS_TO_FOLLOW) > 0)
+            {
+                reportsToFollow = true;
+
+                /* Advance the index accordingly */
+                index += reportLen;
+            }
+            else
+            {
+                reportsToFollow = false;
+            }
+        }
+        while (reportsToFollow && ((pktBytes.length - index) > 2));
+
+        return true;
     }
 
     // ------------------------------------------------------------------------
@@ -475,7 +701,7 @@ public class TrackClientPacketHandler
                 reportsToFollow = false;
             }
         }
-        while (reportsToFollow);
+        while (reportsToFollow && ((pktBytes.length - index) > 2));
 
         return true;
     }
@@ -714,7 +940,7 @@ public class TrackClientPacketHandler
                 reportsToFollow = false;
             }
         }
-        while (reportsToFollow);
+        while (reportsToFollow && ((pktBytes.length - index) > 2));
 
         return true;
     }

@@ -50,7 +50,7 @@ public class CommonServlet
     // ------------------------------------------------------------------------
     // overriding host properties keys
 
-    public  static final String HOST_PROPERTIES_ID              = "lfid";               // String
+    public  static final String HOST_PROPERTIES_ID              = "lfid";               // String: "lf", "laf"
     public  static final String HOST_PROPERTIES                 = "hostProperties";     // RTProperties
     public  static final String DEFAULT_HOST_PROPERTIES_ID      = "default";            // default id
 

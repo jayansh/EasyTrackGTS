@@ -35,6 +35,12 @@ public interface CustomCommand
 
     // ------------------------------------------------------------------------
 
+    /* command argument separator */
+    public  static final String  ARG_SEPARATOR          = "|";
+    public  static final char    ARG_SEPARATOR_CHAR     = '|';
+
+    // ------------------------------------------------------------------------
+
     /**
     *** Callback to handle custom web-service commands.  
     *** device communication server.

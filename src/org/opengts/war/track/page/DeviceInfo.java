@@ -94,6 +94,8 @@
 //  2013/11/11  Martin D. Flynn
 //     -Added "manager" option to "deviceInfo.allowNewDevice" property
 //     -Allow device "delete" if over limit
+//  2014/05/05  Martin D. Flynn
+//     -Added a fuel cost field.
 // ----------------------------------------------------------------------------
 package org.opengts.war.track.page;
 
@@ -139,6 +141,8 @@ public class DeviceInfo
     private static final boolean SHOW_IGNITION_NDX          = true;
     private static final boolean SHOW_DISPLAY_COLOR         = true;
     private static final boolean SHOW_SPEED_LIMIT           = false;
+    private static final boolean SHOW_REPORTED_ODOM         = true;  
+    private static final boolean SHOW_REPORTED_ENG_HRS      = true;  
     private static final boolean SHOW_MAINTENANCE_ODOM      = true;  // still requires maintenance support
     private static final boolean SHOW_MAINTENANCE_HOURS     = true;  // still requires maintenance support
     private static final boolean SHOW_MAINTENANCE_NOTES     = true;  // still requires maintenance support
@@ -249,6 +253,7 @@ public class DeviceInfo
     public  static final String PARM_DEV_EQUIP_STATUS       = "d_equips";
     public  static final String PARM_DEV_FUEL_CAP           = "d_fuelcap";
     public  static final String PARM_DEV_FUEL_ECON          = "d_fuelecon";
+    public  static final String PARM_DEV_FUEL_COST          = "d_fuelcost";
     public  static final String PARM_DEV_SPEED_LIMIT        = "d_speedLim";
     public  static final String PARM_DEV_IMEI               = "d_imei";
     public  static final String PARM_DEV_SERIAL_NO          = "d_sernum";
@@ -307,7 +312,7 @@ public class DeviceInfo
     public  static final String PARM_FAULT_CODES            = "d_faultc";       // read-only
     public  static final String PARM_FAULT_RESET            = "d_faultres";     // reset checkbox
 
-    public  static final String PARM_DEV_RULE_ALLOW         = "d_ruleallw";
+    public  static final String PARM_DEV_RULE_ALLOW         = "d_ruleallw";     // "Notify Enable"
     public  static final String PARM_DEV_RULE_EMAIL         = "d_rulemail";
     public  static final String PARM_DEV_RULE_SEL           = "d_rulesel";
     public  static final String PARM_DEV_RULE_DESC          = "d_ruledesc";
@@ -318,6 +323,9 @@ public class DeviceInfo
     public  static final String PARM_LAST_ALERT_RESET       = "d_alertReset";
 
     public  static final String PARM_ACTIVE_CORRIDOR        = "d_actvcorr";
+
+    public  static final String PARM_BORDER_CROSS_ENAB      = "d_bcEnable";
+    public  static final String PARM_BORDER_CROSS_TIME      = "d_bcTime";
 
   //public  static final String PARM_WORKORDER_ID           = "d_workid";
 
@@ -750,7 +758,7 @@ public class DeviceInfo
     {
         final HttpServletRequest request = reqState.getHttpServletRequest();
         final boolean      sysadminLogin = reqState.isLoggedInFromSysAdmin();
-        final Account      currAcct      = reqState.getCurrentAccount();
+        final Account      currAcct      = reqState.getCurrentAccount(); // should not be null
         final User         currUser      = reqState.getCurrentUser();
         final PrivateLabel privLabel     = reqState.getPrivateLabel();
         final Device       selDev        = reqState.getSelectedDevice(); // 'selDev' is non-null
@@ -759,6 +767,8 @@ public class DeviceInfo
         final String       devTitles[]   = reqState.getDeviceTitles();
         final boolean      showFuelCap   = true;
         final boolean      showFuelEcon  = DBConfig.hasExtraPackage();
+        final boolean      showFuelCost  = showFuelEcon;
+        final boolean      acctBCEnabled = ((currAcct!=null)&&currAcct.getIsBorderCrossing())?true:false;
         String  msg         = null;
         boolean groupsChg   = false;
         String  serverID    = AttributeTools.getRequestString(request, PARM_SERVER_ID         , "");
@@ -778,6 +788,7 @@ public class DeviceInfo
         String  equipStatus = AttributeTools.getRequestString(request, PARM_DEV_EQUIP_STATUS  , "");
         double  fuelCap     = AttributeTools.getRequestDouble(request, PARM_DEV_FUEL_CAP      , 0.0);
         double  fuelEcon    = AttributeTools.getRequestDouble(request, PARM_DEV_FUEL_ECON     , 0.0);
+        double  fuelCostPU  = AttributeTools.getRequestDouble(request, PARM_DEV_FUEL_COST     , 0.0);
         double  speedLimU   = AttributeTools.getRequestDouble(request, PARM_DEV_SPEED_LIMIT   , 0.0);
         String  driverID    = AttributeTools.getRequestString(request, PARM_DRIVER_ID         , "");
         String  prefUsrID   = AttributeTools.getRequestString(request, PARM_USER_ID           , "");
@@ -800,9 +811,10 @@ public class DeviceInfo
         double  rptOdom     = AttributeTools.getRequestDouble(request, PARM_REPORT_ODOM       , 0.0);
         double  rptEngHrs   = AttributeTools.getRequestDouble(request, PARM_REPORT_HOURS      , 0.0);
         String  actvCorr    = AttributeTools.getRequestString(request, PARM_ACTIVE_CORRIDOR   , "");
+        String  borderCross = AttributeTools.getRequestString(request, PARM_BORDER_CROSS_ENAB , "");
       //String  worderID    = AttributeTools.getRequestString(request, PARM_WORKORDER_ID      , "");
         try {
-            // unique id
+            // -- unique id
             boolean editUniqID = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_UNIQUEID));
             if (editUniqID && !selDev.getUniqueID().equals(uniqueID)) {
                 if (StringTools.isBlank(uniqueID)) {
@@ -816,11 +828,11 @@ public class DeviceInfo
                             String devAcctID = dev.getAccountID();
                             String devDevID  = dev.getDeviceID();
                             if (devAcctID.equals(reqState.getCurrentAccountID())) {
-                                // same account, this user can fix this himself
+                                // -- same account, this user can fix this himself
                                 msg = i18n.getString("DeviceInfo.uniqueIdAlreadyAssignedToDevice","UniqueID is already assigned to {0}: {1}", devTitles[0], devDevID); // UserErrMsg
                                 selDev.setError(msg);
                             } else {
-                                // different account, this user cannot fix this himself
+                                // -- different account, this user cannot fix this himself
                                 Print.logWarn("UniqueID '%s' already assigned: %s/%s", uniqueID, devAcctID, devDevID);
                                 msg = i18n.getString("DeviceInfo.uniqueIdAlreadyAssigned","UniqueID is already assigned to another Account"); // UserErrMsg
                                 selDev.setError(msg);
@@ -832,61 +844,61 @@ public class DeviceInfo
                     }
                 }
             }
-            // server id
+            // -- server id
             boolean editServID = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_SERVERID)) &&
                 privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_allowEditServerID,EDIT_SERVER_ID) && (selDev.getLastConnectTime() <= 0L);
             if (editServID && !selDev.getDeviceCode().equals(serverID) && DCServerFactory.hasServerConfig(serverID)) {
                 selDev.setDeviceCode(serverID);
             }
-            // code version (firmware version)
+            // -- code version (firmware version)
             boolean editCodeVer = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_FIRMWARE)) &&
                 privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_allowEditFirmwareVersion,EDIT_CODE_VERSION);
             if (editCodeVer && !selDev.getCodeVersion().equals(codeVers)) {
                 selDev.setCodeVersion(codeVers);
             }
-            // active
+            // -- active
             boolean editActive = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_ACTIVE));
             boolean devActv = ComboOption.parseYesNoText(locale, devActive, true);
             if (editActive && (selDev.getIsActive() != devActv)) { 
                 selDev.setIsActive(devActv); 
             }
-            // description
+            // -- description
             if (!selDev.getDescription().equals(devDesc)) {
                 selDev.setDescription(devDesc);
             }
-            // display name
+            // -- display name
             if (!selDev.getDisplayName().equals(devName)) {
                 selDev.setDisplayName(devName);
             }
-            // vehicle ID (VIN)
+            // -- vehicle ID (VIN)
             if ((vehicleID != null) && !selDev.getVehicleID().equals(vehicleID)) {
                 selDev.setVehicleID(vehicleID);
             }
-            // vehicle Make
+            // -- vehicle Make
             if ((vehMake != null) && !selDev.getVehicleMake().equals(vehMake)) {
                 selDev.setVehicleMake(vehMake);
             }
-            // vehicle Model
+            // -- vehicle Model
             if ((vehModel != null) && !selDev.getVehicleModel().equals(vehModel)) {
                 selDev.setVehicleModel(vehModel);
             }
-            // License Plate
+            // -- License Plate
             if ((licPlate != null) && !selDev.getLicensePlate().equals(licPlate)) {
                 selDev.setLicensePlate(licPlate);
             }
-            // License Expire
+            // -- License Expire
             long licExpireDN = GetDayNumber(licExpire);
             if ((licExpireDN >= 0L) && (licExpireDN != selDev.getLicenseExpire())) {
                 selDev.setLicenseExpire(licExpireDN);
             }
-            // equipment type/status
+            // -- equipment type/status
             if (!selDev.getEquipmentType().equals(equipType)) {
                 selDev.setEquipmentType(equipType);
             }
             if (!selDev.getEquipmentStatus().equals(equipStatus)) {
                 selDev.setEquipmentStatus(equipStatus);
             }
-            // fuel capacity
+            // -- fuel capacity
             boolean editFuelCap = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_FUEL_CAPACITY));
             if (showFuelCap && editFuelCap) {
                 double fuelCapLiters = Account.getVolumeUnits(currAcct).convertToLiters(fuelCap);
@@ -894,19 +906,29 @@ public class DeviceInfo
                     selDev.setFuelCapacity(fuelCapLiters);
                 }
             }
-            // fuel economy (km/L)
+            // -- fuel economy (km/L)
             boolean editFuelEcon = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_FUEL_ECONOMY));
-            if (showFuelEcon) {
+            if (showFuelEcon && editFuelEcon) {
                 double fuelEconomy = Account.getEconomyUnits(currAcct).convertToKPL(fuelEcon);
                 if (selDev.getFuelEconomy() != fuelEconomy) {
                     selDev.setFuelEconomy(fuelEconomy);
                 }
             }
-            // Driver ID
+            // -- fuel cost ($/L)
+            boolean editFuelCost = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_FUEL_ECONOMY));
+            if (showFuelCost && editFuelCost) {
+                double unitsPerLiter = Account.getVolumeUnits(currAcct).convertFromLiters(1.0);
+                double costPerUnit   = fuelCostPU;
+                double costPerLiter  = costPerUnit * unitsPerLiter;
+                if (selDev.getFuelCostPerLiter() != costPerLiter) {
+                    selDev.setFuelCostPerLiter(costPerLiter);
+                }
+            }
+            // -- Driver ID
             if (!selDev.getDriverID().equals(driverID)) {
                 selDev.setDriverID(driverID);
             }
-            // Assigned User ID
+            // -- Assigned User ID
             boolean showAssgnUsr = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showAssignedUserID,SHOW_ASSIGNED_USER);
             if (showAssgnUsr && Device.supportsAssignedUserID()) {
                 if (!StringTools.isBlank(prefUsrID)) {
@@ -930,17 +952,17 @@ public class DeviceInfo
                     selDev.setAssignedUserID(prefUsrID);
                 }
             }
-            // IMEI number
+            // -- IMEI number
             boolean editIMEI = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_EDIT_IMEI));
             if (editIMEI && !selDev.getImeiNumber().equals(imeiNum)) {
                 selDev.setImeiNumber(imeiNum);
             }
-            // Serial number
+            // -- Serial number
             boolean editSERIAL = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_EDIT_SERIAL));
             if (!selDev.getSerialNumber().equals(serialNum)) {
                 selDev.setSerialNumber(serialNum);
             }
-            // SIM phone number
+            // -- SIM phone number
             boolean editSIM = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_EDIT_SIM));
             if (editSIM && !selDev.getSimPhoneNumber().equals(simPhone)) {
                 boolean uniqSimPhone = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_uniqueSimPhoneNumber,false);
@@ -972,14 +994,14 @@ public class DeviceInfo
                 }
                 selDev.setSimPhoneNumber(simPhone);
             }
-            // SMS EMail address
+            // -- SMS EMail address
             boolean editSMSEm = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_EDIT_SMS));
             if (editSMSEm && !selDev.getSmsEmail().equals(smsEmail)) { // EMail.validateAddress(smsEmail)
                 String se[] = StringTools.split(smsEmail,',');
                 if (ListTools.size(se) > 0) {
                     for (String s : se) {
                         if (!StringTools.isBlank(s)) {
-                            // save first non-blank entry
+                            // -- save first non-blank entry
                             smsEmail = s;
                             break;
                         }
@@ -987,12 +1009,12 @@ public class DeviceInfo
                 }
                 selDev.setSmsEmail(smsEmail);
             }
-            // Notes
+            // -- Notes
             boolean notesOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showNotes,SHOW_NOTES);
             if (notesOK && !selDev.getNotes().equals(noteText)) {
                 selDev.setNotes(noteText);
             }
-            // Link URL/Description
+            // -- Link URL/Description
             if (Device.supportsLinkURL()) {
                 if (!selDev.getLinkURL().equals(linkURL)) {
                     selDev.setLinkURL(linkURL);
@@ -1001,14 +1023,14 @@ public class DeviceInfo
                     selDev.setLinkDescription(linkDesc);
                 }
             }
-            // Fixed Latitude/Longitude
+            // -- Fixed Latitude/Longitude
             if (Device.supportsFixedLocation()) {
                 if ((fixedLat != 0.0) || (fixedLon != 0.0)) {
                     selDev.setFixedLatitude(fixedLat);
                     selDev.setFixedLongitude(fixedLon);
                 }
             }
-            // Ignition index
+            // -- Ignition index
             boolean ignOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showIgnitionIndex,SHOW_IGNITION_NDX);
             if (ignOK && !StringTools.isBlank(ignition)) {
                 String ign = ignition.toLowerCase();
@@ -1023,56 +1045,62 @@ public class DeviceInfo
                 }
                 selDev.setIgnitionIndex(ignNdx); // may also clear "lastIgnitionOnTime"/"lastIgnitionOffTime"
             }
-            // speed limit
+            // -- speed limit
             boolean speedLimOK = Device.hasRuleFactory(); // || privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showSpeedLimit,SHOW_SPEED_LIMIT);
             double speedLimKPH = Account.getSpeedUnits(currAcct).convertToKPH(speedLimU);
             if (speedLimOK && (selDev.getSpeedLimitKPH() != speedLimKPH)) {
                 selDev.setSpeedLimitKPH(speedLimKPH);
             }
-            // Data Key
+            // -- Data Key
             boolean editDATKEY = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_EDIT_DATKEY));
             boolean dataKeyOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showDataKey,SHOW_DATA_KEY);
             if (editDATKEY && dataKeyOK && !selDev.getDataKey().equals(dataKey)) {
                 selDev.setDataKey(dataKey);
             }
-            // Pushpin ID
+            // -- Pushpin ID
             boolean ppidOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showPushpinID,SHOW_PUSHPIN_ID);
             if (ppidOK && !selDev.getPushpinID().equals(pushpinID)) {
                 selDev.setPushpinID(pushpinID);
             }
-            // Display Color
+            // -- Display Color
             boolean dcolorOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showDisplayColor,SHOW_DISPLAY_COLOR);
             if (dcolorOK && !selDev.getDisplayColor().equals(dispColor)) {
                 selDev.setDisplayColor(dispColor);
             }
-            // Reported Odometer
-            if (rptOdom >= 0.0) {
-                Account.DistanceUnits distUnits = Account.getDistanceUnits(currAcct);
-                double rptOdomKM  = distUnits.convertToKM(rptOdom);
-                double lastOdomKM = selDev.getLastOdometerKM();
-                double offsetKM   = rptOdomKM - lastOdomKM;
-                if (Math.abs(offsetKM - selDev.getOdometerOffsetKM()) >= 0.1) {
-                    selDev.setOdometerOffsetKM(offsetKM);
-                }
-            } else
-            if (rptOdom < 0.0) {
-                selDev.setOdometerOffsetKM(0.0);
-            }
-            // Reported EngineHours
-            if (rptEngHrs >= 0.0) {
-                double lastEngHrs = selDev.getLastEngineHours();
-                double offsetHrs  = rptEngHrs - lastEngHrs;
-                if (Math.abs(offsetHrs - selDev.getEngineHoursOffset()) >= 0.01) {
-                    selDev.setEngineHoursOffset(offsetHrs);
+            // -- Reported Odometer
+            boolean lastOdomOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showReportedOdometer,SHOW_REPORTED_ODOM);
+            if (lastOdomOK && Device.supportsLastOdometer()) { // Domain.Properties.deviceInfo.showReportedOdometer=false
+                if (rptOdom >= 0.0) {
+                    Account.DistanceUnits distUnits = Account.getDistanceUnits(currAcct);
+                    double rptOdomKM  = distUnits.convertToKM(rptOdom);
+                    double lastOdomKM = selDev.getLastOdometerKM();
+                    double offsetKM   = rptOdomKM - lastOdomKM;
+                    if (Math.abs(offsetKM - selDev.getOdometerOffsetKM()) >= 0.1) {
+                        selDev.setOdometerOffsetKM(offsetKM);
+                    }
+                } else
+                if (rptOdom < 0.0) {
+                    selDev.setOdometerOffsetKM(0.0);
                 }
             }
-            // Maintenance Interval
+            // -- Reported EngineHours
+            boolean lastEngHrsOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showReportedEngineHours,SHOW_REPORTED_ENG_HRS);
+            if (lastEngHrsOK && Device.supportsLastEngineHours()) { // Domain.Properties.deviceInfo.showReportedEngineHours=false
+                if (rptEngHrs >= 0.0) {
+                    double lastEngHrs = selDev.getLastEngineHours();
+                    double offsetHrs  = rptEngHrs - lastEngHrs;
+                    if (Math.abs(offsetHrs - selDev.getEngineHoursOffset()) >= 0.01) {
+                        selDev.setEngineHoursOffset(offsetHrs);
+                    }
+                }
+            }
+            // -- Maintenance Interval
             if (Device.supportsPeriodicMaintenance()) {
                 Account.DistanceUnits distUnits = Account.getDistanceUnits(currAcct);
-                // Odometer Maintenance 
+                // -- Odometer Maintenance 
                 boolean maintOdomOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showMaintenanceOdometer,SHOW_MAINTENANCE_ODOM);
-                if (maintOdomOK) {
-                    // Odometer Maintenance #0
+                if (maintOdomOK) { // Domain.Properties.deviceInfo.showMaintenanceOdometer=false
+                    // -- Odometer Maintenance #0
                     long    mIntrvKM0 = AttributeTools.getRequestLong(request, PARM_MAINT_INTERVKM_0, 0L);
                     double  intrvKM0  = distUnits.convertToKM((double)mIntrvKM0);
                     boolean mResetKM0 = !StringTools.isBlank(AttributeTools.getRequestString(request,PARM_MAINT_RESETKM_0,null));
@@ -1080,7 +1108,7 @@ public class DeviceInfo
                     if (mResetKM0) {
                         selDev.setMaintOdometerKM0(selDev.getLastOdometerKM());
                     }
-                    // Odometer Maintenance #1
+                    // -- Odometer Maintenance #1
                     long    mIntrvKM1 = AttributeTools.getRequestLong(request, PARM_MAINT_INTERVKM_1, 0L);
                     double  intrvKM1  = distUnits.convertToKM((double)mIntrvKM1);
                     boolean mResetKM1 = !StringTools.isBlank(AttributeTools.getRequestString(request,PARM_MAINT_RESETKM_1,null));
@@ -1089,9 +1117,9 @@ public class DeviceInfo
                         selDev.setMaintOdometerKM1(selDev.getLastOdometerKM());
                     }
                 }
-                // EngineHours Maintenane #0
+                // -- EngineHours Maintenane #0
                 boolean maintHoursOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showMaintenanceHours,SHOW_MAINTENANCE_HOURS);
-                if (maintHoursOK) {
+                if (maintHoursOK) { // Domain.Properties.deviceInfo.showMaintenanceHours=false
                     double  mIntrvHR0 = AttributeTools.getRequestDouble(request, PARM_MAINT_INTERVHR_0, 0.0);
                     double  intrvHR0  = mIntrvHR0;
                     boolean mResetHR0 = !StringTools.isBlank(AttributeTools.getRequestString(request,PARM_MAINT_RESETHR_0,null));
@@ -1101,31 +1129,31 @@ public class DeviceInfo
                         selDev.setMaintEngHoursHR0(lastEngHrs);
                     }
                 }
-                // maintenance notes
+                // -- maintenance notes
                 boolean maintNotesOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showMaintenanceNotes,SHOW_MAINTENANCE_NOTES);
-                if (maintNotesOK) {
+                if (maintNotesOK) { // Domain.Properties.deviceInfo.showMaintenanceNotes=false
                     String maintText = AttributeTools.getRequestString(request, PARM_MAINT_NOTES   , "");
                     if (!selDev.getMaintNotes().equals(maintText)) {
                         selDev.setMaintNotes(maintText);
                     }
                 }
-                // reminder interval
+                // -- reminder interval
                 boolean reminderOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showReminderMessage,SHOW_REMINDER_MESSAGE);
-                if (reminderOK) {
-                    // reminder interval
+                if (reminderOK) { // Domain.Properties.deviceInfo.showReminderMessage=false
+                    // -- reminder interval
                     String  remIntrv = AttributeTools.getRequestString(request, PARM_REMIND_INTERVAL, "");
                     if (!selDev.getReminderInterval().equals(remIntrv)) {
                         selDev.setReminderInterval(remIntrv);
                     }
-                    // reminder message
+                    // -- reminder message
                     String  remMsg = AttributeTools.getRequestString(request, PARM_REMIND_MESSAGE, "");
                     if (!selDev.getReminderMessage().equals(remMsg)) {
                         selDev.setReminderMessage(remMsg);
                     }
                 }
-                // service time
+                // -- service time
                 boolean servTimeOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showServiceTime,SHOW_SERVICE_TIME);
-                if (servTimeOK) {
+                if (servTimeOK) { // Domain.Properties.deviceInfo.showServiceTime=false
                     DateTime.DateStringFormat dsf = privLabel.getDateStringFormat();
                     TimeZone tmz = Account.getTimeZone(selDev.getAccount(),DateTime.getGMTTimeZone()); 
                     String lastServ   = AttributeTools.getRequestString(request, PARM_LAST_SERVICE_TIME, "");
@@ -1136,15 +1164,15 @@ public class DeviceInfo
                     selDev.setNextServiceTime(nextServTS); // saved as epoch timestamp
                 }
             }
-            // hours of operation
+            // -- hours of operation
             boolean workHoursOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showHoursOfOperation,SHOW_HOURS_OF_OPERATION);
-            if (workHoursOK && Device.supportsHoursOfOperation()) {
+            if (workHoursOK && Device.supportsHoursOfOperation()) { // Domain.Properties.deviceInfo.showHoursOfOperation=false
                 String whStr = AttributeTools.getRequestString(request, PARM_HOURS_OF_OPERATION, "");
                 if (!whStr.equals(selDev.getHoursOfOperation())) {
                     selDev.setHoursOfOperation(whStr);
                 }
             }
-            // Reset Fault codes
+            // -- Reset Fault codes
             boolean faultCodesOK = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showFaultCodes,SHOW_FAULT_CODES);
             if (faultCodesOK && Device.supportsFaultCodes()) {
                 boolean fReset = !StringTools.isBlank(AttributeTools.getRequestString(request,PARM_FAULT_RESET,null));
@@ -1154,9 +1182,9 @@ public class DeviceInfo
                     selDev.setLastMalfunctionLamp(false);   // clear MIL indicator
                 }
             }
-            // Rule Engine Notification
+            // -- Rule Engine Notification
             if (_showNotificationFields(privLabel)) {
-                String  ruleAllow   = AttributeTools.getRequestString(  request, PARM_DEV_RULE_ALLOW  ,  null);
+                String  ruleAllow   = AttributeTools.getRequestString(  request, PARM_DEV_RULE_ALLOW  ,  null); // "Notify Enable"
                 String  notifyEmail = AttributeTools.getRequestString(  request, PARM_DEV_RULE_EMAIL  ,  null);
                 boolean alertReset  = AttributeTools.getRequestCheckbox(request, PARM_LAST_ALERT_RESET);
                 String  ruleSel     = AttributeTools.getRequestString(  request, PARM_DEV_RULE_SEL    ,  null);
@@ -1164,12 +1192,12 @@ public class DeviceInfo
                 String  ruleSubj    = AttributeTools.getRequestString(  request, PARM_DEV_RULE_SUBJ   ,  null);
                 String  ruleText    = AttributeTools.getRequestString(  request, PARM_DEV_RULE_TEXT   ,  null);
               //String  ruleWrap    = AttributeTools.getRequestString(  request, PARM_DEV_RULE_WRAP   ,  null);
-                // Allow Notification
+                // -- Allow Notification
                 boolean allowNtfy = ComboOption.parseYesNoText(locale, ruleAllow, true);
                 if (selDev.getAllowNotify() != allowNtfy) { 
                     selDev.setAllowNotify(allowNtfy); 
                 }
-                // Notification email
+                // -- Notification email
                 if (notifyEmail != null) {
                     String devNE = selDev.getNotifyEmail();  // no acct/user email
                     if (StringTools.isBlank(notifyEmail)) {
@@ -1186,55 +1214,64 @@ public class DeviceInfo
                         selDev.setError(msg);
                     }
                 }
-                // notification selector
+                // -- notification selector
                 if (ruleSel != null) {
                     if (DeviceInfo.ShowNotifySelector() && !Device.CheckSelectorSyntax(ruleSel)) {
                         Print.logInfo("Notification selector has a syntax error: " + ruleSel);
                         msg = i18n.getString("DeviceInfo.ruleError","Notification rule contains a syntax error");
                         selDev.setError(msg);
                     } else {
-                        // update rule selector (if changed)
+                        // -- update rule selector (if changed)
                         if (!selDev.getNotifySelector().equals(ruleSel)) {
                             selDev.setNotifySelector(ruleSel);
                         }
                         //selDev.setAllowNotify(!StringTools.isBlank(ruleSel));
                     }
                 }
-                // notification description
+                // -- notification description
                 if (ruleDesc != null) {
                     if (!selDev.getNotifyDescription().equals(ruleDesc)) {
                         selDev.setNotifyDescription(ruleDesc);
                     }
                 }
-                // notification subject
+                // -- notification subject
                 if (ruleSubj != null) {
                     if (!selDev.getNotifySubject().equals(ruleSubj)) {
                         selDev.setNotifySubject(ruleSubj);
                     }
                 }
-                // notification message
+                // -- notification message
                 if (ruleText != null) {
                     if (!selDev.getNotifyText().equals(ruleText)) {
                         selDev.setNotifyText(ruleText);
                     }
                 }
-                // notify wrapper
+                // -- notify wrapper
                 boolean ntfyWrap = false; // ComboOption.parseYesNoText(locale, ruleWrap, true);
                 if (selDev.getNotifyUseWrapper() != ntfyWrap) { 
                     selDev.setNotifyUseWrapper(ntfyWrap); 
                 }
-                // last-notify-time reset
+                // -- last-notify-time reset
                 if ((selDev.getLastNotifyTime() != 0L) && alertReset) {
                     selDev.clearLastNotifyEvent(false/*nosave*/);
                 }
             }
-            // Active Corridor
-            if (Device.supportsActiveCorridor()) {
+            // -- Active Corridor
+            if (Device.hasENRE() && Device.supportsActiveCorridor()) {
                 if (!selDev.getActiveCorridor().equals(actvCorr)) {
                     selDev.setActiveCorridor(actvCorr);
                 }
             }
-            // WorkOrder ID
+            // -- BorderCrossing
+            if (acctBCEnabled && Device.supportsBorderCrossing()) {
+                int bcState = ComboOption.parseYesNoText(locale,borderCross,true)?
+                    Device.BorderCrossingState.ON.getIntValue() :
+                    Device.BorderCrossingState.OFF.getIntValue();
+                if (selDev.getBorderCrossing() != bcState) {
+                    selDev.setBorderCrossing(bcState);
+                }
+            }
+            // -- WorkOrder ID
             /*
             if (_showWorkOrderID(privLabel)) {
                 if (!selDev.getWorkOrderID().equals(worderID)) {
@@ -1242,21 +1279,21 @@ public class DeviceInfo
                 }
             }
             */
-            // DCS properties ID
+            // -- DCS properties ID
             boolean showDCSPropID = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showDcsPropertiesID,SHOW_DCS_PROPERTIES_ID);
             if (showDCSPropID) {
                 if (!selDev.getDcsPropertiesID().equals(dcsPropsID)) {
                     selDev.setDcsPropertiesID(dcsPropsID);
                 }
             }
-            // DCS config string
+            // -- DCS config string
             boolean showDCSCfgStr = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showDcsConfigString,SHOW_DCS_CONFIG_STRING);
             if (showDCSCfgStr) {
                 if (!selDev.getDcsConfigString().equals(dcsCfgStr)) {
                     selDev.setDcsConfigString(dcsCfgStr);
                 }
             }
-            // Preferred Group ID
+            // -- Preferred Group ID
             boolean showPrefGrp = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showPreferredGroupID,SHOW_PREFERRED_GROUP);
             if (showPrefGrp) {
                 String pgid = !DeviceGroup.DEVICE_GROUP_ALL.equalsIgnoreCase(prefGrpID)? prefGrpID : ""; // "all" ==> ""
@@ -1264,13 +1301,13 @@ public class DeviceInfo
                     selDev.setGroupID(pgid);
                 }
             }
-            // DeviceGroups
+            // -- DeviceGroups
             if (!selDev.hasError()) {
                 String accountID = selDev.getAccountID();
                 String deviceID  = selDev.getDeviceID();
-                // 'grpKey' may only contain 'checked' items!
+                // -- 'grpKey' may only contain 'checked' items!
                 OrderedSet<String> fullGroupSet = reqState.getDeviceGroupIDList(true);
-                // add checked groups
+                // -- add checked groups
                 if (!ListTools.isEmpty(grpKeys)) {
                     for (int i = 0; i < grpKeys.length; i++) {
                         String grpID = grpKeys[i].substring(PARM_DEV_GROUP_.length());
@@ -1294,7 +1331,7 @@ public class DeviceInfo
                         }
                     }
                 }
-                // delete remaining (unchecked) groups
+                // -- delete remaining (unchecked) groups
                 for (Iterator i = fullGroupSet.iterator(); i.hasNext();) {
                     String grpID = (String)i.next();
                     if (!grpID.equalsIgnoreCase(DeviceGroup.DEVICE_GROUP_ALL)) {
@@ -1307,7 +1344,7 @@ public class DeviceInfo
                     }
                 }
             }
-            // Custom Attributes
+            // -- Custom Attributes
             if (!ListTools.isEmpty(cstKeys)) {
                 String oldCustAttr = selDev.getCustomAttributes();
                 RTProperties rtp = selDev.getCustomAttributesRTP();
@@ -1323,9 +1360,9 @@ public class DeviceInfo
                     selDev.setCustomAttributes(rtpStr);
                 }
             }
-            // save
+            // -- save
             if (selDev.hasError()) {
-                // should stay on same page
+                // -- should stay on same page
                 Print.logInfo("An error occured during Edit ...");
             } else
             if (selDev.hasChanged()) {
@@ -1336,7 +1373,7 @@ public class DeviceInfo
                 String grpTitles[] = reqState.getDeviceGroupTitles();
                 msg = i18n.getString("DeviceInfo.updatedDeviceGroups","{0} membership updated", grpTitles);
             } else {
-                // nothing changed
+                // -- nothing changed
                 Print.logInfo("Nothing has changed for this Device ...");
             }
         } catch (Throwable t) {
@@ -1366,6 +1403,7 @@ public class DeviceInfo
         final String       currAcctID    = reqState.getCurrentAccountID();
         final User         currUser      = reqState.getCurrentUser(); // may be null
         final String       pageName      = this.getPageName();
+        final boolean      acctBCEnabled = ((currAcct!=null)&&currAcct.getIsBorderCrossing())?true:false;
         String m = pageMsg;
         boolean error = false;
         String cmdBtnTitle = i18n.getString("DeviceInfo.commands","Commands"); // included here to maintain I18N string
@@ -1406,7 +1444,8 @@ public class DeviceInfo
                 allowDelete = false;
             }
         } else
-        if (currAcct.exceedsMaximumDevices(currAcct.getDeviceCount()+1,true/*0=unlimited*/)) {
+        if ((currAcct == null) || 
+            currAcct.exceedsMaximumDevices(currAcct.getDeviceCount()+1,true/*0=unlimited*/)) {
             // deny if over limit
             Print.logInfo("Allow New Device? Deny - over limit");
             allowNew    = false;
@@ -1467,6 +1506,8 @@ public class DeviceInfo
         boolean viewFuelCap  = editFuelCap   || privLabel.hasReadAccess( currUser, this.getAclName(_ACL_FUEL_CAPACITY));
         boolean editFuelEco  = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_FUEL_ECONOMY ));
         boolean viewFuelEco  = editFuelEco   || privLabel.hasReadAccess( currUser, this.getAclName(_ACL_FUEL_ECONOMY ));
+        boolean editFuelCst  = sysadminLogin || privLabel.hasWriteAccess(currUser, this.getAclName(_ACL_FUEL_ECONOMY ));
+        boolean viewFuelCst  = editFuelCst   || privLabel.hasReadAccess( currUser, this.getAclName(_ACL_FUEL_ECONOMY ));
 
         /* command */
         String  deviceCmd    = reqState.getCommandName();
@@ -2168,6 +2209,8 @@ public class DeviceInfo
             final boolean _viewFuelCap = _uiView && viewFuelCap;
             final boolean _editFuelEco = _uiEdit && editFuelEco;
             final boolean _viewFuelEco = _uiView && viewFuelEco;
+            final boolean _editFuelCst = _uiEdit && editFuelCst;
+            final boolean _viewFuelCst = _uiView && viewFuelCst;
             HTML_CONTENT = new HTMLOutput(CommonServlet.CSS_CONTENT_FRAME, m) {
                 public void write(PrintWriter out) throws IOException {
                     String editURL        = DeviceInfo.this.encodePageURL(reqState);//,RequestProperties.TRACK_BASE_URI());
@@ -2177,6 +2220,8 @@ public class DeviceInfo
                     boolean ppidOK        = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showPushpinID,SHOW_PUSHPIN_ID);
                     boolean dcolorOK      = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showDisplayColor,SHOW_DISPLAY_COLOR);
                     boolean notesOK       = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showNotes,SHOW_NOTES);
+                    boolean lastOdomOK    = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showReportedOdometer,SHOW_REPORTED_ODOM);
+                    boolean lastEngHrsOK  = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showReportedEngineHours,SHOW_REPORTED_ENG_HRS);
                     boolean maintOdomOK   = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showMaintenanceOdometer,SHOW_MAINTENANCE_ODOM);
                     boolean maintHoursOK  = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showMaintenanceHours,SHOW_MAINTENANCE_HOURS);
                     boolean maintNotesOK  = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showMaintenanceNotes,SHOW_MAINTENANCE_NOTES);
@@ -2189,6 +2234,7 @@ public class DeviceInfo
                     boolean speedLimOK    = Device.hasRuleFactory(); // || privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showSpeedLimit,SHOW_SPEED_LIMIT);
                     boolean showFuelCap   = true;
                     boolean showFuelEcon  = DBConfig.hasExtraPackage();
+                    boolean showFuelCost  = showFuelEcon;
                     boolean fixLocOK      = (_selDev != null) && Device.supportsFixedLocation() && 
                         privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_showFixedLocation,SHOW_FIXED_LOCATION);
                     boolean edServID_     = _editServID && ((_selDev == null) || (_selDev.getLastConnectTime() <= 0L)) &&
@@ -2232,7 +2278,7 @@ public class DeviceInfo
                     String lastEventTime   = reqState.formatDateTime(reqState.getLastEventTime());
                     if (StringTools.isBlank(lastEventTime  )) { lastEventTime   = i18n.getString("DeviceInfo.noLastEvent"   ,"none" ); }
 
-                    // frame header
+                    /* frame header */
                     String frameTitle = _allowEdit? 
                         i18n.getString("DeviceInfo.viewEditDevice","View/Edit {0} Information", devTitles) : 
                         i18n.getString("DeviceInfo.viewDevice","View {0} Information", devTitles);
@@ -2374,27 +2420,38 @@ public class DeviceInfo
                         }
                         out.println(FormRow_ComboBox( PARM_IGNITION_INDEX, _uiEdit   , i18n.getString("DeviceInfo.ignitionIndex","Ignition Input") +":" , ignSel, ignList, "", -1, i18n.getString("DeviceInfo.ignitionIndexDesc","(ignition input line, if applicable)")));
                     }
-                    // fuel capacity
+                    // -- fuel capacity
                     if (showFuelCap && _viewFuelCap) {
                         double fuelCapUnits = (_selDev!=null)? volmUnits.convertFromLiters(_selDev.getFuelCapacity()) : 0.0;
                         String fuelCapStr   = StringTools.format(fuelCapUnits, "0.0");
                         out.println(FormRow_TextField(PARM_DEV_FUEL_CAP    , _editFuelCap, i18n.getString("DeviceInfo.fuelCapacity","Fuel Capacity") +":"      , fuelCapStr                                     , 10, 10, volmUnitsStr));
                     }
-                    // fuel economy
+                    // -- fuel economy
                     if (showFuelEcon && _viewFuelEco) {
                         double fuelEconUnits = (_selDev!=null)? econUnits.convertFromKPL(_selDev.getFuelEconomy()) : 0.0;
                         String fuelEconStr   = StringTools.format(fuelEconUnits, "0.0");
                         out.println(FormRow_TextField(PARM_DEV_FUEL_ECON   , _editFuelEco, i18n.getString("DeviceInfo.fuelEconomy","Fuel Economy") +":"        , fuelEconStr                                    , 10, 10, econUnitsStr));
                     }
-                    // Speed Limit
+                    // -- fuel cost
+                    if (showFuelCost && _viewFuelCst) {
+                        double unitsPerLiter = volmUnits.convertFromLiters(1.0);
+                        double litersPerUnit = (unitsPerLiter > 0.0)? (1.0 / unitsPerLiter) : 0.0;
+                        double costPerLiter  = (_selDev!=null)? _selDev.getFuelCostPerLiter() : 0.0;
+                        double costPerUnit   = costPerLiter * litersPerUnit;
+                        double fuelCostUnits = costPerUnit;
+                        String fuelCostStr   = StringTools.format(fuelCostUnits, "0.00");
+                        String costUnitsStr  = Account.getCurrency(currAcct) + "/" + volmUnitsStr;
+                        out.println(FormRow_TextField(PARM_DEV_FUEL_COST   , _editFuelCst, i18n.getString("DeviceInfo.fuelCost","Fuel Cost") +":"              , fuelCostStr                                    , 10, 10, costUnitsStr));
+                    }
+                    // -- Speed Limit
                     if (speedLimOK) {
                         double speedLimUnits = (_selDev!=null)? Account.getSpeedUnits(currAcct).convertFromKPH(_selDev.getSpeedLimitKPH()) : 0.0;
                         String speedLimStr   = StringTools.format(speedLimUnits, "0.0");
-                        out.println(FormRow_TextField(PARM_DEV_SPEED_LIMIT, _uiEdit  , i18n.getString("DeviceInfo.speedLimit","Maximum Speed") +":"        , speedLimStr                                    , 10, 10, speedUnitsStr));
+                        out.println(FormRow_TextField(PARM_DEV_SPEED_LIMIT, _uiEdit  , i18n.getString("DeviceInfo.speedLimit","Maximum Speed") +":"            , speedLimStr                                    , 10, 10, speedUnitsStr));
                     }
-                    // Driver ID
+                    // -- Driver ID
                     out.println(FormRow_TextField(PARM_DRIVER_ID, _uiEdit, i18n.getString("DeviceInfo.driverID","Driver ID")+":", (_selDev!=null)?_selDev.getDriverID():""       , 24, 24));
-                    // User ID
+                    // -- User ID
                     if (showAssgnUsr && Device.supportsAssignedUserID()) {
                         OrderedMap<String,String> userMap = new OrderedMap<String,String>();
                         userMap.put("", "---");
@@ -2406,19 +2463,19 @@ public class DeviceInfo
                                 userMap.put(id, desc);
                             }
                         } catch (DBException dbe) {
-                            // ignore
+                            // -- ignore
                         }
                         ComboMap userCombo = new ComboMap(userMap);
                         String userSel = (_selDev != null)? _selDev.getAssignedUserID() : "";
                       //out.println(FormRow_TextField(PARM_USER_ID, _uiEdit, i18n.getString("DeviceInfo.userID","Assigned User ID")+":", userSel , 24, 24));
                         out.println(FormRow_ComboBox(PARM_USER_ID, _uiEdit, i18n.getString("DeviceInfo.userID","Assigned User ID")+":", userSel, userCombo, "", -1));
                     }
-                    // Maintenance Section
+                    //-- Maintenance Section
                     if (Device.supportsPeriodicMaintenance()) {
-                        // add separator before odometer if maintenance is supported
+                        // -- add separator before odometer if maintenance is supported
                         out.println(FormRow_Separator());
                     }
-                    if (Device.supportsLastOdometer()) {
+                    if (lastOdomOK && Device.supportsLastOdometer()) {
                         double odomKM   = (_selDev != null)? _selDev.getLastOdometerKM() : 0.0;
                         double offsetKM = (_selDev != null)? _selDev.getOdometerOffsetKM() : 0.0;
                         double rptOdom  = distUnits.convertFromKM(odomKM + offsetKM);
@@ -2429,7 +2486,7 @@ public class DeviceInfo
                         odom_ofs += " [" + ofsText + " " + ofsStr + "]";
                         out.println(FormRow_TextField(PARM_REPORT_ODOM, _uiEdit, i18n.getString("DeviceInfo.reportOdometer","Reported Odometer") +":" , odomStr, 10, 11, odom_ofs));
                     }
-                    if (Device.supportsLastEngineHours()) {
+                    if (lastEngHrsOK && Device.supportsLastEngineHours()) {
                         double engHR    = (_selDev != null)? _selDev.getLastEngineHours() : 0.0;
                         double offsetHr = (_selDev != null)? _selDev.getEngineHoursOffset() : 0.0;
                         String hourStr  = StringTools.format(engHR + offsetHr, "0.00");
@@ -2443,13 +2500,13 @@ public class DeviceInfo
                     if (Device.supportsPeriodicMaintenance()) {
                         double offsetKM = (_selDev != null)? _selDev.getOdometerOffsetKM() : 0.0;
                         double offsetHR = (_selDev != null)? _selDev.getEngineHoursOffset() : 0.0;
-                        // Maintenance Notes
-                        if (maintNotesOK) {
+                        // -- Maintenance Notes
+                        if (maintNotesOK) { // Domain.Properties.deviceInfo.showMaintenanceNotes=false
                             String noteText = (_selDev!=null)? StringTools.decodeNewline(_selDev.getMaintNotes()) : "";
                             out.println(FormRow_TextArea(PARM_MAINT_NOTES, _uiEdit, i18n.getString("DeviceInfo.maintNotes" ,"Maintenance Notes")+":", noteText, 3, 70));
                         }
-                        // Odometer Maintenance / Interval
-                        if (maintOdomOK) {
+                        // -- Odometer Maintenance / Interval
+                        if (maintOdomOK) { // Domain.Properties.deviceInfo.showMaintenanceOdometer=false
                             for (int ndx = 0; ndx < Device.getPeriodicMaintOdometerCount(); ndx++) {
                                 String ndxStr = String.valueOf(ndx + 1);
                                 out.println(FormRow_SubSeparator());
@@ -2473,8 +2530,8 @@ public class DeviceInfo
                                 out.print("</tr>\n");
                             }
                         }
-                        // EngineHours Maintenance / Interval
-                        if (maintHoursOK) {
+                        // -- EngineHours Maintenance / Interval
+                        if (maintHoursOK) { // Domain.Properties.deviceInfo.showMaintenanceHours=false
                             for (int ndx = 0; ndx < Device.getPeriodicMaintEngHoursCount(); ndx++) {
                                 String ndxStr = String.valueOf(ndx + 1);
                                 out.println(FormRow_SubSeparator());
@@ -2498,15 +2555,15 @@ public class DeviceInfo
                                 out.print("</tr>\n");
                             }
                         }
-                        // Reminder
-                        if (reminderOK) {
+                        // -- Reminder
+                        if (reminderOK) { // Domain.Properties.deviceInfo.showReminderMessage=false
                             String remIntr = (_selDev!=null)? _selDev.getReminderInterval() : "";
                             String remText = (_selDev!=null)? StringTools.decodeNewline(_selDev.getReminderMessage()) : "";
                             out.println(FormRow_SubSeparator());
                             out.println(FormRow_TextField(PARM_REMIND_INTERVAL, _uiEdit, i18n.getString("DeviceInfo.reminderInterval","Reminder Interval") +":", remIntr, 30, 60, null));
                             out.println(FormRow_TextArea( PARM_REMIND_MESSAGE , _uiEdit, i18n.getString("DeviceInfo.reminderMessage" ,"Reminder Message")+":", remText, 3, 70));
                         }
-                        // Last/Next Service time
+                        // -- Last/Next Service time
                         if (servTimeOK) {
                             DateTime.DateStringFormat dsf = privLabel.getDateStringFormat();
                             String dateFmtTxt  = privLabel.getDateStringFormatText(locale);
@@ -2548,7 +2605,7 @@ public class DeviceInfo
                         out.print("</td>");
                         out.print("</tr>\n");
                     }
-                    // Notification Section
+                    // -- Notification Section
                     if (ntfyOK) {
                         ComboOption allowNotfy = ComboOption.getYesNoOption(locale, ((_selDev!=null) && _selDev.getAllowNotify()));
                         out.println(FormRow_Separator());
@@ -2602,8 +2659,8 @@ public class DeviceInfo
                         }
 
                     }
-                    // Active Corridor
-                    if (Device.supportsActiveCorridor()) {
+                    // -- Active Corridor
+                    if (Device.hasENRE() && Device.supportsActiveCorridor()) {
                         String actvGC   = (_selDev != null)? _selDev.getActiveCorridor() : "";
                         String gcTitle  = i18n.getString("DeviceInfo.activeCorridor","Active Corridor") + ":";
                         String gcList[] = Device.getCorridorIDsForAccount(reqState.getCurrentAccountID());
@@ -2616,7 +2673,18 @@ public class DeviceInfo
                             out.println(FormRow_TextField(PARM_ACTIVE_CORRIDOR, _uiEdit, gcTitle, actvGC, 20, 20));
                         }
                     }
-                    // WorkOrder info
+                    // -- BorderCrossing
+                    if (acctBCEnabled && Device.supportsBorderCrossing()) {
+                        long      bcTime  = (_selDev != null)? _selDev.getLastBorderCrossTime() : 0L;
+                        String    bcTimeS = reqState.formatDateTime(bcTime, "--");
+                        int       bcState = (_selDev != null)? _selDev.getBorderCrossing() : Device.BorderCrossingState.OFF.getIntValue();
+                        boolean   bcOK    = (bcState == Device.BorderCrossingState.ON.getIntValue())? true : false;
+                        ComboOption bcOpt = ComboOption.getYesNoOption(locale, bcOK);
+                        out.println(FormRow_Separator());
+                        out.println(FormRow_ComboBox (PARM_BORDER_CROSS_ENAB, _uiEdit, i18n.getString("DeviceInfo.borderCrossingEnabled","Border Crossing Enable")+":", bcOpt, ComboMap.getYesNoMap(locale), "", -1));
+                        out.println(FormRow_TextField(PARM_BORDER_CROSS_TIME, false  , i18n.getString("DeviceInfo.borderCrossingTime"   ,"Border Crossing Time"  )+":", bcTimeS, 30, 30));
+                    }
+                    // -- WorkOrder info
                     /*
                     if (_showWorkOrderID(privLabel)) {
                         String actvWO = (_selDev != null)? _selDev.getWorkOrderID() : "";

@@ -129,6 +129,7 @@ public class SysAdminAccounts
     public  static final String PARM_ACCT_SMS_PROPS             = "a_smsprops";
 
     public  static final String PARM_ACCT_RETAIN_EVENTS         = "a_retainEv";
+    public  static final String PARM_ACCT_WEB_SERVICE           = "a_wsAllow";
 
     // ------------------------------------------------------------------------
 
@@ -306,6 +307,8 @@ public class SysAdminAccounts
             privLabel.getBooleanProperty(PrivateLabel.PROP_SysAdminAccounts_showAccountManager,false);
         final boolean  showRetainEvents = 
             privLabel.getBooleanProperty(PrivateLabel.PROP_SysAdminAccounts_showRetainEvents,false);
+        final boolean  showAllowWebService = 
+            privLabel.getBooleanProperty(PrivateLabel.PROP_SysAdminAccounts_showAllowWebService,false);
         final boolean  showAutoAddDevices = 
             privLabel.getBooleanProperty(PrivateLabel.PROP_SysAdminAccounts_showAutoAddDevices,false);
         final boolean  showMaxPingCount = DBConfig.hasExtraPackage();
@@ -603,6 +606,7 @@ public class SysAdminAccounts
                 String  smsEnabledStr = AttributeTools.getRequestString(request, PARM_ACCT_SMS_ENABLED   , "");
                 String  smsProps      = AttributeTools.getRequestString(request, PARM_ACCT_SMS_PROPS     , "");
                 String  retainEvStr   = AttributeTools.getRequestString(request, PARM_ACCT_RETAIN_EVENTS , "");
+                String  wsAllowStr    = AttributeTools.getRequestString(request, PARM_ACCT_WEB_SERVICE   , "");
                 User    adminUser     = null;
                 listAccounts = true;
                 // sms default enabled?
@@ -713,6 +717,13 @@ public class SysAdminAccounts
                             }
                         } else {
                             selAccount.setRetainedEventAge(0L);
+                        }
+                    }
+                    // showAllowWebService
+                    if (showAllowWebService && isSysAdmin) {
+                        boolean wsAllow = ComboOption.parseYesNoText(locale, wsAllowStr, false);
+                        if (selAccount.getAllowWebService() != wsAllow) { 
+                            selAccount.setAllowWebService(wsAllow); 
                         }
                     }
                     // private label name
@@ -1226,7 +1237,12 @@ public class SysAdminAccounts
                     if (showRetainEvents && isSysAdmin) {
                         // show "Retain Events" field
                         ComboOption retainEvents = ComboOption.getYesNoOption(locale, ((_selAccount != null) && _selAccount.hasRetainedEventAge()));
-                        out.println(FormRow_ComboBox (PARM_ACCT_RETAIN_EVENTS, editSysAdmin, i18n.getString("SysAdminAccounts.retainEvents","Retain Events")+":"            , retainEvents, ComboMap.getYesNoMap(locale), "", -1));
+                        out.println(FormRow_ComboBox (PARM_ACCT_RETAIN_EVENTS, editSysAdmin, i18n.getString("SysAdminAccounts.retainEvents","Retain Events")+":"        , retainEvents, ComboMap.getYesNoMap(locale), "", -1));
+                    }
+                    if (showAllowWebService && isSysAdmin) {
+                        // show "Allow Web Service" field
+                        ComboOption allowWS = ComboOption.getYesNoOption(locale, ((_selAccount != null) && _selAccount.getAllowWebService()));
+                        out.println(FormRow_ComboBox (PARM_ACCT_WEB_SERVICE, editSysAdmin, i18n.getString("SysAdminAccounts.allowWebService","Allow Web Service")+":"   , allowWS     , ComboMap.getYesNoMap(locale), "", -1));
                     }
 
                     /* account properties */

@@ -381,7 +381,7 @@ public class GeneralPasswordHandler
     *** Check entered password against stored password
     *** @param enteredPass  The User entered password
     *** @param tablePass    The password value from the Account/User table
-    *** @return True if teh passwords match
+    *** @return True if the passwords match
     **/
     public boolean checkPassword(String enteredPass, String tablePass) 
     {

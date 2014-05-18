@@ -186,7 +186,8 @@ public class SendMailArgs
     *** @param args  The email arguments
     *** @return True if the email was sent, false otherwise
     **/
-    public static boolean send(SendMail.Args args)
+    public static void send(SendMail.Args args)
+        throws SendMail.SendMailException
     {
         String                       from = args.getFrom();
         String                       to[] = args.getTo();
@@ -232,11 +233,13 @@ public class SendMailArgs
         // SMTP host:port
         if (StringTools.isBlank(smtpHost) || smtpHost.endsWith("example.com")) {
             Print.logError("Null/Invalid SMTP host, not sending email");
-            return false;
+            //return false;
+            throw new SendMail.SendMailException("Null/Invalid SMTP host");
         } else
         if (smtpPort <= 0) {
             Print.logError("Invalid SMTP port, not sending email");
-            return false;
+            //return false;
+            throw new SendMail.SendMailException("Invalid SMTP port");
         }
 
         /* timeout */
@@ -265,7 +268,7 @@ public class SendMailArgs
                 props.put("mail.smtp.ssl.socketFactory.port", String.valueOf(smtpPort));
             }
         }
-        
+
         // TLS
         if (enableTLS.equals("only") || enableTLS.equals("true")) {
             props.put("mail.smtp.starttls.required"         , "true");
@@ -298,88 +301,115 @@ public class SendMailArgs
                 msg.setFrom(new InternetAddress(from));
             }
 
+            /* destination email addresses */
             InternetAddress toAddr[]  = _convertRecipients(to);
             InternetAddress ccAddr[]  = _convertRecipients(cc);
             InternetAddress bccAddr[] = _convertRecipients(bcc);
-            if ((toAddr != null) && (toAddr.length > 0)) {
-
-                /* set headers */
-                for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
-                    String k = (String)i.next();
-                    String v = headers.getProperty(k);
-                    if (v != null) {
-                        msg.setHeader(k, v);
-                    }
-                }
-
-                /* set recipients */
-                msg.setRecipients(Message.RecipientType.TO , toAddr);
-                msg.setRecipients(Message.RecipientType.CC , ccAddr);
-                msg.setRecipients(Message.RecipientType.BCC, bccAddr);
-
-                /* subject */
-                msg.setSubject(subject, StringTools.CharEncoding_UTF_8);
-
-                /* date */
-                msg.setSentDate(new Date());
-
-                /* message body/content */
-                if ((attach != null) && (attach.getSize() > 0)) {
-                    Multipart multipart = new MimeMultipart();
-                    if ((msgBody != null) && !msgBody.equals("")) {
-                        MimeBodyPart textBodyPart = new MimeBodyPart();
-                        textBodyPart.setText(msgBody, StringTools.CharEncoding_UTF_8);
-                        multipart.addBodyPart(textBodyPart);
-                    }
-                    // add attachment
-                    BodyPart attachBodyPart = new MimeBodyPart();
-                    DataSource source = new ByteArrayDataSource(attach.getName(), attach.getType(), attach.getBytes());
-                    attachBodyPart.setDataHandler(new DataHandler(source));
-                    attachBodyPart.setFileName(source.getName());
-                    multipart.addBodyPart(attachBodyPart);
-                    // set content 
-                    msg.setContent(multipart);
-                } else {
-                    msg.setText(msgBody, StringTools.CharEncoding_UTF_8);
-                    //msg.setText(msgBody); // setContent(msgBody, CONTENT_TYPE_PLAIN);
-                }
-
-                /* send email */
-                msg.saveChanges(); // implicit with send()
-                if (!USE_AUTHENTICATOR && !StringTools.isBlank(smtpUser)) {
-                    Transport transport = session.getTransport("smtp");
-                    transport.connect(smtpHost, smtpUser, (smtpPass!=null?smtpPass:""));
-                    transport.sendMessage(msg, msg.getAllRecipients());
-                    transport.close();
-                } else {
-                    Transport.send(msg);
-                }
-
-                /* success */
-                Print.logDebug("Email sent ...");
-                return true;
-
-            } else {
-
-                /* fail */
-                return false;
-
+            if ((toAddr == null) || (toAddr.length <= 0)) {
+                // -- no 'To' email address
+                Print.logError("No 'To' address specified, not sending email");
+                //return false;
+                throw new SendMail.SendMailException("No 'To' address specified");
             }
 
+            /* set headers */
+            for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
+                String k = (String)i.next();
+                String v = headers.getProperty(k);
+                if (v != null) {
+                    msg.setHeader(k, v);
+                }
+            }
+
+            /* set recipients */
+            msg.setRecipients(Message.RecipientType.TO , toAddr);
+            msg.setRecipients(Message.RecipientType.CC , ccAddr);
+            msg.setRecipients(Message.RecipientType.BCC, bccAddr);
+
+            /* subject */
+            msg.setSubject(subject, StringTools.CharEncoding_UTF_8);
+
+            /* date */
+            msg.setSentDate(new Date());
+
+            /* message body/content */
+            if ((attach != null) && (attach.getSize() > 0)) {
+                Multipart multipart = new MimeMultipart();
+                if ((msgBody != null) && !msgBody.equals("")) {
+                    MimeBodyPart textBodyPart = new MimeBodyPart();
+                    textBodyPart.setText(msgBody, StringTools.CharEncoding_UTF_8);
+                    multipart.addBodyPart(textBodyPart);
+                }
+                // add attachment
+                BodyPart attachBodyPart = new MimeBodyPart();
+                DataSource source = new ByteArrayDataSource(attach.getName(), attach.getType(), attach.getBytes());
+                attachBodyPart.setDataHandler(new DataHandler(source));
+                attachBodyPart.setFileName(source.getName());
+                multipart.addBodyPart(attachBodyPart);
+                // set content 
+                msg.setContent(multipart);
+            } else {
+                msg.setText(msgBody, StringTools.CharEncoding_UTF_8);
+                //msg.setText(msgBody); // setContent(msgBody, CONTENT_TYPE_PLAIN);
+            }
+
+            /* send email */
+            msg.saveChanges(); // implicit with send()
+            if (!USE_AUTHENTICATOR && !StringTools.isBlank(smtpUser)) {
+                Transport transport = session.getTransport("smtp");
+                transport.connect(smtpHost, smtpUser, (smtpPass!=null?smtpPass:""));
+                transport.sendMessage(msg, msg.getAllRecipients());
+                transport.close();
+            } else {
+                Transport.send(msg);
+                // java.net.ConnectException: Connection timed out
+            }
+
+            /* success */
+            Print.logDebug("Email sent ...");
+            return /*true*/;
+
         } catch (MessagingException me) {
-            
+
+            /* error */
+            String message = null;
+            boolean retry = false;
+            SendMail.SendMailException rtn = null;
             Print.logStackTrace("Unable to send email [host="+smtpHost+"; port="+smtpPort+"]", me);
             for (Exception ex = me; ex != null;) {
                 if (ex instanceof SendFailedException) {
+                    // javax.mail.SendFailedException
+                    // -- unable to send to some of the listed recipients
                     SendFailedException sfex = (SendFailedException)ex;
                     _printAddresses("Invalid:"     , sfex.getInvalidAddresses());
                     _printAddresses("Valid Unsent:", sfex.getValidUnsentAddresses());
                     _printAddresses("Valid Sent:"  , sfex.getValidSentAddresses());
+                    message = "Partial send";
+                    retry   = false;
+                } else
+                if (ex instanceof ConnectException) {
+                    // java.net.ConnectException: Connection timed out
+                    // -- save/retry?
+                    message = "Connection Error";
+                    retry   = true;
+                } else
+                if (ex instanceof AuthenticationFailedException) {
+                    // javax.mail.AuthenticationFailedException: failed to connect
+                    // -- save/retry?
+                    message = "Authentication Failed";
+                    retry   = true;
                 }
+                // -- next exception
                 ex = (ex instanceof MessagingException)? ((MessagingException)ex).getNextException() : null;
             }
 
-            return false;
+            /* did not send email */
+            //return false;
+            if (!StringTools.isBlank(message)) {
+                throw new SendMail.SendMailException(message,me).setRetry(retry);
+            } else {
+                throw new SendMail.SendMailException(me).setRetry(retry);
+            }
 
         }
 

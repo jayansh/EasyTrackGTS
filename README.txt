@@ -30,19 +30,14 @@ Notes:
        Sanav GX-101 Vehicle Tracker (HTTP-based protocol).
        [http://www.sanav.com]
      - V-Sun 3338 Personal Tracker.
-     - Android App "GPS2OpenGTS"
-       [http://www.androidzoom.com/android_applications/communication/gps2opengts_nfsk_download.html]
-     - iCare G3300 Personal Tracker.
+     - CelltracGTS/Free Android application
+     - GPS2OpenGTS Android application 
      - Most TK102/TK103 devices.
-     - Xexun TK102.
      - ZhongShan SIPGEAR Technology Co, Ltd.
      - TAIP (Trimble ASCII Interface Protocol).
      - TrackStick GPS data logger.
      - "GPSMapper" capable phones.
      - "NetGPS" capable devices.
-     - HP hw6965 Windows/CE phone (OpenDMTP compliant)
-     - Mologogo capable phones
-     - Various Boost Mobile phones (OpenDMTP compliant)
 
 Please let us know if you find any issues with this release.
 

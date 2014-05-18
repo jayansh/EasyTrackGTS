@@ -108,6 +108,8 @@ public class DBConfig
 
     public  static final String PACKAGE_OPT                     = PACKAGE_OPENGTS_ + "opt";        // "org.opengts.opt"
     public  static final String PACKAGE_OPT_                    = PACKAGE_OPT      + ".";          // "org.opengts.opt."
+    private static final String PACKAGE_OPT_TABLES              = PACKAGE_OPT_     + "tables";     // "org.opengts.opt.tables"
+    public  static final String PACKAGE_OPT_TABLES_             = PACKAGE_OPT_     + "tables.";    // "org.opengts.opt.tables."
     public  static final String PACKAGE_OPT_AUDIT_              = PACKAGE_OPT_     + "audit.";     // "org.opengts.opt.audit."
     public  static final String PACKAGE_OPT_WAR_                = PACKAGE_OPT_     + "war.";       // "org.opengts.opt.war."
 
@@ -285,6 +287,20 @@ public class DBConfig
     **/
     public static final String PROP_Account_defaultTimeZone             = "Account.defaultTimeZone";
 
+    /**
+    *** Runtime Configuration Property<br>
+    *** Default Account Currency<br>
+    *** Type: String (valid Currency value)
+    **/
+    public static final String PROP_Account_defaultCurrency             = "Account.defaultCurrency";
+
+    /**
+    *** Runtime Configuration Property<br>
+    *** Default Account Currency Symbol<br>
+    *** Type: String (valid Currency Symbol)
+    **/
+    public static final String PROP_Account_defaultCurrencySymbol       = "Account.defaultCurrencySymbol";
+
     // -------
 
     /**
@@ -459,6 +475,13 @@ public class DBConfig
 
     /**
     *** Runtime Configuration Property<br>
+    *** Allow the use of "count(*)" in InnoDB EventData table, if the request has a "WHERE" clause<br>
+    *** Type: Boolean
+    **/
+    public static final String PROP_EventData_allowInnoDBCountWithWhere = "EventData.allowInnoDBCountWithWhere";
+
+    /**
+    *** Runtime Configuration Property<br>
     *** Create alternate keyed "adtime" in EventData over accountID/deviceID/timestamp<br>
     *** Type: Boolean
     **/
@@ -490,6 +513,13 @@ public class DBConfig
 
     /**
     *** Runtime Configuration Property<br>
+    *** Maximum number of vertices allowed in a Geozone<br>
+    *** Type: Integer
+    **/
+    public static final String PROP_Geozone_maximumVertices             = "Geozone.maximumVertices";
+
+    /**
+    *** Runtime Configuration Property<br>
     *** Default Radius (in meters) for PointRadius Geozones<br>
     *** Type: Integer
     **/
@@ -497,7 +527,7 @@ public class DBConfig
     
     /**
     *** Runtime Configuration Property<br>
-    *** Default Radius (in meters) for Polygon Geozones<br>
+    *** Default Radius (in meters) for Polygon Geozones (NOT USED)<br>
     *** Type: Integer
     **/
     public static final String PROP_Geozone_dftRadius_polygon           = "Geozone.dftRadius.polygon";
@@ -758,6 +788,7 @@ public class DBConfig
         new RTKey.Entry(PROP_Device_maximumOdometerKM               , 1000000.0                     , "Maximum Odometer value"),
         new RTKey.Entry(PROP_Device_maximumRuntimeHours             , 24.0 * 365.0 * 30.0           , "Maximum Runtime hours value"),
         new RTKey.Entry(PROP_EventData_keyedCreationTime            , false                         , "Keyed 'EventData.creationTime'"),
+        new RTKey.Entry(PROP_Geozone_maximumVertices                , -1                            , "Maximum Number of Geozone Vertices"),
         new RTKey.Entry(PROP_Geozone_dftRadius_pointRadius          , 3000                          , "Default Point Radius"),
         new RTKey.Entry(PROP_Geozone_dftRadius_polygon              , 500                           , "Default Polygon Radius"),
         new RTKey.Entry(PROP_Geozone_dftRadius_sweptPointRadius     , 1000                          , "Default SweptPoint Radius"),
@@ -1005,6 +1036,14 @@ public class DBConfig
             PACKAGE_EXTRA_TABLES_ + "WorkZoneList"
         };
         for (String tableClassName : workZoneTables) {
+            DBAdmin.addTableFactory(tableClassName, false/*optional*/);
+        }
+
+        /* optional tables (optional) */
+        String optTables[] = new String[] {
+            PACKAGE_OPT_TABLES_ + "Celltrac"
+        };
+        for (String tableClassName : optTables) {
             DBAdmin.addTableFactory(tableClassName, false/*optional*/);
         }
 
@@ -1421,6 +1460,7 @@ public class DBConfig
                 //}
             } else {
                 String tableOptions = RTConfig.getString(ARG_INIT_TABLES,"");
+                //Print.logInfo("Setting '-tables' to '"+tableOptions+"'");
                 RTConfig.setString(DBAdmin.ARG_TABLES[0], tableOptions);
             }
             // The following are required:

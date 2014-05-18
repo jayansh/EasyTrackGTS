@@ -778,7 +778,7 @@ public abstract class ReportLayout
                     String desc = devGrp.getDescription();
                     return !desc.equals("")? desc : devGrp.getGroupID();
                 } else {
-                    return DeviceGroup.GetDeviceGroupAll(rd.getLocale());
+                    return DeviceGroup.GetDeviceGroupAllTitle(rd.getAccount(), rd.getLocale());
                 }
             }
         });

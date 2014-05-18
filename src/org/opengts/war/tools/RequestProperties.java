@@ -311,7 +311,19 @@ public class RequestProperties
             return null;
         }
     }
-    
+
+    /* pass-through for "request.isSecure()" */
+    public boolean isSecure()
+    {
+        if (this.request != null) {
+            return this.request.isSecure();
+        } else {
+            return false; // assume false
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
     /* SOAP request? */
     public void setSoapRequest(boolean soap)
     {
@@ -1044,7 +1056,7 @@ public class RequestProperties
                     return !n.equals("")? n : grpID;
                 } else {
                     if (grpID.equalsIgnoreCase(DeviceGroup.DEVICE_GROUP_ALL)) {
-                        return DeviceGroup.GetDeviceGroupAll(this.getLocale());
+                        return DeviceGroup.GetDeviceGroupAllTitle(acct, this.getLocale());
                     } else {
                         return grpID;
                     }
@@ -2103,6 +2115,8 @@ public class RequestProperties
     public static final String KEY_economyUnits         = "economyUnits";
     public static final String KEY_pressureUnits        = "pressureUnits";
     public static final String KEY_volumeUnits          = "volumeUnits";
+    public static final String KEY_currency             = "currency";
+    public static final String KEY_currencySymbol       = "currencySymbol";
     public static final String KEY_statusCodeDesc       = "statusCodeDesc";
     public static final String KEY_version              = "version";
     public static final String KEY_hostname             = "hostname";
@@ -2435,7 +2449,7 @@ public class RequestProperties
                     return i18n.getString("RequestProperties.users","Users");
                 }
             });
-            
+
             /* Units */
             propKeyMap.put(KEY_speedUnits, new KeyValue() {
                 public String getValue(RequestProperties reqState, String arg) {
@@ -2495,6 +2509,20 @@ public class RequestProperties
                 public String getValue(RequestProperties reqState, String arg) {
                     Account acct = reqState.getCurrentAccount(); // may be null;
                     return Account.getVolumeUnits(acct).toString(reqState.getLocale());
+                }
+            });
+
+            /* Currency */
+            propKeyMap.put(KEY_currency, new KeyValue() {
+                public String getValue(RequestProperties reqState, String arg) {
+                    Account acct = reqState.getCurrentAccount(); // may be null;
+                    return Account.getCurrency(acct);
+                }
+            });
+            propKeyMap.put(KEY_currencySymbol, new KeyValue() {
+                public String getValue(RequestProperties reqState, String arg) {
+                    Account acct = reqState.getCurrentAccount(); // may be null;
+                    return Account.getCurrencySymbol(acct);
                 }
             });
 

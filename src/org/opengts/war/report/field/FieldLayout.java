@@ -128,6 +128,8 @@ public class FieldLayout
     public static final String  DATA_DEVICE_ID              = "deviceId";           // field
     public static final String  DATA_DEVICE_DESC            = "deviceDesc";
     public static final String  DATA_DEVICE_BATTERY         = "deviceBattery";
+    public static final String  DATA_DEVICE_LICENSE_EXP     = "deviceLicenseExp";   
+    public static final String  DATA_DEVICE_INSURANCE_EXP   = "deviceInsuranceExp";   
 
     public static final String  DATA_VEHICLE_ID             = "vehicleId";          // field
     public static final String  DATA_LICENSE_PLATE          = "licensePlate";       // field
@@ -636,6 +638,152 @@ public class FieldLayout
                 public String getTitle(ReportData rd, ReportColumn rc) {
                     I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
                     return i18n.getString("FieldLayout.deviceBattery","Last\nBattery");
+                }
+            });
+
+            // Device expirations
+            this.addColumnTemplate(new DataColumnTemplate(DATA_DEVICE_LICENSE_EXP) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    FieldData fd = (FieldData)obj;
+                    long licExp = 0L;
+                    if (fd.hasValue(DATA_DEVICE_LICENSE_EXP)) {
+                        licExp = fd.getLong(DATA_DEVICE_LICENSE_EXP);
+                    } else {
+                        Device device = fd.getDevice();
+                        licExp = (device != null)? device.getLicenseExpire() : 0L;
+                    }
+                    if (licExp > 0L) {
+                        TimeZone tz = rd.getTimeZone();
+                        long currdn = DateTime.getCurrentDayNumber(tz);
+                        long days = licExp - currdn;
+                        boolean expired = (days <= 0L)? true : false;
+                        if (arg.equalsIgnoreCase("days")) {
+                            I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                            String expStr = "";
+                            ColorTools.RGB fgColor = null;
+                            if (days < 0L) {
+                                // Red: Expired
+                                expStr = i18n.getString("FieldLayout.expired", "Expired");
+                                fgColor = ColorTools.RED;
+                            } else
+                            if (days == 0L) {
+                                // Red: Today
+                                expStr = i18n.getString("FieldLayout.today", "Today");
+                                fgColor = ColorTools.RED;
+                            } else
+                            if (days == 1L) {
+                                // Yellow: Tomorrow
+                                //expStr = i18n.getString("FieldLayout.nday", "{0} day", String.valueOf(days));
+                                expStr = i18n.getString("FieldLayout.tomorrow", "Tomorrow");
+                                fgColor = ColorTools.DARK_YELLOW;
+                            } else
+                            if (days <= 30L) {
+                                // Yellow: N days from now
+                                expStr = i18n.getString("FieldLayout.ndays", "{0} days", String.valueOf(days));
+                                fgColor = ColorTools.DARK_YELLOW;
+                            } else {
+                                // Green/Black: N days from now
+                                expStr = i18n.getString("FieldLayout.ndays", "{0} days", String.valueOf(days));
+                                //fgColor = ColorTools.GREEN;
+                            }
+                            ColumnValue cv = new ColumnValue(expStr).setSortKey(licExp);
+                            if (fgColor != null) {
+                                cv.setForegroundColor(fgColor);
+                            }
+                            return fd.filterReturnedValue(DATA_DEVICE_LICENSE_EXP, cv);
+                        } else {
+                            ReportLayout rl = rd.getReportLayout();
+                            DayNumber dn = new DayNumber(licExp);
+                            String dnFmt = dn.format(rl.getDateFormat(rd.getPrivateLabel()));
+                            ColumnValue cv = new ColumnValue(dnFmt).setSortKey(licExp);
+                            if (days <= 0L) {
+                                cv.setForegroundColor(ColorTools.RED);
+                            } else
+                            if (days <= 30L) {
+                                cv.setForegroundColor(ColorTools.DARK_YELLOW);
+                            }
+                            return fd.filterReturnedValue(DATA_DEVICE_LICENSE_EXP, cv);
+                        }
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    return i18n.getString("FieldLayout.deviceLicenseExpire","Device\nLicense Exp");
+                }
+            });
+            this.addColumnTemplate(new DataColumnTemplate(DATA_DEVICE_INSURANCE_EXP) {
+                public Object getColumnValue(int rowNdx, ReportData rd, ReportColumn rc, Object obj) {
+                    String arg = rc.getArg();
+                    FieldData fd = (FieldData)obj;
+                    long licExp = 0L;
+                    if (fd.hasValue(DATA_DEVICE_INSURANCE_EXP)) {
+                        licExp = fd.getLong(DATA_DEVICE_INSURANCE_EXP);
+                    } else {
+                        Device device = fd.getDevice();
+                        licExp = (device != null)? device.getInsuranceExpire() : 0L;
+                    }
+                    if (licExp > 0L) {
+                        TimeZone tz = rd.getTimeZone();
+                        long currdn = DateTime.getCurrentDayNumber(tz);
+                        long days = licExp - currdn;
+                        boolean expired = (days <= 0L)? true : false;
+                        if (arg.equalsIgnoreCase("days")) {
+                            I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                            String expStr = "";
+                            ColorTools.RGB fgColor = null;
+                            if (days < 0L) {
+                                // Red: Expired
+                                expStr = i18n.getString("FieldLayout.expired", "Expired");
+                                fgColor = ColorTools.RED;
+                            } else
+                            if (days == 0L) {
+                                // Red: Today
+                                expStr = i18n.getString("FieldLayout.today", "Today");
+                                fgColor = ColorTools.RED;
+                            } else
+                            if (days == 1L) {
+                                // Yellow: Tomorrow
+                                //expStr = i18n.getString("FieldLayout.nday", "{0} day", String.valueOf(days));
+                                expStr = i18n.getString("FieldLayout.tomorrow", "Tomorrow");
+                                fgColor = ColorTools.DARK_YELLOW;
+                            } else
+                            if (days <= 30L) {
+                                // Yellow: N days from now
+                                expStr = i18n.getString("FieldLayout.ndays", "{0} days", String.valueOf(days));
+                                fgColor = ColorTools.DARK_YELLOW;
+                            } else {
+                                // Green/Black: N days from now
+                                expStr = i18n.getString("FieldLayout.ndays", "{0} days", String.valueOf(days));
+                                //fgColor = ColorTools.GREEN;
+                            }
+                            ColumnValue cv = new ColumnValue(expStr).setSortKey(licExp);
+                            if (fgColor != null) {
+                                cv.setForegroundColor(fgColor);
+                            }
+                            return fd.filterReturnedValue(DATA_DEVICE_INSURANCE_EXP, cv);
+                        } else {
+                            ReportLayout rl = rd.getReportLayout();
+                            DayNumber dn = new DayNumber(licExp);
+                            String dnFmt = dn.format(rl.getDateFormat(rd.getPrivateLabel()));
+                            ColumnValue cv = new ColumnValue(dnFmt).setSortKey(licExp);
+                            if (days <= 0L) {
+                                cv.setForegroundColor(ColorTools.RED);
+                            } else
+                            if (days <= 30L) {
+                                cv.setForegroundColor(ColorTools.DARK_YELLOW);
+                            }
+                            return fd.filterReturnedValue(DATA_DEVICE_INSURANCE_EXP, cv);
+                        }
+                    } else {
+                        return rc.getBlankFiller();
+                    }
+                }
+                public String getTitle(ReportData rd, ReportColumn rc) {
+                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    return i18n.getString("FieldLayout.deviceInsuranceExpire","Device\nInsurance Exp");
                 }
             });
 
@@ -3113,7 +3261,7 @@ public class FieldLayout
                     if (fd.hasValue(DATA_ENTER_FUEL)) {
                         double fuel = fd.getDouble(DATA_ENTER_FUEL); // Liters
                         if (fuel > 0.0) {
-                            Device dev = fd.getDevice();
+                            //Device dev = fd.getDevice();
                             fuel = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(fuel);
                             return fd.filterReturnedValue(DATA_ENTER_FUEL,formatDouble(fuel, arg, "#0"));
                         } else {
@@ -3291,7 +3439,7 @@ public class FieldLayout
                     if (fd.hasValue(DATA_EXIT_FUEL)) {
                         double fuel = fd.getDouble(DATA_EXIT_FUEL); // Liters
                         if (fuel > 0.0) {
-                            Device dev = fd.getDevice();
+                            //Device dev = fd.getDevice();
                             fuel = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(fuel);
                             return fd.filterReturnedValue(DATA_EXIT_FUEL,formatDouble(fuel, arg, "#0"));
                         } else {
@@ -4265,10 +4413,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_CAPACITY)) {
-                        double vol = fd.getDouble(DATA_FUEL_CAPACITY); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_CAPACITY,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_CAPACITY); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_CAPACITY,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_CAPACITY,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4277,8 +4438,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelCapacity","Fuel Capacity") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelCapacity","Fuel Capacity");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_LEVEL) {
@@ -4315,10 +4484,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_TOTAL)) {
-                        double vol = fd.getDouble(DATA_FUEL_TOTAL); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_TOTAL,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_TOTAL); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_TOTAL,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_TOTAL,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4327,8 +4509,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelTotal","Total Fuel") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelTotal","Total Fuel");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_REMAIN) {
@@ -4336,10 +4526,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_REMAIN)) {
-                        double vol = fd.getDouble(DATA_FUEL_REMAIN); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_REMAIN,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_REMAIN); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_REMAIN,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_REMAIN,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4348,8 +4551,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelRemain","Remaining Fuel") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelRemain","Remaining Fuel");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_TRIP) {
@@ -4357,10 +4568,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_TRIP)) {
-                        double vol = fd.getDouble(DATA_FUEL_TRIP); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_TRIP,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_TRIP); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_TRIP,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_TRIP,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4369,8 +4593,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelTrip","Trip Fuel") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelTrip","Trip Fuel");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_TRIP_WH) {
@@ -4378,10 +4610,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_TRIP_WH)) {
-                        double vol = fd.getDouble(DATA_FUEL_TRIP_WH); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_TRIP_WH,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_TRIP_WH); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_TRIP_WH,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_TRIP_WH,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4390,8 +4635,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelTripWorkHours","Trip Fuel\nWork Hours") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelTripWorkHours","Trip Fuel\nWork Hours");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_TRIP_AH) {
@@ -4399,10 +4652,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_TRIP_AH)) {
-                        double vol = fd.getDouble(DATA_FUEL_TRIP_AH); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_TRIP_AH,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_TRIP_AH); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_TRIP_AH,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_TRIP_AH,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4411,9 +4677,22 @@ public class FieldLayout
                         double ft   = fd.getDouble(DATA_FUEL_TRIP); // liters
                         double ftwh = fd.getDouble(DATA_FUEL_TRIP_WH); // liters
                         if ((ft >= 0.0) && (ft > ftwh)) {
-                            double vol = ft - ftwh;
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_TRIP_AH,formatDouble(vol, arg, "#0.0"));
+                            double literVol = ft - ftwh; // liters
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_TRIP_AH,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_TRIP_AH,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4422,8 +4701,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelTripAfterHours","Trip Fuel\nAfter Hours") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelTripAfterHours","Trip Fuel\nAfter Hours");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_IDLE) {
@@ -4431,10 +4718,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_IDLE)) {
-                        double vol = fd.getDouble(DATA_FUEL_IDLE); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_IDLE,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_IDLE); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_IDLE,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_IDLE,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4443,8 +4743,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelIdle","Idle Fuel") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelIdle","Idle Fuel");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_IDLE_WH) {
@@ -4452,10 +4760,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_IDLE_WH)) {
-                        double vol = fd.getDouble(DATA_FUEL_IDLE_WH); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_IDLE_WH,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_IDLE_WH); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_IDLE_WH,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_IDLE_WH,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4464,8 +4785,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelIdleWorkHours","Idle Fuel\nWork Hours") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelIdleWorkHours","Idle Fuel\nWork Hours");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_IDLE_AH) {
@@ -4473,10 +4802,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_IDLE_AH)) {
-                        double vol = fd.getDouble(DATA_FUEL_IDLE_AH); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_IDLE_AH,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_IDLE_AH); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_IDLE_AH,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_IDLE_AH,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4485,9 +4827,22 @@ public class FieldLayout
                         double fi   = fd.getDouble(DATA_FUEL_IDLE); // liters
                         double fiwh = fd.getDouble(DATA_FUEL_IDLE_WH); // liters
                         if ((fi >= 0.0) && (fi > fiwh)) {
-                            double vol = fi - fiwh;
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_IDLE_AH,formatDouble(vol, arg, "#0.0"));
+                            double literVol = fi - fiwh; // liters
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_IDLE_AH,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_IDLE_AH,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4496,8 +4851,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelIdleWorkHours","Idle Fuel\nWork Hours") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelIdleAfterHours","Idle Fuel\nAfter Hours");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_WORK) {
@@ -4505,19 +4868,45 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_WORK)) {
-                        double vol = fd.getDouble(DATA_FUEL_WORK); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_WORK,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_WORK); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_WORK,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_WORK,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
                     } else
                     if (fd.hasValue(DATA_FUEL_TOTAL) && fd.hasValue(DATA_FUEL_IDLE)) {
-                        double vol = fd.getDouble(DATA_FUEL_TOTAL) - fd.getDouble(DATA_FUEL_IDLE); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_WORK,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_TOTAL) - fd.getDouble(DATA_FUEL_IDLE); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_WORK,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_WORK,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4526,8 +4915,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelWork","Work Fuel") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelWork","Work Fuel");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_PTO) {
@@ -4535,10 +4932,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_PTO)) {
-                        double vol = fd.getDouble(DATA_FUEL_PTO); // liters
-                        if (vol > 0.0) {
-                            vol = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(vol);
-                            return fd.filterReturnedValue(DATA_FUEL_PTO,formatDouble(vol, arg, "#0.0"));
+                        double literVol = fd.getDouble(DATA_FUEL_PTO); // liters
+                        if (literVol > 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_PTO,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_PTO,formatDouble(vol, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4547,8 +4957,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelPTO","PTO Fuel") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelPTO","PTO Fuel");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_ECONOMY) {
@@ -4558,8 +4976,16 @@ public class FieldLayout
                     if (fd.hasValue(DATA_FUEL_ECONOMY)) {
                         double econ = fd.getDouble(DATA_FUEL_ECONOMY); // kilometers per liter
                         if (econ > 0.0) {
-                            econ = Account.getEconomyUnits(rd.getAccount()).convertFromKPL(econ);
-                            return fd.filterReturnedValue(DATA_FUEL_ECONOMY,formatDouble(econ, arg, "#0.0"));
+                            Account acct = rd.getAccount();
+                            econ = Account.getEconomyUnits(acct).convertFromKPL(econ);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost (TODO: kilometers per $)
+                                //double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                return rc.getBlankFiller();
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_ECONOMY,formatDouble(econ, arg, "#0.0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4568,8 +4994,16 @@ public class FieldLayout
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelEcon","Fuel Econ") + "\n${economyUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelEcon","Fuel Econ");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost: $ per mile (TODO: not yet supported)
+                        Account acct = rd.getAccount();
+                        return title + "\n(blank)";
+                    } else {
+                        return title + "\n${economyUnits}";
+                    }
                 }
             });
             this.addColumnTemplate(new DataColumnTemplate(DATA_FUEL_ECONOMY_TYPE) {
@@ -4609,7 +5043,6 @@ public class FieldLayout
                     if (fd.hasValue(DATA_START_FUEL)) {
                         double fuel = fd.getDouble(DATA_START_FUEL); // Liters
                         if (fuel > 0.0) {
-                            Device dev = fd.getDevice();
                             fuel = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(fuel);
                             return fd.filterReturnedValue(DATA_START_FUEL,formatDouble(fuel, arg, "#0"));
                         } else {
@@ -4662,7 +5095,6 @@ public class FieldLayout
                     if (fd.hasValue(DATA_STOP_FUEL)) {
                         double fuel = fd.getDouble(DATA_STOP_FUEL); // Liters
                         if (fuel > 0.0) {
-                            Device dev = fd.getDevice();
                             fuel = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(fuel);
                             return fd.filterReturnedValue(DATA_STOP_FUEL,formatDouble(fuel, arg, "#0"));
                         } else {
@@ -4713,10 +5145,23 @@ public class FieldLayout
                     String arg = rc.getArg();
                     FieldData fd = (FieldData)obj;
                     if (fd.hasValue(DATA_FUEL_DELTA)) {
-                        double deltaFuel = fd.getDouble(DATA_FUEL_DELTA); // Liters
-                        if (deltaFuel >= 0.0) {
-                            deltaFuel = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(deltaFuel);
-                            return fd.filterReturnedValue(DATA_FUEL_DELTA,formatDouble(deltaFuel,arg,"#0"));
+                        double literVol = fd.getDouble(DATA_FUEL_DELTA); // Liters
+                        if (literVol >= 0.0) {
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_DELTA,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_DELTA,formatDouble(vol,arg,"#0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
@@ -4739,17 +5184,38 @@ public class FieldLayout
                         }
                         // -- calc delta fuel
                         if ((startFuel >= 0.0) && (stopFuel >= 0.0) && (stopFuel >= startFuel)) {
-                            double deltaFuel = stopFuel - startFuel;
-                            deltaFuel = Account.getVolumeUnits(rd.getAccount()).convertFromLiters(deltaFuel);
-                            return fd.filterReturnedValue(DATA_FUEL_DELTA,formatDouble(deltaFuel,arg,"#0"));
+                            double literVol = stopFuel - startFuel; // Liters
+                            Account acct = rd.getAccount();
+                            double vol = Account.getVolumeUnits(acct).convertFromLiters(literVol);
+                            if ((arg != null) && arg.startsWith("$")) {
+                                // -- cost
+                                double cost = Device.CalculateFuelCost(acct, fd.getDevice(), literVol);
+                                if (cost > 0.0) {
+                                    String fmt = arg.substring(1);
+                                    return fd.filterReturnedValue(DATA_FUEL_DELTA,formatDouble(cost, fmt, "#0.00"));
+                                } else {
+                                    return rc.getBlankFiller();
+                                }
+                            } else {
+                                // -- volume
+                                return fd.filterReturnedValue(DATA_FUEL_DELTA,formatDouble(vol,arg,"#0"));
+                            }
                         } else {
                             return rc.getBlankFiller();
                         }
                     }
                 }
                 public String getTitle(ReportData rd, ReportColumn rc) {
-                    I18N i18n = rd.getPrivateLabel().getI18N(FieldLayout.class);
-                    return i18n.getString("FieldLayout.fuelUsed","Fuel Used") + "\n${volumeUnits}";
+                    String arg   = rc.getArg(); // cost
+                    I18N   i18n  = rd.getPrivateLabel().getI18N(FieldLayout.class);
+                    String title = i18n.getString("FieldLayout.fuelUsed","Fuel Used");
+                    if ((arg != null) && arg.startsWith("$")) {
+                        // Cost ($)
+                        String costTitle = i18n.getString("FieldLayout.cost","Cost");
+                        return title + "\n" + costTitle + " (${currency})";
+                    } else {
+                        return title + "\n${volumeUnits}";
+                    }
                 }
             });
 

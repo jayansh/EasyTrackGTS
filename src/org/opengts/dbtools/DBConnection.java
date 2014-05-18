@@ -247,7 +247,12 @@ public class DBConnection
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    private static boolean parseCommunicationsException(SQLException sqe)
+    /**
+    *** Analyze SQLException and return true if the exception refers to a communication error.
+    *** @param sqe  The SQLException
+    *** @return True if the SQLException refers to a communication error, false otherwise.
+    **/
+    public static boolean parseCommunicationsException(SQLException sqe)
     {
 
         /* no SQLExeption? */
@@ -787,7 +792,7 @@ public class DBConnection
     {
         return this.execute(sql, false);
     }
-    
+
     /**
     *** Execute the specified SQL statement
     *** @param sql  The String SQL statement to execute
@@ -843,13 +848,19 @@ public class DBConnection
     *** @throws DBException   If a database error occurs
     **/
     protected Statement _execute(String sql, boolean rowByRow)
-        throws SQLException, DBException
+        throws SQLException
     {
-        LastSQLExecuted = sql;
-        Statement stmt = this.createStatement(rowByRow);
-        stmt.execute(sql); // eg. "SELECT * FROM <table>"
-        return stmt;
-        // may throw "...CommunicationsException"
+        Statement stmt = null;
+        try {
+            LastSQLExecuted = sql;
+            stmt = this.createStatement(rowByRow); // may throw SQLException
+            stmt.execute(sql); // eg. "SELECT * FROM <table>"
+            return stmt;
+        } catch (SQLException sqe) { // CommunicationsException?
+            // -- close Statement if an exception occurs (we won't get another chance to close it later)
+            if (stmt != null) { try { stmt.close(); } catch (Throwable t) {} }
+            throw sqe;
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -888,15 +899,22 @@ public class DBConnection
     *** @return The returned ResultSet
     **/
     protected ResultSet _executeQuery(String sql)
-        throws SQLException, DBException
+        throws SQLException
     {
         Statement stmt = null;
-        ResultSet rs = null;
-        LastSQLExecuted = sql;
-        stmt = this.createStatement();
-        rs = stmt.executeQuery(sql);
-        return rs; // TODO: close 'stmt'?
-        // may throw "...CommunicationsException"
+        ResultSet rs   = null;
+        try {
+            LastSQLExecuted = sql;
+            stmt = this.createStatement(); // may throw SQLException
+            rs = stmt.executeQuery(sql);
+            return rs; // TODO: close 'stmt'?
+        } catch (SQLException sqe) { // CommunicationsException?
+            // -- close ResultSet if an exception occurs (we won't get another chance to close it later)
+            if (rs   != null) { try { rs.close();   } catch (Throwable t) {} } // 2.5.4-B35
+            throw sqe;
+        } finally {
+            if (stmt != null) { try { stmt.close(); } catch (Throwable t) {} } // 2.5.4-B35
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -968,13 +986,13 @@ public class DBConnection
     *** @throws DBException   If a database error occurs
     **/
     private long _executeUpdate(String sql, boolean rtnAutoIncrVal)
-        throws SQLException, IOException, DBException
+        throws SQLException, IOException
     {
         Statement stmt = null;
         ResultSet rs = null;
         try {
             LastSQLExecuted = sql;
-            stmt = this.createStatement();
+            stmt = this.createStatement(); // may throw SQLException
             if (rtnAutoIncrVal) {
                 stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
                 rs = stmt.getGeneratedKeys();

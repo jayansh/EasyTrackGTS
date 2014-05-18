@@ -188,6 +188,8 @@ public class BasicPrivateLabel
     public  static final String PROP_DeviceInfo_showNotes                   = "deviceInfo.showNotes";               // true|false
     public  static final String PROP_DeviceInfo_showFixedLocation           = "deviceInfo.showFixedLocation";       // true|false
     public  static final String PROP_DeviceInfo_showExpectedAcks            = "deviceInfo.showExpectedAcks";        // true|false
+    public  static final String PROP_DeviceInfo_showReportedOdometer        = "deviceInfo.showReportedOdometer";    // true|false
+    public  static final String PROP_DeviceInfo_showReportedEngineHours     = "deviceInfo.showReportedEngineHours"; // true|false
     public  static final String PROP_DeviceInfo_showMaintenanceOdometer     = "deviceInfo.showMaintenanceOdometer"; // true|false
     public  static final String PROP_DeviceInfo_showMaintenanceHours        = "deviceInfo.showMaintenanceHours";    // true|false
     public  static final String PROP_DeviceInfo_showMaintenanceNotes        = "deviceInfo.showMaintenanceNotes";    // true|false
@@ -351,44 +353,45 @@ public class BasicPrivateLabel
     public  static final String PROP_RuleInfo_showPredefinedActions         = "ruleInfo.showPredefinedActions";
 
     /* DeviceChooser misc properties */
-    public  static final String PROP_DeviceChooser_sortBy                   = "deviceChooser.sortBy";               // id|name|description
-    public  static final String PROP_DeviceChooser_useTable                 = "deviceChooser.useTable";             // true|false
-    public  static final String PROP_DeviceChooser_idPosition               = "deviceChooser.idPosition";           // none|first|last (table only)
-    public  static final String PROP_DeviceChooser_search                   = "deviceChooser.search";               // true|false (table only)
-    public  static final String PROP_DeviceChooser_matchContains            = "deviceChooser.matchContains";        // true|false 
-    public  static final String PROP_DeviceChooser_singleItemTextField      = "deviceChooser.singleItemTextField";  // true|false (hint)
-    public  static final String PROP_DeviceChooser_includeListHtml          = "deviceChooser.includeListHtml";      // include iniitial HTML
+    public  static final String PROP_DeviceChooser_sortBy                   = "deviceChooser.sortBy";                   // id|name|description
+    public  static final String PROP_DeviceChooser_useTable                 = "deviceChooser.useTable";                 // true|false
+    public  static final String PROP_DeviceChooser_idPosition               = "deviceChooser.idPosition";               // none|first|last (table only)
+    public  static final String PROP_DeviceChooser_search                   = "deviceChooser.search";                   // true|false (table only)
+    public  static final String PROP_DeviceChooser_matchContains            = "deviceChooser.matchContains";            // true|false 
+    public  static final String PROP_DeviceChooser_singleItemTextField      = "deviceChooser.singleItemTextField";      // true|false (hint)
+    public  static final String PROP_DeviceChooser_includeListHtml          = "deviceChooser.includeListHtml";          // include iniitial HTML
     // ---
-    public  static final String PROP_DeviceChooser_extraDebugEntries        = "deviceChooser.extraDebugEntries";    // int
+    public  static final String PROP_DeviceChooser_extraDebugEntries        = "deviceChooser.extraDebugEntries";        // int
 
     /* WorkZoneInfo properties */
-    public  static final String PROP_WorkZoneInfo_mapControlLocation        = "WorkZoneInfo.mapControlLocation";    // left|right|true|false
+    public  static final String PROP_WorkZoneInfo_mapControlLocation        = "WorkZoneInfo.mapControlLocation";        // left|right|true|false
 
     /* StatusCodeInfo misc properties */
-    public  static final String PROP_StatusCodeInfo_showIconSelector        = "statusCodeInfo.showIconSelector";    // true|false "Rule" selector
-    public  static final String PROP_StatusCodeInfo_showPushpinChooser      = "statusCodeInfo.showPushpinChooser";  // true|false
+    public  static final String PROP_StatusCodeInfo_showIconSelector        = "statusCodeInfo.showIconSelector";        // true|false "Rule" selector
+    public  static final String PROP_StatusCodeInfo_showPushpinChooser      = "statusCodeInfo.showPushpinChooser";      // true|false
 
     /* DeviceAlerts misc properties */
-    public  static final String PROP_DeviceAlerts_refreshInterval           = "deviceAlerts.refreshInterval";       // #seconds
-    public  static final String PROP_DeviceAlerts_mapPageName               = "deviceAlerts.mapPageName";           // map page name
-    public  static final String PROP_DeviceAlerts_showAllDevices            = "deviceAlerts.showAllDevices";        // true|false
-    public  static final String PROP_DeviceAlerts_maxActiveAlertAge         = "deviceAlerts.maxActiveAlertAge";     // #seconds
+    public  static final String PROP_DeviceAlerts_refreshInterval           = "deviceAlerts.refreshInterval";           // #seconds
+    public  static final String PROP_DeviceAlerts_mapPageName               = "deviceAlerts.mapPageName";               // map page name
+    public  static final String PROP_DeviceAlerts_showAllDevices            = "deviceAlerts.showAllDevices";            // true|false
+    public  static final String PROP_DeviceAlerts_maxActiveAlertAge         = "deviceAlerts.maxActiveAlertAge";         // #seconds
 
     /* EntityAdmin misc properties */
-    public  static final String PROP_EntityAdmin_entityType                 = "entityAdmin.entityType";             // 
+    public  static final String PROP_EntityAdmin_entityType                 = "entityAdmin.entityType";                 // 
 
     /* SysAdminAccounts misc properties */
-    public  static final String PROP_SysAdminAccounts_showPasswords         = "sysAdminAccounts.showPasswords";     // true|false
-    public  static final String PROP_SysAdminAccounts_accountProperties     = "sysAdminAccounts.accountProperties"; // true|false
-    public  static final String PROP_SysAdminAccounts_showAccountManager    = "sysAdminAccounts.showAccountManager";// true|false
-    public  static final String PROP_SysAdminAccounts_showRetainEvents      = "sysAdminAccounts.showRetainEvents";  // true|false
-    public  static final String PROP_SysAdminAccounts_showAutoAddDevices    = "sysAdminAccounts.showAutoAddDevices";// true|false
-    public  static final String PROP_SysAdminAccounts_showDataPushURL       = "sysAdminAccounts.showDataPushURL";   // true|false
-    public  static final String PROP_SysAdminAccounts_showNotes             = "sysAdminAccounts.showNotes";         // true|false
+    public  static final String PROP_SysAdminAccounts_showPasswords         = "sysAdminAccounts.showPasswords";         // true|false
+    public  static final String PROP_SysAdminAccounts_accountProperties     = "sysAdminAccounts.accountProperties";     // true|false
+    public  static final String PROP_SysAdminAccounts_showAccountManager    = "sysAdminAccounts.showAccountManager";    // true|false
+    public  static final String PROP_SysAdminAccounts_showRetainEvents      = "sysAdminAccounts.showRetainEvents";      // true|false
+    public  static final String PROP_SysAdminAccounts_showAllowWebService   = "sysAdminAccounts.showAllowWebService";   // true|false
+    public  static final String PROP_SysAdminAccounts_showAutoAddDevices    = "sysAdminAccounts.showAutoAddDevices";    // true|false
+    public  static final String PROP_SysAdminAccounts_showDataPushURL       = "sysAdminAccounts.showDataPushURL";       // true|false
+    public  static final String PROP_SysAdminAccounts_showNotes             = "sysAdminAccounts.showNotes";             // true|false
 
     /* SysAdminAccounts auto-login properties */
-  //public  static final String PROP_SysAdminAccounts_allowAccountLogin     = "sysAdminAccounts.allowAccountLogin"; // true|false
-  //public  static final String PROP_SysAdminAccounts_reloginPasscode       = "sysAdminAccounts.reloginPasscode";   // String
+  //public  static final String PROP_SysAdminAccounts_allowAccountLogin     = "sysAdminAccounts.allowAccountLogin";     // true|false
+  //public  static final String PROP_SysAdminAccounts_reloginPasscode       = "sysAdminAccounts.reloginPasscode";       // String
   //public  static final String PROP_SysAdminAccounts_enableAutoLoginReturn = "sysAdminAccounts.enableAutoLoginReturn"; // String
 
     /* Account-Login properties */
@@ -2135,18 +2138,21 @@ public class BasicPrivateLabel
     **/
     public String getStringProperty(String key, String dft)
     {
+        //boolean isMenuType = PROP_TopMenu_menuType.equals(key);
 
         /* try temporary properties */
         RTProperties rtp = RTConfig.getTemporaryProperties(key);
         if (rtp != null) {
             Object v = rtp.getProperty(key,null);
             if (v instanceof String) {
+                //if (isMenuType) { Print.logInfo("MenuType (temp props): " + v); }
                 return v.toString();
             }
         }
 
         /* try locally defined properties */
         Object obj = this.getProperty(key);
+        //if (isMenuType && (obj != null)) { Print.logInfo("MenuType (defined props): " + obj); }
         return (obj != null)? obj.toString() : dft;
 
     }
@@ -2365,7 +2371,7 @@ public class BasicPrivateLabel
     *** Gets the list of PredefinedRuleActions
     *** @return The list of predefined rule actions
     **/
-    public PredefinedRuleAction[] getPredefinedRulesActions()
+    public PredefinedRuleAction[] getPredefinedRuleActions()
     {
         return this.predefRuleActions;
     }

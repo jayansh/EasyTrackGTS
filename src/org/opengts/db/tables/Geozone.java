@@ -79,6 +79,8 @@
 //     -Added command-line "-delete" option.
 //  2012/09/02  Martin D. Flynn
 //     -Increased number of points per Geozone to 10
+//  2013/03/03  Martin D. Flynn
+//     -Added initial support for an arbitrary unlimited number of vertices.
 // ----------------------------------------------------------------------------
 package org.opengts.db.tables;
 
@@ -191,6 +193,7 @@ public class Geozone
     // geozone definition
     public static final String FLD_zoneType                 = "zoneType";       // POINT_RADIUS, BOUNDED_RECT, ...
     public static final String FLD_radius                   = "radius";         // radius in meters
+    public static final String FLD_vertices                 = "vertices";
     public static final String FLD_latitude1                = "latitude1";
     public static final String FLD_longitude1               = "longitude1";
     public static final String FLD_latitude2                = "latitude2";
@@ -244,6 +247,7 @@ public class Geozone
         // geozone definition
         new DBField(FLD_zoneType            , Integer.TYPE  , DBField.TYPE_UINT8       , "Zone Type"        , "edit=2 enum=Geozone$GeozoneType export=true"),
         new DBField(FLD_radius              , Integer.TYPE  , DBField.TYPE_UINT32      , "Radius Meters"    , "edit=2 export=true"),
+        new DBField(FLD_vertices            , String.class  , DBField.TYPE_TEXT        , "Vertices"         , "edit=2 export=true"),
         new DBField(FLD_latitude1           , Double.TYPE   , DBField.TYPE_DOUBLE      , "Latitude 1"       , "edit=2 format=#0.00000 export=true"),
         new DBField(FLD_longitude1          , Double.TYPE   , DBField.TYPE_DOUBLE      , "Longitude 1"      , "edit=2 format=#0.00000 export=true"),
         new DBField(FLD_latitude2           , Double.TYPE   , DBField.TYPE_DOUBLE      , "Latitude 2"       , "edit=2 format=#0.00000 export=true"),
@@ -641,7 +645,7 @@ public class Geozone
         this.setFieldValue(FLD_radius, v);
         this.setZoneChanged();
     }
-    
+
     /* sets the default radius for the geozone type */
     public void setDefaultRadius()
     {
@@ -656,7 +660,7 @@ public class Geozone
         } else
         if (gzType == GeozoneType.SWEPT_POINT_RADIUS.getIntValue()) {
             int radM = RTConfig.getInt(DBConfig.PROP_Geozone_dftRadius_sweptPointRadius, 1000);
-            this.setRadius(1000);
+            this.setRadius(radM);
         } else {
             int radM = RTConfig.getInt(DBConfig.PROP_Geozone_dftRadius_pointRadius, 3000);
             this.setRadius(radM);
@@ -736,6 +740,52 @@ public class Geozone
         return (lon1 >= lon2)? lon1 : lon2;
     }
 
+    // ------------------------------------------------------------------------
+
+    /* gets the list of vertices as a String */
+    public String getVertices()
+    {
+        // "lat/lon,lat/lon,..."
+        String v = (String)this.getFieldValue(FLD_vertices);
+        return StringTools.trim(v);
+    }
+
+    /* sets the list of vertices as a String */
+    public void setVertices(String v)
+    {
+        this.setFieldValue(FLD_vertices, StringTools.trim(v));
+        this.setZoneChanged();
+    }
+
+    // --------------------------------
+
+    /* Gets the list of vertices as a list of GeoPoints */
+    public java.util.List<GeoPoint> getVerticesList(java.util.List<GeoPoint> gpList)
+    {
+        java.util.List<GeoPoint> vert = (gpList != null)? gpList : new Vector<GeoPoint>();
+        String v = this.getVertices(); // may be blank
+        if (!StringTools.isBlank(v)) {
+            // -- parse "lat/lon,lat/lon,..."
+            String gpA[] = StringTools.split(v,','); // split array items
+            for (String gpS : gpA) {
+                GeoPoint gp = !StringTools.isBlank(gpS)? new GeoPoint(gpS) : null; // "lat/lon"
+                if (GeoPoint.isValid(gp)) {
+                    vert.add(gp);
+                }
+            }
+        }
+        return vert;
+    }
+
+    /* sets the list of vertices as a list of GeoPoints */
+    public void setVerticesList(java.util.List<GeoPoint> gpList)
+    {
+        String v = StringTools.join(gpList,','); // join array items
+        this.setVertices(v);
+    }
+
+    // ------------------------------------------------------------------------
+
     /* get latitude #1 */
     public double getLatitude1()
     {
@@ -769,24 +819,24 @@ public class Geozone
     }
 
     /* get geopoint #1 */
-    public GeoPoint getGeoPoint1()
-    {
-        // BoundingRect: NorthWest point
-        return new GeoPoint(this.getLatitude1(), this.getLongitude1());
-    }
+    //public GeoPoint getGeoPoint1()
+    //{
+    //    // BoundingRect: NorthWest point
+    //    return new GeoPoint(this.getLatitude1(), this.getLongitude1());
+    //}
 
     /* set geopoint #1 */
-    public void setGeoPoint1(GeoPoint gp)
-    {
-        // BoundingRect: NorthWest point
-        if (gp != null) {
-            this.setLatitude1(gp.getLatitude());
-            this.setLongitude1(gp.getLongitude());
-        } else {
-            this.setLatitude1(0.0);
-            this.setLongitude1(0.0);
-        }
-    }
+    //public void setGeoPoint1(GeoPoint gp)
+    //{
+    //    // BoundingRect: NorthWest point
+    //    if (gp != null) {
+    //        this.setLatitude1(gp.getLatitude());
+    //        this.setLongitude1(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude1(0.0);
+    //        this.setLongitude1(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -823,24 +873,24 @@ public class Geozone
     }
 
     /* get geopoint #2 */
-    public GeoPoint getGeoPoint2()
-    {
-        // BoundingRect: SouthEast point
-        return new GeoPoint(this.getLatitude2(), this.getLongitude2());
-    }
+    //public GeoPoint getGeoPoint2()
+    //{
+    //    // BoundingRect: SouthEast point
+    //    return new GeoPoint(this.getLatitude2(), this.getLongitude2());
+    //}
 
     /* set geopoint #2 */
-    public void setGeoPoint2(GeoPoint gp)
-    {
-        // BoundingRect: SouthEast point
-        if (gp != null) {
-            this.setLatitude2(gp.getLatitude());
-            this.setLongitude2(gp.getLongitude());
-        } else {
-            this.setLatitude2(0.0);
-            this.setLongitude2(0.0);
-        }
-    }
+    //public void setGeoPoint2(GeoPoint gp)
+    //{
+    //    // BoundingRect: SouthEast point
+    //    if (gp != null) {
+    //        this.setLatitude2(gp.getLatitude());
+    //        this.setLongitude2(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude2(0.0);
+    //        this.setLongitude2(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -850,7 +900,7 @@ public class Geozone
         Double v = (Double)this.getFieldValue(FLD_latitude3);
         return (v != null)? v.doubleValue() : 0.0;
     }
-    
+
     /* set latitude #3 */
     public void setLatitude3(double v)
     {
@@ -873,22 +923,22 @@ public class Geozone
     }
 
     /* get geopoint #3 */
-    public GeoPoint getGeoPoint3()
-    {
-        return new GeoPoint(this.getLatitude3(), this.getLongitude3());
-    }
+    //public GeoPoint getGeoPoint3()
+    //{
+    //    return new GeoPoint(this.getLatitude3(), this.getLongitude3());
+    //}
 
     /* set geopoint #3 */
-    public void setGeoPoint3(GeoPoint gp)
-    {
-        if (gp != null) {
-            this.setLatitude3(gp.getLatitude());
-            this.setLongitude3(gp.getLongitude());
-        } else {
-            this.setLatitude3(0.0);
-            this.setLongitude3(0.0);
-        }
-    }
+    //public void setGeoPoint3(GeoPoint gp)
+    //{
+    //    if (gp != null) {
+    //        this.setLatitude3(gp.getLatitude());
+    //        this.setLongitude3(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude3(0.0);
+    //        this.setLongitude3(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -921,22 +971,22 @@ public class Geozone
     }
 
     /* get geopoint #4 */
-    public GeoPoint getGeoPoint4()
-    {
-        return new GeoPoint(this.getLatitude4(), this.getLongitude4());
-    }
+    //public GeoPoint getGeoPoint4()
+    //{
+    //    return new GeoPoint(this.getLatitude4(), this.getLongitude4());
+    //}
 
     /* set geopoint #4 */
-    public void setGeoPoint4(GeoPoint gp)
-    {
-        if (gp != null) {
-            this.setLatitude4(gp.getLatitude());
-            this.setLongitude4(gp.getLongitude());
-        } else {
-            this.setLatitude4(0.0);
-            this.setLongitude4(0.0);
-        }
-    }
+    //public void setGeoPoint4(GeoPoint gp)
+    //{
+    //    if (gp != null) {
+    //        this.setLatitude4(gp.getLatitude());
+    //        this.setLongitude4(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude4(0.0);
+    //        this.setLongitude4(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -969,22 +1019,22 @@ public class Geozone
     }
 
     /* get geopoint #5 */
-    public GeoPoint getGeoPoint5()
-    {
-        return new GeoPoint(this.getLatitude5(), this.getLongitude5());
-    }
+    //public GeoPoint getGeoPoint5()
+    //{
+    //    return new GeoPoint(this.getLatitude5(), this.getLongitude5());
+    //}
 
     /* set geopoint #5 */
-    public void setGeoPoint5(GeoPoint gp)
-    {
-        if (gp != null) {
-            this.setLatitude5(gp.getLatitude());
-            this.setLongitude5(gp.getLongitude());
-        } else {
-            this.setLatitude5(0.0);
-            this.setLongitude5(0.0);
-        }
-    }
+    //public void setGeoPoint5(GeoPoint gp)
+    //{
+    //    if (gp != null) {
+    //        this.setLatitude5(gp.getLatitude());
+    //        this.setLongitude5(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude5(0.0);
+    //        this.setLongitude5(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -1017,22 +1067,22 @@ public class Geozone
     }
 
     /* get geopoint #6 */
-    public GeoPoint getGeoPoint6()
-    {
-        return new GeoPoint(this.getLatitude6(), this.getLongitude6());
-    }
+    //public GeoPoint getGeoPoint6()
+    //{
+    //    return new GeoPoint(this.getLatitude6(), this.getLongitude6());
+    //}
 
     /* set geopoint #6 */
-    public void setGeoPoint6(GeoPoint gp)
-    {
-        if (gp != null) {
-            this.setLatitude6(gp.getLatitude());
-            this.setLongitude6(gp.getLongitude());
-        } else {
-            this.setLatitude6(0.0);
-            this.setLongitude6(0.0);
-        }
-    }
+    //public void setGeoPoint6(GeoPoint gp)
+    //{
+    //    if (gp != null) {
+    //        this.setLatitude6(gp.getLatitude());
+    //        this.setLongitude6(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude6(0.0);
+    //        this.setLongitude6(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -1065,22 +1115,22 @@ public class Geozone
     }
 
     /* get geopoint #7 */
-    public GeoPoint getGeoPoint7()
-    {
-        return new GeoPoint(this.getLatitude7(), this.getLongitude7());
-    }
+    //public GeoPoint getGeoPoint7()
+    //{
+    //    return new GeoPoint(this.getLatitude7(), this.getLongitude7());
+    //}
 
     /* set geopoint #7 */
-    public void setGeoPoint7(GeoPoint gp)
-    {
-        if (gp != null) {
-            this.setLatitude7(gp.getLatitude());
-            this.setLongitude7(gp.getLongitude());
-        } else {
-            this.setLatitude7(0.0);
-            this.setLongitude7(0.0);
-        }
-    }
+    //public void setGeoPoint7(GeoPoint gp)
+    //{
+    //    if (gp != null) {
+    //        this.setLatitude7(gp.getLatitude());
+    //        this.setLongitude7(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude7(0.0);
+    //        this.setLongitude7(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -1113,22 +1163,22 @@ public class Geozone
     }
 
     /* get geopoint #8 */
-    public GeoPoint getGeoPoint8()
-    {
-        return new GeoPoint(this.getLatitude8(), this.getLongitude8());
-    }
+    //public GeoPoint getGeoPoint8()
+    //{
+    //    return new GeoPoint(this.getLatitude8(), this.getLongitude8());
+    //}
 
     /* set geopoint #8 */
-    public void setGeoPoint8(GeoPoint gp)
-    {
-        if (gp != null) {
-            this.setLatitude8(gp.getLatitude());
-            this.setLongitude8(gp.getLongitude());
-        } else {
-            this.setLatitude8(0.0);
-            this.setLongitude8(0.0);
-        }
-    }
+    //public void setGeoPoint8(GeoPoint gp)
+    //{
+    //    if (gp != null) {
+    //        this.setLatitude8(gp.getLatitude());
+    //        this.setLongitude8(gp.getLongitude());
+    //    } else {
+    //        this.setLatitude8(0.0);
+    //        this.setLongitude8(0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -1144,37 +1194,160 @@ public class Geozone
         { FLD_latitude9 , FLD_longitude9  },
         { FLD_latitude10, FLD_longitude10 },
     };
-    
+
     /* get number of GeoPoints */
-    public static int GetGeoPointCount()
+    private static int _GetGeoPointFieldCount()
     {
         return GeoPointFields.length;
     }
 
-    /* get latitude */
-    public double getLatitude(int ndx)
+    /* get number of GeoPoints */
+    //public static int GetGeoPointCount()
+    //{
+    //    return Geozone._GetGeoPointFieldCount();
+    //}
+
+    /* get maximum number of GeoPoint Vertices */
+    public static int GetMaxVerticesCount()
     {
-        if ((ndx >= 0) && (ndx < Geozone.GetGeoPointCount())) {
+        int max = RTConfig.getInt(DBConfig.PROP_Geozone_maximumVertices, -1);
+        if (max > 0) {
+            return max;
+        } else {
+            return Geozone._GetGeoPointFieldCount();
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    
+    private GeoPoint    cachedVertices[] = null;
+
+    /* get all valid GeoPoints */
+    public GeoPoint[] getGeoPoints()
+    {
+        if (this.cachedVertices == null) {
+            // -- read/cache list of GeoPoints
+            java.util.List<GeoPoint> gpList = new Vector<GeoPoint>();
+    
+            /* populate with GeoPoint fields */
+            int geoCnt = Geozone._GetGeoPointFieldCount();
+            for (int i = 0; i < geoCnt; i++) {
+                double lat = this._getLatitudeFieldAt( i);
+                double lon = this._getLongitudeFieldAt(i);
+                if (GeoPoint.isValid(lat,lon)) {
+                    gpList.add(new GeoPoint(lat,lon));
+                }
+            }
+    
+            /* populate with vertices */
+            this.getVerticesList(gpList);
+    
+            /* convert to array and return */
+            this.cachedVertices = gpList.toArray(new GeoPoint[gpList.size()]);
+
+        }
+        return this.cachedVertices;
+    }
+
+    /* get all valid Vertices */
+    public GeoPoint getGeoPointAt(int ndx, GeoPoint dft)
+    {
+        GeoPoint gp[] = this.getGeoPoints();
+        if ((ndx >= 0) && (ndx < gp.length)) {
+            return gp[ndx];
+        } else {
+            return dft;
+        }
+    }
+
+    /* clear all GeoPoints */
+    public void clearGeoPoints()
+    {
+
+        /* clear GeoPoint fields */
+        int geoCnt = Geozone._GetGeoPointFieldCount();
+        for (int i = 0; i < geoCnt; i++) {
+            this._setLatitudeFieldAt( i, 0.0);
+            this._setLongitudeFieldAt(i, 0.0);
+        }
+
+        /* clear vertices */
+        this.setVertices(null);
+
+    }
+
+    /* set GeoPoints */
+    public void setGeoPoints(java.util.List<GeoPoint> gpList)
+    {
+        if (!ListTools.isEmpty(gpList)) {
+            this.setGeoPoints(gpList.toArray(new GeoPoint[gpList.size()]));
+        } else {
+            this.setGeoPoints((GeoPoint[])null);
+        }
+    }
+
+    /* set GeoPoints */
+    public void setGeoPoints(GeoPoint gp[])
+    {
+        int gpCnt = 0;
+
+        /* clear? */
+        if ((gp == null) || (gp.length == 0)) {
+            // -- clear all GeoPoints
+            this.clearGeoPoints();
+            return;
+        }
+        // -- remaining GeoPoints are assumed to be valid
+
+        /* fill GeoPoint fields */
+        int geoCnt = Geozone._GetGeoPointFieldCount();
+        for (int i = 0; i < geoCnt; i++) {
+            if (i < gp.length) {
+                this._setLatitudeFieldAt( i, gp[i].getLatitude() );
+                this._setLongitudeFieldAt(i, gp[i].getLongitude());
+                gpCnt++;
+            } else {
+                this._setLatitudeFieldAt( i, 0.0);
+                this._setLongitudeFieldAt(i, 0.0);
+            }
+        }
+
+        /* fill vertices */
+        if (gpCnt < gp.length) {
+            String v = StringTools.join(gp,gpCnt,','); // join array items
+            this.setVertices(v);
+        } else {
+            this.setVertices(null);
+        }
+
+    }
+
+    // ------------------------------------------------------------------------
+
+    /* get latitude */
+    private double _getLatitudeFieldAt(int ndx)
+    {
+        if ((ndx >= 0) && (ndx < Geozone._GetGeoPointFieldCount())) {
             Double v = (Double)this.getFieldValue(GeoPointFields[ndx][0]);
             return (v != null)? v.doubleValue() : 0.0;
         } else {
             return 0.0;
         }
     }
-    
+
     /* set latitude */
-    public void setLatitude(int ndx, double v)
+    private void _setLatitudeFieldAt(int ndx, double v)
     {
-        if ((ndx >= 0) && (ndx < Geozone.GetGeoPointCount())) {
+        if ((ndx >= 0) && (ndx < Geozone._GetGeoPointFieldCount())) {
             this.setFieldValue(GeoPointFields[ndx][0], v); // FLD_latitude#
             this.setZoneChanged();
         }
     }
 
     /* get longitude */
-    public double getLongitude(int ndx)
+    private double _getLongitudeFieldAt(int ndx)
     {
-        if ((ndx >= 0) && (ndx < Geozone.GetGeoPointCount())) {
+        if ((ndx >= 0) && (ndx < Geozone._GetGeoPointFieldCount())) {
             Double v = (Double)this.getFieldValue(GeoPointFields[ndx][1]);
             return (v != null)? v.doubleValue() : 0.0;
         } else {
@@ -1183,95 +1356,55 @@ public class Geozone
     }
 
     /* set longitude */
-    public void setLongitude(int ndx, double v)
+    private void _setLongitudeFieldAt(int ndx, double v)
     {
-        if ((ndx >= 0) && (ndx < Geozone.GetGeoPointCount())) {
+        if ((ndx >= 0) && (ndx < Geozone._GetGeoPointFieldCount())) {
             this.setFieldValue(GeoPointFields[ndx][1], v); // FLD_longitude#
             this.setZoneChanged();
         }
     }
 
     /* return specified GeoPoint */
-    public GeoPoint getGeoPoint(int ndx)
-    {
-        return this.getGeoPoint(ndx,null);
-    }
+    //private GeoPoint _getGeoPoint(int ndx)
+    //{
+    //    return this.getGeoPoint(ndx,null);
+    //}
 
     /* return specified GeoPoint */
-    public GeoPoint getGeoPoint(int ndx, GeoPoint dft)
-    {
-        if ((ndx >= 0) && (ndx < Geozone.GetGeoPointCount())) {
-            double lat = this.getLatitude( ndx);
-            double lon = this.getLongitude(ndx);
-            return GeoPoint.isValid(lat,lon)? new GeoPoint(lat,lon) : dft;
-        } else {
-            return dft;
-        }
-    }
+    //public GeoPoint _getGeoPoint(int ndx, GeoPoint dft)
+    //{
+    //    if ((ndx >= 0) && (ndx < Geozone._GetGeoPointFieldCount())) {
+    //        double lat = this._getLatitudeFieldAt( ndx);
+    //        double lon = this._getLongitudeFieldAt(ndx);
+    //        return GeoPoint.isValid(lat,lon)? new GeoPoint(lat,lon) : dft;
+    //    } else {
+    //        return dft;
+    //    }
+    //}
 
-    /* get all valid GeoPoints */
-    public GeoPoint[] getGeoPoints()
-    {
-        java.util.List<GeoPoint> gpList = new Vector<GeoPoint>();
-        int geoCnt = Geozone.GetGeoPointCount();
-        for (int i = 0; i < geoCnt; i++) {
-            double lat = this.getLatitude( i);
-            double lon = this.getLongitude(i);
-            if (GeoPoint.isValid(lat,lon)) {
-                gpList.add(new GeoPoint(lat,lon));
-            }
-        }
-        return gpList.toArray(new GeoPoint[gpList.size()]);
-    }
-    
     /* set latitude/longitude */
-    public void setGeoPoint(int ndx, GeoPoint gp)
-    {
-        if ((gp != null) && gp.isValid()) {
-            this.setLatitude( ndx, gp.getLatitude());
-            this.setLongitude(ndx, gp.getLongitude());
-        } else {
-            this.setLatitude( ndx, 0.0);
-            this.setLongitude(ndx, 0.0);
-        }
-    }
-    
+    //public void _setGeoPoint(int ndx, GeoPoint gp)
+    //{
+    //    if ((gp != null) && gp.isValid()) {
+    //        this._setLatitudeFieldAt( ndx, gp.getLatitude());
+    //        this._setLongitudeFieldAt(ndx, gp.getLongitude());
+    //    } else {
+    //        this._setLatitudeFieldAt( ndx, 0.0);
+    //        this._setLongitudeFieldAt(ndx, 0.0);
+    //    }
+    //}
+
     /* set latitude/longitude */
-    public void setGeoPoint(int ndx, double lat, double lon)
-    {
-        if (GeoPoint.isValid(lat,lon)) {
-            this.setLatitude( ndx, lat);
-            this.setLongitude(ndx, lon);
-        } else {
-            this.setLatitude( ndx, 0.0);
-            this.setLongitude(ndx, 0.0);
-        }
-    }
-
-    /* set GeoPoints */
-    public void setGeoPoints(GeoPoint gp[])
-    {
-        int geoCnt = Geozone.GetGeoPointCount();
-        for (int i = 0; i < geoCnt; i++) {
-            if ((gp != null) && (i < gp.length)) {
-                this.setLatitude( i, gp[i].getLatitude() );
-                this.setLongitude(i, gp[i].getLongitude());
-            } else {
-                this.setLatitude( i, 0.0);
-                this.setLongitude(i, 0.0);
-            }
-        }
-    }
-
-    /* clear GeoPoints */
-    public void clearGeoPoints()
-    {
-        int geoCnt = Geozone.GetGeoPointCount();
-        for (int i = 0; i < geoCnt; i++) {
-            this.setLatitude( i, 0.0);
-            this.setLongitude(i, 0.0);
-        }
-    }
+    //public void _setGeoPoint(int ndx, double lat, double lon)
+    //{
+    //    if (GeoPoint.isValid(lat,lon)) {
+    //        this._setLatitudeFieldAt( ndx, lat);
+    //        this._setLongitudeFieldAt(ndx, lon);
+    //    } else {
+    //        this._setLatitudeFieldAt( ndx, 0.0);
+    //        this._setLongitudeFieldAt(ndx, 0.0);
+    //    }
+    //}
 
     // ------------------------------------------------------------------------
 
@@ -2051,6 +2184,7 @@ public class Geozone
     protected void setZoneChanged()
     {
         this.zoneChanged = true;
+        this.cachedVertices = null;
     }
 
     /* return true if a bounding box has been defined for this Geozone */
@@ -3107,7 +3241,7 @@ public class Geozone
             Print.sysPrintln("");
             Print.sysPrintln("Account: " + acctId);
             for (int i = 0; i < gz.length; i++) {
-                int ptCnt = Geozone.GetGeoPointCount();
+                int ptCnt = Geozone.GetMaxVerticesCount();
                 StringBuffer sb = new StringBuffer();
                 sb.append(" ---------------------------------------------------------\n");
                 sb.append("  Geozone  : " + gz[i].getGeozoneID() + ":" + gz[i].getSortID() + " - " + gz[i].getDescription()+ "\n");
@@ -3135,7 +3269,7 @@ public class Geozone
                     } else {
                         sb.append(" "); 
                     }
-                    GeoPoint gp = gz[i].getGeoPoint(p);
+                    GeoPoint gp = gz[i].getGeoPointAt(p,null);
                     if (gp == null) { gp = GeoPoint.INVALID_GEOPOINT; }
                     sb.append(p+1).append("(" + gp + ")");
                 }
@@ -3570,7 +3704,7 @@ public class Geozone
             }
             System.exit(0);
         }
-        
+
         /* test */
         if (RTConfig.hasProperty(ARG_TEST)) {
             opts++;

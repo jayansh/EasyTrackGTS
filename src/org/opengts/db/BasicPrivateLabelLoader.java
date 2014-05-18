@@ -438,8 +438,8 @@ public class BasicPrivateLabelLoader
                     for (int i = 0; i < cn.length; i++) {
                         try {
                             //Print.logInfo("Check for class: " + cn[i]);
-                            Class.forName(cn[i]);
-                            BasicPrivateLabelLoader.setTrackServlet(); // true
+                            Class.forName(cn[i]); // throws Exception if not found
+                            BasicPrivateLabelLoader.setTrackServlet(); // found/true
                             break;
                         } catch (Throwable th1) {
                             // try again
@@ -447,7 +447,7 @@ public class BasicPrivateLabelLoader
                         }
                     }
                     if (!BasicPrivateLabelLoader.isTrackServlet()) {
-                        printInfo("Not a 'Track/Service' servlet");
+                        printInfo("Not a 'Track/Service' servlet: " + RTConfig.getContextName("?"));
                     }
                 }
             }
@@ -1527,6 +1527,8 @@ public class BasicPrivateLabelLoader
             if (v != null) {
                 val = v;
                 //Print.logInfo("[%s] RTProperty '%s' ==> '%s'", xmlFile.getName(), rtKey, val);
+            } else {
+                //Print.logInfo("[%s] RTProperty '%s' ==> n/a", xmlFile.getName(), rtKey);
             }
         }
 

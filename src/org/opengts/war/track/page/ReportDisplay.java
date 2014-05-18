@@ -1082,7 +1082,7 @@ public class ReportDisplay
                             reportID + ".html", 
                             HTMLTools.MIME_HTML());
                         SendMail.SmtpProperties smtpProps = privLabel.getSmtpProperties();
-                        SendMail.send(frEmail,toEmail,subj,body,attach,smtpProps);
+                        SendMail.send(frEmail,toEmail,subj,body,attach,smtpProps,false);
                         Print.logInfo("Email sent to: " + toEmail);
                         m = i18n.getString("ReportDisplay.reportEmailed","The selected report has been emailed"); // UserErrMsg
                         if (DEBUG_SAVE_EHTML_TO_TMP) {

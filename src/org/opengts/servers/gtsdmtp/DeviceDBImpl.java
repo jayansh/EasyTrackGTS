@@ -196,7 +196,7 @@ public class DeviceDBImpl
     public long getEventCount(long timeStart, long timeEnd)
     {
         try {
-            return this.device.getEventCount(timeStart, timeEnd);
+            return this.device.getEventCount(timeStart, timeEnd); // -1 for InnoDB?
         } catch (DBException dbe) {
             dbe.printException();
             return -1L;

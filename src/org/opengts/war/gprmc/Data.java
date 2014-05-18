@@ -87,8 +87,10 @@
 //      gprmc.parm.address=addr,address
 //      gprmc.parm.driver=drv,driver
 //      gprmc.parm.message=msg,message
-//      gprmc.parm.battlevel=battp,batt,battlevel
-//      gprmc.parm.battvolts=battv,battvolts
+//      gprmc.parm.battlevel=batl,battl,batt,battlevel
+//      gprmc.parm.battvolts=batv,battv,battvolts
+//      gprmc.parm.batttemp=batc,battc,batttemp
+//      gprmc.parm.temperature=temp,tempC,temperature
 //      gprmc.parm.email=email,contact
 //
 // Default sample Data:
@@ -285,6 +287,12 @@
 //     -Fixed issue with "dateStr" or "timeStr" blank (changed to 'and')
 //  2014/01/01  Martin D. Flynn / STefan Mayer
 //     -Added CellTower support (MCC,MNC,LAC,CID,TAV,etc.)
+//  2014/03/03  Martin D. Flynn
+//     -Fixed packets sent via POST
+//  2014/05/05  Martin D. Flynn
+//     -Added support for a temperature value
+//     -Added support for battery-temperature (version OpenGTS_2.5.5+ only)
+//     -Battery-level adjusted to be saved as a % (range 0 to 1).
 // ----------------------------------------------------------------------------
 package org.opengts.war.gprmc;
 
@@ -321,10 +329,10 @@ public class Data
     public static       String LOG_NAME                     = "gprmc";
 
     /* name used to tag logged messaged */
-    public static final String VERSION                      = "2.2.1";
+    public static final String VERSION                      = "2.2.6"; // 2.5.5-B12
     
     /* default UniqueID prefix */
-    public static final String DEFAULT_UNIQUEID_PREFIX[]    = { "gprmc_", "imei_", "uid_" };
+    public static final String DEFAULT_UNIQUEID_PREFIX[]    = { "gprmc_", "ct_", "uid_", "imei_", "*" };
 
     // ------------------------------------------------------------------------
 
@@ -368,6 +376,9 @@ public class Data
     
     /* Invalid Lat/Lon */
     private static double   INVALID_LATLON                  = -999.0;
+    
+    /* Invalid temperature */
+    private static double   BAD_TEMP                        = EventData.INVALID_TEMPERATURE;
 
     // ------------------------------------------------------------------------
 
@@ -381,7 +392,7 @@ public class Data
 
     /* date format */
     // The date format must be specified here
-    public static int     DateFormat                        = DATE_FORMAT_YMDhms; // DATE_FORMAT_YMD;
+    public static int     DateFormat                        = DATE_FORMAT_YMD; // DATE_FORMAT_YMDhms;
 
     public static String GetDateFormatString()
     {
@@ -398,7 +409,7 @@ public class Data
     
     // ------------------------------------------------------------------------
 
-    // common parameter keys (lookups are case insensitive) */
+    // -- common parameter keys (lookups are case insensitive) */
     private static String PARM_COMMAND[]                    = { "co"   , "cmd", "command"            };  // Command
     private static String PARM_VERSION[]                    = { "ve"   , "ver", "version"            };  // Version
     private static String PARM_MOBILE[]                     = { "id"   , "imei", "un", "mobileid"    };  // MobileID
@@ -417,8 +428,12 @@ public class Data
     private static String PARM_HORZ_ACC[]                   = { "hacc" , "acc"                       };  // horizontal accuracy (meters)
     private static String PARM_VERT_ACC[]                   = { "vacc"                               };  // vertical accuracy (meters)
     private static String PARM_NUM_SATS[]                   = { "sat"  , "sats", "numsats"           };  // number of satellite
-    private static String PARM_BATT_LEVEL[]                 = { "battp", "batt", "battl", "battlevel"};  // battery level (%)
-    private static String PARM_BATT_VOLTS[]                 = { "battv", "battvolts"                 };  // battery voltage
+    private static String PARM_BATT_LEVEL[]                 = { "batl" , "battl", "battlevel", "batt"};  // battery level (%)
+    private static String PARM_BATT_VOLTS[]                 = { "batv" , "battv", "battvolts"        };  // battery voltage
+    private static String PARM_BATT_TEMPC[]                 = { "batc" , "battc", "batttemp"         };  // Battery tempC
+    private static String PARM_TEMPERATURE[]                = { "temp" , "tempc", "temperature"      };  // Temperature
+
+    // -- cell-tower data
     private static String PARM_CELLID_MCC[]                 = { "mcc"                                };  // CellID: mcc
     private static String PARM_CELLID_MNC[]                 = { "mnc"                                };  // CellID: mnc
     private static String PARM_CELLID_LAC[]                 = { "lac"                                };  // CellID: lac
@@ -428,10 +443,10 @@ public class Data
     private static String PARM_CELLID_RXLEV[]               = { "rxlev", "rxlvl", "rxl"              };  // CellID: rxlev
     private static String PARM_CELLID_ARFCN[]               = { "arfcn", "arf"                       };  // CellID: arfcn
 
-    // $GPRMC field key
+    // -- $GPRMC field key
     private static String PARM_GPRMC[]                      = { "gprmc", "rmc", "cds", "nmea"        };  // $GPRMC data
 
-    // these are ignored if PARM_GPRMC is defined
+    // -- these are ignored if PARM_GPRMC is defined
     private static String PARM_DATE[]                       = { "date" , "datetime", "dt"            };  // date (YYYYMMDD)
     private static String PARM_TIME[]                       = { "time" , "ts", "tm"                  };  // time (HHMMSS)
     private static String PARM_LATITUDE[]                   = { "lat"  , "latitude"                  };  // latitude
@@ -442,6 +457,7 @@ public class Data
     /* returned response */
     private static String RESPONSE_OK                       = "OK";
     private static String RESPONSE_ERROR                    = "ERROR";
+    private static String RESPONSE_NOT_AUTH                 = RESPONSE_ERROR;
 
     // ------------------------------------------------------------------------
 
@@ -458,6 +474,7 @@ public class Data
     public static final String  CONFIG_DATE_FORMAT          = DEVICE_CODE + ".dateFormat";       // "YMD", "DMY", "MDY"
     public static final String  CONFIG_RESPONSE_OK          = DEVICE_CODE + ".response.ok";
     public static final String  CONFIG_RESPONSE_ERROR       = DEVICE_CODE + ".response.error";
+    public static final String  CONFIG_RESPONSE_NOT_AUTH    = DEVICE_CODE + ".response.notAuth";
 
     public static final String  CONFIG_PARM_MOBILE          = DEVICE_CODE + ".parm.mobile";
     public static final String  CONFIG_PARM_UNIQUE          = DEVICE_CODE + ".parm.unique";
@@ -487,6 +504,8 @@ public class Data
     public static final String  CONFIG_PARM_NUM_SATS        = DEVICE_CODE + ".parm.sats";        // number satellites
     public static final String  CONFIG_PARM_BATT_LEVEL      = DEVICE_CODE + ".parm.battlevel";   // battery level
     public static final String  CONFIG_PARM_BATT_VOLTS      = DEVICE_CODE + ".parm.battvolts";   // battery voltage
+    public static final String  CONFIG_PARM_BATT_TEMPC      = DEVICE_CODE + ".parm.batttemp";    // battery temp-C
+    public static final String  CONFIG_PARM_TEMPERATURE     = DEVICE_CODE + ".parm.temperature"; // temperature
     public static final String  CONFIG_PARM_CELLID_MCC      = DEVICE_CODE + ".parm.mcc";         // CellID: mcc
     public static final String  CONFIG_PARM_CELLID_MNC      = DEVICE_CODE + ".parm.mnc";         // CellID: mnc
     public static final String  CONFIG_PARM_CELLID_LAC      = DEVICE_CODE + ".parm.lac";         // CellID: lac
@@ -608,6 +627,8 @@ public class Data
         PARM_NUM_SATS      = RTConfig.getStringArray(CONFIG_PARM_NUM_SATS    , PARM_NUM_SATS    );
         PARM_BATT_LEVEL    = RTConfig.getStringArray(CONFIG_PARM_BATT_LEVEL  , PARM_BATT_LEVEL  );
         PARM_BATT_VOLTS    = RTConfig.getStringArray(CONFIG_PARM_BATT_VOLTS  , PARM_BATT_VOLTS  );
+        PARM_BATT_TEMPC    = RTConfig.getStringArray(CONFIG_PARM_BATT_TEMPC  , PARM_BATT_TEMPC  );
+        PARM_TEMPERATURE   = RTConfig.getStringArray(CONFIG_PARM_TEMPERATURE , PARM_TEMPERATURE );
         PARM_CELLID_MNC    = RTConfig.getStringArray(CONFIG_PARM_CELLID_MNC  , PARM_CELLID_MNC  );
         PARM_CELLID_MCC    = RTConfig.getStringArray(CONFIG_PARM_CELLID_MCC  , PARM_CELLID_MCC  );
         PARM_CELLID_LAC    = RTConfig.getStringArray(CONFIG_PARM_CELLID_LAC  , PARM_CELLID_LAC  );
@@ -618,8 +639,9 @@ public class Data
         PARM_CELLID_ARFCN  = RTConfig.getStringArray(CONFIG_PARM_CELLID_ARFCN, PARM_CELLID_ARFCN);
 
         /* return errors */
-        RESPONSE_OK        = RTConfig.getString(     CONFIG_RESPONSE_OK   , RESPONSE_OK);
-        RESPONSE_ERROR     = RTConfig.getString(     CONFIG_RESPONSE_ERROR, RESPONSE_ERROR);
+        RESPONSE_OK        = RTConfig.getString(     CONFIG_RESPONSE_OK      , RESPONSE_OK);
+        RESPONSE_ERROR     = RTConfig.getString(     CONFIG_RESPONSE_ERROR   , RESPONSE_ERROR);
+        RESPONSE_NOT_AUTH  = RTConfig.getString(     CONFIG_RESPONSE_NOT_AUTH, RESPONSE_ERROR);
 
         /* header */
         Data.logInfo("-----------------------------------------------------------------------");
@@ -648,6 +670,8 @@ public class Data
         Data.printHeaderLine("Message parameter"      , PARM_MESSAGE          , CONFIG_PARM_MESSAGE);
         Data.printHeaderLine("Battery Level parameter", PARM_BATT_LEVEL       , CONFIG_PARM_BATT_LEVEL);
         Data.printHeaderLine("Battery Volts parameter", PARM_BATT_VOLTS       , CONFIG_PARM_BATT_VOLTS);
+        Data.printHeaderLine("Battery TempC parameter", PARM_BATT_TEMPC       , CONFIG_PARM_BATT_TEMPC);
+        Data.printHeaderLine("Temperature parameter"  , PARM_TEMPERATURE      , CONFIG_PARM_TEMPERATURE);
         Data.printHeaderLine("CellID: MCC parameter"  , PARM_CELLID_MCC       , CONFIG_PARM_CELLID_MCC);
         Data.printHeaderLine("CellID: MNC parameter"  , PARM_CELLID_MNC       , CONFIG_PARM_CELLID_MNC);
         Data.printHeaderLine("CellID: LAC parameter"  , PARM_CELLID_LAC       , CONFIG_PARM_CELLID_LAC);
@@ -850,7 +874,7 @@ public class Data
         this._doWork(false, request, response);
     }
     
-    private void _doWork(boolean isPost, HttpServletRequest request, HttpServletResponse response)
+    private void _doWork(final boolean isPost, HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
     {
         String ipAddr     = request.getRemoteAddr();
@@ -882,20 +906,24 @@ public class Data
         /* "&cmd=version"? */
         if (isPost) {
             String cmd = AttributeTools.getRequestString(request, PARM_COMMAND, "");
-            if (cmd.equalsIgnoreCase("version") || 
-                cmd.equalsIgnoreCase("ver")     ||
-                cmd.equalsIgnoreCase("ve")        ) {
+            if (StringTools.isBlank(cmd)) {
+                // -- no command requested (fixed 2.5.4-B10)
+            } else
+            if (ListTools.contains(PARM_VERSION,cmd)) {
+                // -- version requested
                 String vers = DEVICE_CODE+"-"+VERSION;
                 Print.logInfo("Version Command: " + vers);
-                this.plainTextResponse(response, "OK:version:"+vers);
+                this.plainTextResponse(response, "OK:version:ver="+vers+";");
                 return;
-            } else 
+            } else
             if (cmd.equalsIgnoreCase("mobileid") ||
                 cmd.equalsIgnoreCase("id")         ) {
+                // -- MobileID exists
                 Print.logInfo("Command not supported: " + cmd);
                 this.plainTextResponse(response, "ERROR:command:"+cmd);
                 return;
             } else {
+                // -- unknown/unsupported command
                 Print.logInfo("Command not supported: " + cmd);
                 this.plainTextResponse(response, "ERROR:command:"+cmd);
                 return;
@@ -905,7 +933,7 @@ public class Data
         /* Device */
         Device device = this.loadDevice(ipAddr, mobileID, accountID, deviceID, authCode);
         if (device == null) {
-            this.plainTextResponse(response, RESPONSE_ERROR);
+            this.plainTextResponse(response, RESPONSE_NOT_AUTH);
             return;
         }
 
@@ -945,6 +973,8 @@ public class Data
         String _numSats    = AttributeTools.getRequestString(request, PARM_NUM_SATS    , null);
         String _battLevel  = AttributeTools.getRequestString(request, PARM_BATT_LEVEL  , null);
         String _battVolts  = AttributeTools.getRequestString(request, PARM_BATT_VOLTS  , null);
+        String _battTempC  = AttributeTools.getRequestString(request, PARM_BATT_TEMPC  , null);
+        String _tempC      = AttributeTools.getRequestString(request, PARM_TEMPERATURE , null);
         String _cellMCC    = AttributeTools.getRequestString(request, PARM_CELLID_MCC  , null);
         String _cellMNC    = AttributeTools.getRequestString(request, PARM_CELLID_MNC  , null);
         String _cellLAC    = AttributeTools.getRequestString(request, PARM_CELLID_LAC  , null);
@@ -979,8 +1009,24 @@ public class Data
         double horzAcc     = StringTools.parseDouble(_horzAcc   , 0.0);     // meters
         double vertAcc     = StringTools.parseDouble(_vertAcc   , 0.0);     // meters
         int    numSats     = StringTools.parseInt(   _numSats   , 0);       // number of satellites
+
+        /* battery */
         double battLevel   = StringTools.parseDouble(_battLevel , 0.0);     // %
         double battVolts   = StringTools.parseDouble(_battVolts , 0.0);     // volts
+        double battTempC   = StringTools.parseDouble(_battTempC , BAD_TEMP);// degrees C
+        if (_battLevel.indexOf(".") < 0) {
+            // -- "&batt=50": no decimal-point in battery level, assume integer range 0..100
+            battLevel /= 100.0;
+        } else
+        if (battLevel > 1.0) {
+            // -- "&batt=50.3": found decimal-point, but greater than "1.0", assume decimal range 1.0..100.0
+            // -  this may incorrectly re-adjust levels on devices that show a battery-level grater than 100%
+            // -  where "1.05" can be interpreted as 105%.
+            battLevel /= 100.0;
+        }
+
+        /* temperature */
+        double tempC       = StringTools.parseDouble(_tempC     , BAD_TEMP);// degrees C
 
         /* cell-tower */
         int    cellMCC     = StringTools.parseInt(_cellMCC  , 0); 
@@ -1112,10 +1158,16 @@ public class Data
             Data.logInfo("Vert Acc : " + vertAcc + " meters");
         }
         if (battLevel > 0.0) {
-            Data.logInfo("Batt Lvl%: " + battLevel + " %");
+            Data.logInfo("BattLevel: " + battLevel + " %");
         }
         if (battVolts > 0.0) {
-            Data.logInfo("Batt Volt: " + battVolts + " V");
+            Data.logInfo("BattVolts: " + battVolts + " V");
+        }
+        if (EventData.isValidTemperature(battTempC)) {
+            Data.logInfo("BattTempC: " + battTempC + " C");
+        }
+        if (EventData.isValidTemperature(tempC)) {
+            Data.logInfo("Temp C   : " + tempC + " C");
         }
         if (servingCell != null) {
             Data.logInfo("CellTower: " + servingCell.toString());
@@ -1150,9 +1202,16 @@ public class Data
                     zoneEv.setHDOP(hdop);
                     zoneEv.setHorzAccuracy(horzAcc);
                     zoneEv.setVertAccuracy(vertAcc);
+                    zoneEv.setSatelliteCount(numSats);
                     zoneEv.setBatteryLevel(battLevel);
                     zoneEv.setBatteryVolts(battVolts);
-                    zoneEv.setSatelliteCount(numSats);
+                    if (EventData.isValidTemperature(battTempC)) {
+                        // --  BatteryTemp defined only in OpenGTS_2.5.5+
+                        zoneEv.setBatteryTemp(battTempC); // Comment this line if a compiler error occurs
+                    } 
+                    if (EventData.isValidTemperature(tempC)) {
+                        zoneEv.setThermoAverage0(tempC);
+                    }
                     zoneEv.setServingCellTower(servingCell);
                     if (device.insertEventData(zoneEv)) {
                         Print.logInfo("Geozone    : " + z);
@@ -1176,12 +1235,19 @@ public class Data
         evdb.setHDOP(hdop);
         evdb.setHorzAccuracy(horzAcc);
         evdb.setVertAccuracy(vertAcc);
+        evdb.setSatelliteCount(numSats);
         evdb.setBatteryLevel(battLevel);
         evdb.setBatteryVolts(battVolts);
-        evdb.setSatelliteCount(numSats);
+        if (EventData.isValidTemperature(battTempC)) {
+            // --  BatteryTemp defined only in OpenGTS_2.5.5+
+            evdb.setBatteryTemp(battTempC); // Comment this line if a compiler error occurs
+        } 
+        if (EventData.isValidTemperature(tempC)) {
+            evdb.setThermoAverage0(tempC);
+        }
         evdb.setServingCellTower(servingCell);
         //evdb.setEmailRecipient(emailAddr);
-        // this will display an error if it was unable to store the event
+        // -- this will display an error if it was unable to store the event
         if (device.insertEventData(evdb)) {
             //Data.logDebug("Event inserted: "+accountID+"/"+deviceID+" - " + evdb.getGeoPoint());
         }
@@ -1252,25 +1318,29 @@ public class Data
         }
 
         /* DateTime YYYYMMDDhhmmss time format (also supports EPOCH) */
-        if ( (DateFormat == DATE_FORMAT_YMDhms)                                || 
-            ((DateFormat == DATE_FORMAT_YMD   ) && 
-                (StringTools.isBlank(timeStr) || StringTools.isBlank(dateStr)))  ) {
-            // &date=1351798496                 <-- Epoch supported
-            // &date=20121104123432             <-- YYYYMMDDhhmmss
-            // &date=2012/11/04,12:34:32        <-- YYYY/MM/DD,hh:mm:ss
-            // &date=2012-11-DDT12:34:32+00:00  <-- YYYY-MM-DDThh:mm:ssZ (GPX format)
-            String dtStr = !StringTools.isBlank(dateStr)? dateStr : timeStr;
-            if (StringTools.isBlank(dtStr) /* || (dtStr.length() < 10) */ ) {
-                return DateTime.getCurrentTimeSec();
+        if (((DateFormat == DATE_FORMAT_YMDhms) || (DateFormat == DATE_FORMAT_YMD)) &&
+            (StringTools.isBlank(timeStr) || StringTools.isBlank(dateStr))) {
+            String dtStr = null;
+            if (StringTools.isBlank(timeStr)) {
+                // &date=1351798496                 <-- Epoch supported
+                // &date=20121104123432             <-- YYYYMMDDhhmmss
+                // &date=2012/11/04,12:34:32        <-- YYYY/MM/DD,hh:mm:ss
+                // &date=2012-11-DDT12:34:32+00:00  <-- YYYY-MM-DDThh:mm:ssZ (GPX format)
+                dtStr = dateStr;
             } else {
-                try {
-                    DateTime dt = DateTime.parseArgumentDate(dtStr, gmtTimeZone,
-                        DateTime.DefaultParsedTime.CurrentTime);
-                    return dt.getTimeSec();
-                } catch (DateTime.DateParseException dpe) {
-                    Print.logWarn("Unable to parse date/time: " + dtStr);
-                    return DateTime.getCurrentTimeSec();
-                }
+                // &time=1351798496                 <-- Epoch supported
+                // &time=20121104123432             <-- YYYYMMDDhhmmss
+                // &time=2012/11/04,12:34:32        <-- YYYY/MM/DD,hh:mm:ss
+                // &time=2012-11-DDT12:34:32+00:00  <-- YYYY-MM-DDThh:mm:ssZ (GPX format)
+                dtStr = timeStr;
+            }
+            try {
+                DateTime dt = DateTime.parseArgumentDate(dtStr, gmtTimeZone,
+                    DateTime.DefaultParsedTime.CurrentTime);
+                return dt.getTimeSec();
+            } catch (DateTime.DateParseException dpe) {
+                Print.logWarn("Unable to parse date/time: " + dtStr);
+                return DateTime.getCurrentTimeSec();
             }
         }
 
@@ -1342,7 +1412,7 @@ public class Data
         int hh = StringTools.parseInt(timeStr.substring(0,2), 0);
         int mm = StringTools.parseInt(timeStr.substring(2,4), 0);
         int ss = StringTools.parseInt(timeStr.substring(4,6), 0);
-        
+
         /* return epoch time */
         DateTime dt = new DateTime(gmtTimeZone, YYYY, MM, DD, hh, mm, ss);
         return dt.getTimeSec();

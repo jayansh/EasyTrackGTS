@@ -29,6 +29,8 @@
 //     -Added command-line option to count/delete old events by group
 //  2013/03/01  Martin D. Flynn
 //     -Added delete between devices for 'deleteOldEvents' and 'countOldEvents'
+//  2014/03/03  Martin D. Flynn
+//     -Made some adjustments to display warnings when unable to count InnoDB events.
 // ----------------------------------------------------------------------------
 package org.opengts.db.tables;
 
@@ -75,10 +77,12 @@ public class DeviceGroup
     }
 
     /* Group "All" description */
-    public static String GetDeviceGroupAll(Locale loc)
+    public static String GetDeviceGroupAllTitle(Account account, Locale loc)
     {
         I18N i18n = I18N.getI18N(DeviceGroup.class, loc);
-        String devTitles[] = Device.GetTitles(loc);
+        String devTitles[] = (account != null)?
+            account.getDeviceTitles(loc) :
+            Device.GetTitles(loc);
         return i18n.getString("DeviceGroup.allDescription", "All {1}", devTitles);
     }
         
@@ -303,14 +307,22 @@ public class DeviceGroup
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
+    /** 
+    *** Returns count of events in this DeviceGroup.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.
+    **/
     public long countOldEvents(long oldTimeSec, boolean log)
         throws DBException
     {
         Account account = this.getAccount();
         String  groupID = this.getGroupID();
-        return DeviceGroup.countOldEvents(account, groupID, oldTimeSec, log);
+        return DeviceGroup.countOldEvents(account, groupID, oldTimeSec, log); // -1 for InnoDB?
     }
 
+    /** 
+    *** Returns count of events in this DeviceGroup.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.
+    **/
     public static long countOldEvents(Account account, String groupID, long oldTimeSec, boolean log)
         throws DBException
     {
@@ -345,25 +357,40 @@ public class DeviceGroup
         }
 
         /* count events */
+        boolean isInnoDB = false;
         long totalCount = 0L;
         for (String devID : devList) {
 
             /* count old events */
             long startMS = DateTime.getCurrentTimeMillis();
-            long count   = EventData.getRecordCount(acctID, devID, -1L, oldTimeSec);
+            long count   = EventData.getRecordCount(acctID, devID, -1L, oldTimeSec); // -1 for InnoDB
             long endMS   = DateTime.getCurrentTimeMillis();
             long deltaMS = endMS - startMS; // amount of time it took to count the events
-            totalCount  += count;
+            if (count > 0L) {
+                totalCount += count;
+            } else
+            if (count < 0L) {
+                isInnoDB = true;
+            }
             devCount--;
 
             /* logging */
-            if (log && (count > 0)) {
-                StringBuffer sb = new StringBuffer();
-                sb.append("  Device: ").append(StringTools.leftAlign(acctID+"/"+devID,25));
-                sb.append(" - counted ").append(StringTools.rightAlign(String.valueOf(count),5));
-                sb.append(" [").append(deltaMS).append("]");
-                Print.sysPrintln(sb.toString());
-            }
+            if (log) {
+                if (count >= 0L) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("  Device: ").append(StringTools.leftAlign(acctID+"/"+devID,25));
+                    sb.append(" - counted ").append(StringTools.rightAlign(String.valueOf(count),5));
+                    sb.append(" [").append(deltaMS).append("]");
+                    Print.sysPrintln(sb.toString());
+                } else
+                if (count < 0L) { // InnoDB
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("  Device: ").append(StringTools.leftAlign(acctID+"/"+devID,25));
+                    sb.append(" - unable to count (InnoDB?)");
+                    sb.append(" [").append(deltaMS).append("]");
+                    Print.sysPrintln(sb.toString());
+                }
+            } else
 
             /* short sleep before deleting next set of events */
             if (devCount > 0) {
@@ -375,23 +402,39 @@ public class DeviceGroup
 
         /* logging */
         if (log) {
-            if (totalCount > 0) {
+            if (totalCount > 0L) {
                 StringBuffer sb = new StringBuffer();
                 sb.append("  Total : ").append(StringTools.leftAlign(acctID+"/"+groupID,25));
                 sb.append(" - counted ").append(StringTools.rightAlign(String.valueOf(totalCount),5));
                 Print.sysPrintln(sb.toString());
+            } else
+            if (isInnoDB) {
+                Print.sysPrintln("  Unable to determine event counts (InnoDB?): "+acctID+"/"+groupID);
             } else {
                 Print.sysPrintln("  No Devices with counts greater than zero: "+acctID+"/"+groupID);
             }
         }
 
         /* return total count */
-        return totalCount;
+        if ((totalCount <= 0L) && isInnoDB) {
+            return -1L; // InnoDB
+        } else {
+            return totalCount;
+        }
 
     }
     
     // ------------------------------------------------------------------------
 
+    /**
+    *** Delete events prior to the specified time.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.  
+    ***       Old events will still be deleted, however it will still go through the
+    ***       motions of attempting to delete events, event if the range is empty.
+    *** @param oldTimeSec  The timestamp before which events will be deleted
+    *** @param log         True to display log
+    *** @return The number of events deleted
+    **/
     public long deleteOldEvents(
         long oldTimeSec, 
         boolean log)
@@ -399,9 +442,20 @@ public class DeviceGroup
     {
         Account account = this.getAccount();
         String  groupID = this.getGroupID();
-        return DeviceGroup.deleteOldEvents(account, groupID, oldTimeSec, log);
+        return DeviceGroup.deleteOldEvents(account, groupID, oldTimeSec, log); // -1 for InnoDB
     }
 
+    /**
+    *** Delete events prior to the specified time.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.  
+    ***       Old events will still be deleted, however it will still go through the
+    ***       motions of attempting to delete events, event if the range is empty.
+    *** @param account     The account
+    *** @param groupID     The group-id
+    *** @param oldTimeSec  The timestamp before which events will be deleted
+    *** @param log         True to display log
+    *** @return The number of events deleted
+    **/
     public static long deleteOldEvents(
         Account account, String groupID, 
         long oldTimeSec, 
@@ -456,6 +510,7 @@ public class DeviceGroup
 
         /* delete events */
         StringBuffer msg = new StringBuffer();
+        boolean isInnoDB = false;
         long totalCount = 0L;
         for (String devID : devList) {
             msg.setLength(0);
@@ -471,22 +526,39 @@ public class DeviceGroup
 
             /* delete old events */
             long startMS = DateTime.getCurrentTimeMillis();
-            long count   = EventData.deleteOldEvents(device, oldTimeSec, msg);
+            long count   = EventData.deleteOldEvents(device, oldTimeSec, msg); // -1 for InnoDB
             long endMS   = DateTime.getCurrentTimeMillis();
             long deltaMS = endMS - startMS; // amount of time it took to delete the events
-            totalCount  += count;
+            if (count > 0L) {
+                totalCount += count;
+            } else
+            if (count < 0L) {
+                isInnoDB = true;
+            }
             devCount--;
 
             /* logging */
             if (log) {
-                StringBuffer sb = new StringBuffer();
-                sb.append("  Device: ").append(StringTools.leftAlign(acctID+"/"+devID,25));
-                sb.append(" - deleted ").append(StringTools.rightAlign(String.valueOf(count),5));
-                sb.append(" [").append(deltaMS).append("ms]");
-                if (msg.length() > 0) {
-                    sb.append("  ").append(msg);
+                if (count >= 0L) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("  Device: ").append(StringTools.leftAlign(acctID+"/"+devID,25));
+                    sb.append(" - deleted ").append(StringTools.rightAlign(String.valueOf(count),5));
+                    sb.append(" [").append(deltaMS).append("ms]");
+                    if (msg.length() > 0) {
+                        sb.append("  ").append(msg);
+                    }
+                    Print.sysPrintln(sb.toString());
+                } else
+                if (count < 0L) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("  Device: ").append(StringTools.leftAlign(acctID+"/"+devID,25));
+                    sb.append(" - deleted ").append(StringTools.rightAlign("?",5)).append(" (InnoDB?)");
+                    sb.append(" [").append(deltaMS).append("ms]");
+                    if (msg.length() > 0) {
+                        sb.append("  ").append(msg);
+                    }
+                    Print.sysPrintln(sb.toString());
                 }
-                Print.sysPrintln(sb.toString());
             }
 
             /* short sleep before deleting next set of events */
@@ -508,7 +580,11 @@ public class DeviceGroup
         }
 
         /* return total count */
-        return totalCount;
+        if ((totalCount <= 0L) && isInnoDB) {
+            return -1L; // InnoDB
+        } else {
+            return totalCount;
+        }
 
     }
 
@@ -1264,14 +1340,14 @@ public class DeviceGroup
                         Print.sysPrintln("ERROR: Missing '-confirm', aborting delete ...");
                         System.exit(1);
                     }
-                    DeviceGroup.deleteOldEvents(acct, groupID, oldTimeSec, true);
+                    DeviceGroup.deleteOldEvents(acct, groupID, oldTimeSec, true); // InnoDB?
                 } else {
                     Print.sysPrintln("Counting events prior to: " + (new DateTime(oldTimeSec)));
                     if (!confirm) {
                         Print.sysPrintln("ERROR: Missing '-confirm', aborting count ...");
                         System.exit(1);
                     }
-                    DeviceGroup.countOldEvents(acct, groupID, oldTimeSec, true);
+                    DeviceGroup.countOldEvents(acct, groupID, oldTimeSec, true); // InnoDB?
                 }
                 System.exit(0);
             } catch (DBException dbe) {

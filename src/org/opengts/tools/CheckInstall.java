@@ -106,6 +106,8 @@
 //     -Added disk utilization checks
 //     -Added check for recommended DCS runtime config properties
 //     -Additional checks for ReportCron required properties
+//  2014/03/03  Martin D. Flynn
+//     -Added list of currently loaded config files (see getLoadedURLs)
 // ----------------------------------------------------------------------------
 package org.opengts.tools;
 
@@ -151,11 +153,29 @@ public class CheckInstall
     private static final int     WRAP_WIDTH                     = 90;
 
     private static       boolean SHOW_REPORT_LIMITS             = false;
-    
+
     private static       boolean SHOW_DB_ERRORS                 = false;
-    
+
     private static final long    RECOMMENDED_MEMORY_MB          = 4096L;
     private static final double  THRESHOLD_DISK_UTIL            = 0.90;
+
+    // ------------------------------------------------------------------------
+
+    private static final String  CONFIG_FILES[]                 = {
+        "webapp.conf",
+        "default.conf",
+        "common.conf",
+        "system.conf",
+        "authkeys.conf",
+        "statusCodes.conf",
+        "custom.conf",
+        "custom_gts.conf",
+        "config_old.conf",
+        "config.conf",
+        "private.xml",
+        "private/private_common.xml",
+        "reports.xml",
+    };
 
     // ------------------------------------------------------------------------
 
@@ -720,6 +740,10 @@ public class CheckInstall
         /* clear errors */
         clearErrors();
 
+        /* track.war build time (last modified time) */
+        File trackWar_file = new File(configDir,"build/track.war");
+        long trackWar_lastModMS = trackWar_file.lastModified(); // '0' if does not exist
+
         /* begin */
         println("");
         int sepWidth = WRAP_WIDTH;
@@ -746,10 +770,14 @@ public class CheckInstall
         println("");
         println(isEnterprise? "GTS Enterprise:" : "OpenGTS:");
         {
+            String trackWar_build = (trackWar_lastModMS > 0L)?
+                (new DateTime(trackWar_lastModMS/1000L)).toString() : " n/a";
             // Version
             printVariable("(Version)", DBConfig.getVersion(), (isEnterprise?"(enterprise)":""));
             // Compiletime
             printVariable("(Compiled Time)", (new DateTime(CompileTime.COMPILE_TIMESTAMP)).toString(), "");
+            // Compiletime
+            printVariable("('track.war' Build)", trackWar_build, "");
             // Current time
             printVariable("(Current Time)", (new DateTime()).toString(), "");
             // Current user
@@ -858,7 +886,7 @@ public class CheckInstall
             if (sysMem != null) {
                 String  fmt    = "0"; // "0.0"
                 int     digLen = sysMem.getTotalFieldLength(OSTools.M_BYTES, sysDisk) + fmt.length() - 1;
-                Print.sysPrintln("MemoryUsage digLen: " + digLen);
+                //Print.sysPrintln("MemoryUsage digLen: " + digLen);
                 double  _tot   = sysMem.getTotal_Mb();
                 double  _used  = sysMem.getUsed_Mb();
                 double  _free  = sysMem.getFree_Mb();
@@ -1381,6 +1409,69 @@ public class CheckInstall
                 addError("Unable to load WebApp configuration file.",
                          "Possible invalid/unreadable configuration file.",
                          "Please check that configuration exists and is readable.");
+            }
+        }
+        // Show currently loaded config files
+        {
+            // -- list loaded config files
+            RTProperties cfgFileProps = RTConfig.getConfigFileProperties();
+            java.util.List<URL> loadedURLs = (cfgFileProps != null)? cfgFileProps.getLoadedURLs() : null;
+            int cnt = 1, WC = -1;
+            java.util.List<String> allConfigFiles = ListTools.toList(CONFIG_FILES,new Vector<String>());
+            printVariable("(Loaded Config Files)", "(last modified date)", "");
+            // -- list loaded files
+            if (!ListTools.isEmpty(loadedURLs)) {
+                for (URL url : loadedURLs) {
+                    String dispFile = url.toString();
+                    String modWarn = "";
+                    String modDate = "";
+                    if (url.getProtocol().equalsIgnoreCase("file")) {
+                        try {
+                            File cfgFile = new File(url.toURI()); // may throw exception
+                            dispFile = cfgFile.toString();
+                            if ((configDir != null) && dispFile.startsWith(configDir.toString())) {
+                                dispFile = dispFile.substring(configDir.toString().length());
+                                if (dispFile.startsWith("/") || dispFile.startsWith("\\")) {
+                                    dispFile = dispFile.substring(1);
+                                }
+                            }
+                            long cfgLastModMS = cfgFile.lastModified();
+                            DateTime modDT = new DateTime(cfgLastModMS/1000L);
+                            modDate = modDT.shortFormat(null);
+                            if ((trackWar_lastModMS > 0L) && (cfgLastModMS > trackWar_lastModMS)) {
+                                if (WC < 0) {
+                                    WC = countWarning("Config file found that was modified after the 'track.war' file was built.");
+                                    recommendations.append("- Recommend rebuilding 'track.war' file.\n");
+                                }
+                                modWarn = "(WARNING["+WC+"]: Modified AFTER 'track.war' was built)";
+                            }
+                        } catch (Throwable th) {
+                            dispFile = url.toString();
+                        }
+                    }
+                    printVariable("  "+(cnt++)+") "+dispFile, modDate, modWarn);
+                    allConfigFiles.remove(dispFile);
+                }
+            }
+            // -- list remaining files
+            if (!ListTools.isEmpty(allConfigFiles)) {
+                for (String dispFile : allConfigFiles) {
+                    File cfgFile = (configDir != null)? new File(configDir,dispFile) : new File(dispFile);
+                    if (cfgFile.isFile()) { // exists
+                        long cfgLastModMS = cfgFile.lastModified();
+                        DateTime modDT = new DateTime(cfgLastModMS/1000L);
+                        String modDate = modDT.shortFormat(null);
+                        String modWarn = "";
+                        if ((trackWar_lastModMS > 0L) && (cfgLastModMS > trackWar_lastModMS)) {
+                            if (WC < 0) {
+                                WC = countWarning("Config file found that was modified after the 'track.war' file was built.");
+                                recommendations.append("- Recommend rebuilding 'track.war' file.\n");
+                            }
+                            modWarn = "(WARNING["+WC+"]: Modified AFTER 'track.war' was built)";
+                        }
+                        printVariable("  -) "+dispFile, modDate, modWarn);
+                    }
+                }
             }
         }
         // log directory
@@ -1916,7 +2007,7 @@ public class CheckInstall
                         println(PFX+"Sending test email to '"+toAddr+"' ["+loadTestCnt+"] ...");
                         emailLoadTest:
                         for (int e = 0; e < loadTestCnt; e++) {
-                            if (SendMail.send(fromAddr,toAddr,subj,body,null,smtpProps)) {
+                            if (SendMail.send(fromAddr,toAddr,subj,body,null,smtpProps,false)) {
                                 println(PFX+"... Test email successfully sent: ["+(e+1)+"/"+loadTestCnt+"]");
                                 if (e == 0) {
                                     println(PFX+"    From   : " + fromAddr);
@@ -1928,7 +2019,7 @@ public class CheckInstall
                                 //println(PFX+"    BodyHex: 0x" + StringTools.toHexString(body.getBytes(StringTools.CharEncoding_UTF_8)));
                                 //} catch (Throwable th) {/* ignore */}
                             } else {
-                                println(PFX+"ERROR: Unable to send email ('SendMail' failed)");
+                                println(PFX+"ERROR: Unable to queue/send email ('SendMail' failed)");
                                 addError("Unable to send a test email.",
                                          "'SendMail' failed (see previous errors).",
                                          "Please fix displayed errors and re-run CheckInstall.");

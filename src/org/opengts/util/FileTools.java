@@ -173,6 +173,7 @@ public class FileTools
                 return file.getCanonicalFile();
             } catch (IOException ioe) {
                 // ignore error
+                //Print.logException("Unable to obtain RealFile: " + file);
             }
         }
         return null;
@@ -2193,29 +2194,31 @@ public class FileTools
 
     // ------------------------------------------------------------------------
 
-    private static final String ARG_WGET[]          = new String[] { "wget"       , "url"    };    // URL
-    private static final String ARG_FROM_HEX[]      = new String[] { "fromHex"    , "hexFile"};    // File
-    private static final String ARG_TODIR[]         = new String[] { "dir"        , "todir"  };    // Directory
-    private static final String ARG_TOFILE[]        = new String[] { "to"         , "tofile" };    // File
-    private static final String ARG_WHERE[]         = new String[] { "where"                 };    // command name
-    private static final String ARG_WIDTH[]         = new String[] { "width"      , "w"      };    // int
-    private static final String ARG_DUMP[]          = new String[] { "dump"                  };    // boolean
-    private static final String ARG_STRINGS[]       = new String[] { "strings"               };    // boolean
-    private static final String ARG_UNI_ENCODE[]    = new String[] { "uniencode"  , "ue"     };    // boolean
-    private static final String ARG_UNI_DECODE[]    = new String[] { "unidecode"  , "ud"     };    // boolean
-    private static final String ARG_FIND[]          = new String[] { "find"                  };    // String
-    private static final String ARG_COUNTUNIQUE[]   = new String[] { "countUnique"           };    // File
-    private static final String ARG_FILTERLOG[]     = new String[] { "filterLog"  , "flog"   };    // File
-    private static final String ARG_NO_HEADER[]     = new String[] { "noHeader"   , "nh"     };    // Boolean
-    private static final String ARG_SEARCH[]        = new String[] { "search"     , "grep"   };    // File
-    private static final String ARG_MATCH[]         = new String[] { "match"                 };    // String\String
-    private static final String ARG_COPY_CSV[]      = new String[] { "copyCSV"               };    // File
-    private static final String ARG_MD5[]           = new String[] { "md5"                   };    // File
-    private static final String ARG_SHA1[]          = new String[] { "sha1"                  };    // File
-    private static final String ARG_SHA256[]        = new String[] { "sha256"                };    // File
-    private static final String ARG_IS_LINK[]       = new String[] { "isLink"                };    // File
+    private static final String ARG_WGET[]          = new String[] { "wget"       , "url"      };    // URL
+    private static final String ARG_HEX_EXPORT[]    = new String[] { "toHex"      , "hexExport"};    // File
+    private static final String ARG_HEX_IMPORT[]    = new String[] { "fromHex"    , "hexImport"};    // File
+    private static final String ARG_JAVA_STRING[]   = new String[] { "javaString"              };    // File
+    private static final String ARG_TODIR[]         = new String[] { "dir"        , "todir"    };    // Directory
+    private static final String ARG_TOFILE[]        = new String[] { "to"         , "tofile"   };    // File
+    private static final String ARG_WHERE[]         = new String[] { "where"                   };    // command name
+    private static final String ARG_WIDTH[]         = new String[] { "width"      , "w"        };    // int
+    private static final String ARG_DUMP[]          = new String[] { "dump"                    };    // boolean
+    private static final String ARG_STRINGS[]       = new String[] { "strings"                 };    // boolean
+    private static final String ARG_UNI_ENCODE[]    = new String[] { "uniencode"  , "ue"       };    // boolean
+    private static final String ARG_UNI_DECODE[]    = new String[] { "unidecode"  , "ud"       };    // boolean
+    private static final String ARG_FIND[]          = new String[] { "find"                    };    // String
+    private static final String ARG_COUNTUNIQUE[]   = new String[] { "countUnique"             };    // File
+    private static final String ARG_FILTERLOG[]     = new String[] { "filterLog"  , "flog"     };    // File
+    private static final String ARG_NO_HEADER[]     = new String[] { "noHeader"   , "nh"       };    // Boolean
+    private static final String ARG_SEARCH[]        = new String[] { "search"     , "grep"     };    // File
+    private static final String ARG_MATCH[]         = new String[] { "match"                   };    // String\String
+    private static final String ARG_COPY_CSV[]      = new String[] { "copyCSV"                 };    // File
+    private static final String ARG_MD5[]           = new String[] { "md5"                     };    // File
+    private static final String ARG_SHA1[]          = new String[] { "sha1"                    };    // File
+    private static final String ARG_SHA256[]        = new String[] { "sha256"                  };    // File
+    private static final String ARG_IS_LINK[]       = new String[] { "isLink"                  };    // File
 
-    private static final String ARG_PATTERN[]       = new String[] { "pattern"               };    // int
+    private static final String ARG_PATTERN[]       = new String[] { "pattern"                 };    // int
 
     /**
     *** Display usage
@@ -2323,16 +2326,6 @@ public class FileTools
             System.exit(0);
         }
 
-        /* hex dump */
-        if (RTConfig.hasProperty(ARG_DUMP)) {
-            File file = RTConfig.getFile(ARG_DUMP,null);
-            byte data[] = FileTools.readFile(file);
-            System.out.println("Size " + ((data!=null)?data.length:-1));
-            int width = RTConfig.getInt(ARG_WIDTH,16);
-            System.out.println(StringTools.formatHexString(data,width));
-            System.exit(0);
-        }
-
         /* unicode decode */
         if (RTConfig.hasProperty(ARG_UNI_DECODE)) {
             File file = RTConfig.getFile(ARG_UNI_DECODE,null);
@@ -2342,20 +2335,112 @@ public class FileTools
             System.exit(0);
         }
 
-        /* decode hex file to binay */
-        if (RTConfig.hasProperty(ARG_FROM_HEX)) {
-            File hexFile = RTConfig.getFile(ARG_FROM_HEX,null);
-            String asciiHex = StringTools.toStringValue(FileTools.readFile(hexFile));
+        /* import ascii file to Java String */
+        if (RTConfig.hasProperty(ARG_JAVA_STRING)) {
+            File impFile = RTConfig.getFile(ARG_JAVA_STRING,null);
+            if (!FileTools.isFile(impFile)) {
+                Print.sysPrintln("Not a file: " + impFile);
+                System.exit(1);
+            }
+            // -- read file
+            String text = StringTools.toStringValue(FileTools.readFile(impFile));
+            // -- split lines
+            String line[] = StringTools.split(text,'\n');
+            // -- assemble 
+            StringBuffer sb = new StringBuffer();
+            sb.append("String text = \n");
+            for (String L : line) {
+                L = StringTools.replace(L, "\"", "\\\"");
+                sb.append("    \"");
+                sb.append(L);
+                sb.append("\\n\" +\n");
+            }
+            sb.append("    \"\";\n");
+            Print.sysPrintln(sb.toString());
+            // -- exit
+            System.exit(0);
+        }
+
+        /* import ascii-hex file to binay */
+        if (RTConfig.hasProperty(ARG_HEX_IMPORT)) {
+            // -- get file to import
+            File impFile = RTConfig.getFile(ARG_HEX_IMPORT,null);
+            if (!FileTools.isFile(impFile)) {
+                Print.sysPrintln("Not a file: " + impFile);
+                System.exit(1);
+            }
+            // -- read and trim ascii hex
+            String asciiHex = StringTools.toStringValue(FileTools.readFile(impFile));
+            asciiHex = StringTools.stripChars(asciiHex," \t\r\n");
+            // -- parse to binary
             byte bin[] = StringTools.parseHex(asciiHex,null);
+            if (bin == null) {
+                Print.sysPrintln("Unable to parse hex from file (invalid hex?): " + impFile);
+                System.exit(1);
+            }
+            // -- get output file
             File toFile = RTConfig.getFile(ARG_TOFILE,null);
+            if (toFile == null) {
+                Print.sysPrintln("ERROR: 'toFile' not specified");
+                System.exit(1);
+            } else
+            if (toFile.exists()) {
+                Print.sysPrintln("'toFile' already exists: " + toFile);
+                System.exit(1);
+            }
+            // -- write to file
             try {
-                FileTools.writeFile(bin, toFile, false);
-                Print.sysPrintln("Data written to: " + toFile);
-                System.exit(0);
+                Print.sysPrintln("Writing to file: " + toFile);
+                FileTools.writeFile(bin, toFile, false/*append?*/);
+                Print.sysPrintln("Data written to: " + toFile + " [" + FileTools.getRealFile(toFile) + "]");
             } catch (IOException ioe) {
                 Print.logException("Error writing to: " + toFile, ioe);
                 System.exit(99);
             }
+            // -- done
+            System.exit(0);
+        }
+
+        /* export binary file to ascii-hex */
+        if (RTConfig.hasProperty(ARG_HEX_EXPORT)) {
+            // bin/exeJava -quit -hexExport=FROM_FILE -width=64
+            // -- get file to export
+            File file = RTConfig.getFile(ARG_HEX_EXPORT,null);
+            if (!FileTools.isFile(file)) {
+                Print.sysPrintln("Not a file: " + file);
+                System.exit(1);
+            }
+            // -- read binary data
+            byte data[] = FileTools.readFile(file);
+            if (ListTools.size(data) <= 0) {
+                Print.sysPrintln("File is empty: " + file);
+                System.exit(1);
+            }
+            // -- export to ascii-hex
+            int width = RTConfig.getInt(ARG_WIDTH,32);
+            if (width <= 0) {
+                Print.sysPrintln(StringTools.toHexString(data));
+            } else {
+                for (int ofs = 0; (ofs < data.length); ofs += width) {
+                    Print.sysPrintln(StringTools.toHexString(data,ofs,width));
+                }
+            }
+            // -- done
+            System.exit(0);
+        }
+
+        /* hex dump */
+        if (RTConfig.hasProperty(ARG_DUMP)) {
+            // -- get file to dump
+            File file = RTConfig.getFile(ARG_DUMP,null);
+            // -- read binary data
+            byte data[] = FileTools.readFile(file);
+            System.out.println("Size " + ((data!=null)?data.length:-1));
+            // -- format hex output
+            int width = RTConfig.getInt(ARG_WIDTH,16);
+            System.out.println(StringTools.formatHexString(data,width));
+            // -- done
+            System.exit(0);
         }
 
         /* display strings > 4 chars */

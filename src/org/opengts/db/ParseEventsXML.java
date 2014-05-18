@@ -490,13 +490,14 @@ public class ParseEventsXML
     
     public static String ARG_ACCOUNT[]  = new String[] { "account", "acct", "a" };
     public static String ARG_DEVICE[]   = new String[] { "device" , "dev" , "d" };
+    public static String ARG_FILE[]     = new String[] { "file"                 };
 
     public static void main(String args[])
     {
         RTConfig.setCommandLineArgs(args);
 
         /* get XML (GPX) file */
-        File xmlFile = RTConfig.getFile("file",null);
+        File xmlFile = RTConfig.getFile(ARG_FILE,null);
         if (xmlFile == null) {
             Print.sysPrintln("Missing '-file' specification");
             System.exit(1);

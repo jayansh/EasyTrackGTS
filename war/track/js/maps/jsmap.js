@@ -887,7 +887,7 @@ function jsmParseAJAXPoints_JSON(jsonText, recenterMode, replay) // tmz
             //alert("Parsed JSON shape type="+type +" radius="+radiusM +" color="+color +" pt="+dbgPts);
 
             /* create shape (draw later) */
-            shapes.push(new JSMapShape(type, radiusM, points, color, false));
+            shapes.push(new JSMapShape(type, radiusM, points, color, false)); // JSON
 
         }
     }
@@ -1253,7 +1253,7 @@ function jsmParseAJAXPoints_XML(xmlText, recenterMode, replay) // tmz
         //alert("Parsed XML shape type="+type +" radius="+radiusM +" color="+color +" pt="+dbgPts);
 
         /* create shape (draw later) */
-        shapes.push(new JSMapShape(type, radiusM, points, color, false));
+        shapes.push(new JSMapShape(type, radiusM, points, color, false)); // XML
 
     }
 

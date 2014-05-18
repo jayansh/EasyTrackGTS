@@ -74,6 +74,8 @@
 //     -Fixed NPE in "parseDateTime" (when Epoch time specification is invalid).
 //  2013/09/20  Martin D. Flynn
 //     -Support case-insensitive timezone name lookup (see LOWERCASE_TIMEZONE_LOOKUP).
+//  2014/03/03  Martin D. Flynn
+//     -Added "isFuture(..)"
 // ----------------------------------------------------------------------------
 package org.opengts.util;
 
@@ -2726,6 +2728,18 @@ public class DateTime
     }
 
     // ------------------------------------------------------------------------
+
+    /**
+    *** Returns true if the this DateTime is more than the specified seconds into the future.
+    *** @param deltaSec The number of seconds into the future.
+    *** @return True if this DateTime is more than the specified seconds into the future.
+    **/
+    public boolean isFuture(long deltaSec)
+    {
+        TimeZone tz = this.getTimeZone();
+        DateTime dt = new DateTime(DateTime.getCurrentTimeSec() + deltaSec, tz);
+        return this.isAfter(dt, false);
+    }
 
     /**
     *** Returns true if the this DateTime is <b>after</b> the specified DateTime instance

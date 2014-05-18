@@ -581,26 +581,27 @@ public class CompiletimeVars
         if (!RTConfig.hasProperty("timezone"))  { RTConfig.setString("timezone" , now.format("z")); }
 
         /* special case "daysUntil" */
+        // %{daysUntil=2012:02:20}  <== fixed time
         String ARG_daysUntil_ = "daysUntil";
         Set<String> daysUntil_keys = RTConfig.getPropertyKeys(ARG_daysUntil_, false);
         for (String daysUntil_key : daysUntil_keys) {
             String daysUntil_key_date = daysUntil_key + ".date";
             RTProperties daysUntilRTP = RTConfig.getPropertiesForKey(daysUntil_key, false); 
             if (daysUntilRTP != null) {
-                // get/update the RTProperties where "daysUntil" is defined
+                // -- get/update the RTProperties where "daysUntil" is defined
                 String daysUntil = daysUntilRTP.getString(daysUntil_key,"");
                 if (StringTools.isBlank(daysUntil)) {
-                    // remove keys
+                    // -- remove keys
                     daysUntilRTP.removeProperty(daysUntil_key     );
                     daysUntilRTP.removeProperty(daysUntil_key_date);
                     //Print.sysPrintln(daysUntil_key      + " ==> <removed>");
                     //Print.sysPrintln(daysUntil_key_date + " ==> <removed>");
                 } else
                 if ((daysUntil.indexOf("/") >= 0) || (daysUntil.indexOf(":") >= 0)) {
-                    // Change "yyyy:mm:dd" to "DD"
+                    // -- Change "yyyy:mm:dd" to "DD"
                     // Note: The ':' separator should be used instead of '/', because "2010/10/01" is
-                    // syntactically correct and can be compiled into a valid value, while "2010:10:01"
-                    // is not, and will be caught by the compiler.
+                    // syntactically correct (ie. division) and can be compiled into a valid value, 
+                    // while "2010:10:01" is not, and will be caught by the compiler.
                     if (daysUntil.startsWith("'") || daysUntil.startsWith("\"")) {
                         daysUntil = daysUntil.substring(1); // remove prefixing quote
                     }
@@ -614,11 +615,11 @@ public class CompiletimeVars
                         long     futDay = DateTime.getDayNumberFromDate(futDT);
                         long     deltaD = futDay - nowDay;
                         if (deltaD == 0L) {
-                            // today
+                            // -- today
                             deltaD = 1L; // make it tomorrow
                         } else
                         if (deltaD < 0L) {
-                            // this means that the date has already passed
+                            // -- this means that the date has already passed
                             //deltaD = -1L; // already negative
                         } else {
                             deltaD += 1L; // add one more day
@@ -629,25 +630,53 @@ public class CompiletimeVars
                         Print.logException("Unable to parse Date: " + daysUntil, dpe);
                         System.exit(1);
                     }
-                    Print.sysPrintln(daysUntil_key      + " ==> " + daysUntilRTP.getString(daysUntil_key     ,"?"));
-                    Print.sysPrintln(daysUntil_key_date + " ==> " + daysUntilRTP.getString(daysUntil_key_date,"?"));
+                    //Print.sysPrintln(daysUntil_key      + " ==> " + daysUntilRTP.getString(daysUntil_key     ,"?"));
+                    //Print.sysPrintln(daysUntil_key_date + " ==> " + daysUntilRTP.getString(daysUntil_key_date,"?"));
                 } else {
                     long futSec = DateTime.getCurrentTimeSec() + DateTime.DaySeconds(StringTools.parseLong(daysUntil,0L));
                     daysUntilRTP.setString(daysUntil_key_date, (new DateTime(futSec)).format(DateTime.DEFAULT_DATE_FORMAT));
-                    Print.sysPrintln(daysUntil_key      + " ==> " + daysUntilRTP.getString(daysUntil_key     ,"?"));
-                    Print.sysPrintln(daysUntil_key_date + " ==> " + daysUntilRTP.getString(daysUntil_key_date,"?"));
+                    //Print.sysPrintln(daysUntil_key      + " ==> " + daysUntilRTP.getString(daysUntil_key     ,"?"));
+                    //Print.sysPrintln(daysUntil_key_date + " ==> " + daysUntilRTP.getString(daysUntil_key_date,"?"));
+                }
+            }
+        }
+
+        /* special case "daysFromNow" */
+        // %{daysFromNow=30}  <== 30 days from now
+        String ARG_daysFromNow_ = "daysFromNow";
+        Set<String> daysFromNow_keys = RTConfig.getPropertyKeys(ARG_daysFromNow_, false);
+        for (String daysFromNow_key : daysFromNow_keys) {
+            String daysFromNow_key_date = daysFromNow_key + ".date";
+            RTProperties daysFromNowRTP = RTConfig.getPropertiesForKey(daysFromNow_key, false); 
+            if (daysFromNowRTP != null) {
+                // -- get/update the RTProperties where "daysFromNow" is defined
+                String daysFromNow = daysFromNowRTP.getString(daysFromNow_key,"");
+                if (StringTools.isBlank(daysFromNow)) {
+                    // -- remove keys
+                    daysFromNowRTP.removeProperty(daysFromNow_key     );
+                    daysFromNowRTP.removeProperty(daysFromNow_key_date);
+                    //Print.sysPrintln(daysFromNow_key      + " ==> <removed>");
+                    //Print.sysPrintln(daysFromNow_key_date + " ==> <removed>");
+                } else {
+                    long futSec = DateTime.getCurrentTimeSec() + DateTime.DaySeconds(StringTools.parseLong(daysFromNow,0L));
+                    daysFromNowRTP.setString(daysFromNow_key     , String.valueOf(futSec));
+                    daysFromNowRTP.setString(daysFromNow_key_date, (new DateTime(futSec)).format(DateTime.DEFAULT_DATE_FORMAT));
+                    //Print.sysPrintln(daysFromNow_key      + " ==> " + daysFromNowRTP.getString(daysFromNow_key     ,"?"));
+                    //Print.sysPrintln(daysFromNow_key_date + " ==> " + daysFromNowRTP.getString(daysFromNow_key_date,"?"));
                 }
             }
         }
 
         /* special case "secondsUntil" */
+        // %{secondsUntil_abc=2012:02:20} <== fixed time
+        // %{secondsUntil_abc=86400}      <== relative time (86400 seconds from now)
         String ARG_secondsUntil_ = "secondsUntil";
         Set<String> secUntil_keys = RTConfig.getPropertyKeys(ARG_secondsUntil_, false);
         for (String secUntil_key : secUntil_keys) {
             String secUntil_key_date = secUntil_key + ".date";
             RTProperties secUntilRTP = RTConfig.getPropertiesForKey(secUntil_key, false); 
             if (secUntilRTP != null) {
-                // get/update the RTProperties where "secondsUntil" is defined
+                // -- get/update the RTProperties where "secondsUntil" is defined
                 String secUntil = secUntilRTP.getString(secUntil_key,"");
                 if (StringTools.isBlank(secUntil)) {
                     // remove keys
@@ -657,10 +686,10 @@ public class CompiletimeVars
                     //Print.sysPrintln(secUntil_key_date + " ==> <removed>");
                 } else
                 if ((secUntil.indexOf("/") >= 0) || (secUntil.indexOf(":") >= 0)) {
-                    // Change "yyyy:mm:dd:HH:MM:SS" to "ssssss"
+                    // -- Change "yyyy:mm:dd:HH:MM:SS" to "ssssss"
                     // Note: The ':' separator should be used instead of '/', because "2010/10/01" is
-                    // syntactically correct and can be compiled into a valid value, while "2010:10:01"
-                    // is not, and will be caught by the compiler.
+                    // syntactically correct (ie. division) and can be compiled into a valid value, 
+                    // while "2010:10:01" is not, and will be caught by the compiler.
                     if (secUntil.startsWith("'") || secUntil.startsWith("\"")) {
                         secUntil = secUntil.substring(1); // remove prefixing quote
                     }
@@ -673,11 +702,11 @@ public class CompiletimeVars
                         long     futSec = futDT.getTimeSec();
                         long     deltaS = futSec - nowSec;
                         if (deltaS == 0L) {
-                            // now
+                            // -- now
                             deltaS = 1L; // make it 1 second from now
                         } else
                         if (deltaS < 0L) {
-                            // this means that the time has already passed
+                            // -- this means that the time has already passed
                             //deltaS = -1L; // already negative
                         } else {
                             deltaS += 1L; // add one more second
@@ -688,13 +717,39 @@ public class CompiletimeVars
                         Print.logException("Unable to parse Date: " + secUntil, dpe);
                         System.exit(1);
                     }
-                    Print.sysPrintln(secUntil_key      + " ==> " + secUntilRTP.getString(secUntil_key     ,"?"));
-                    Print.sysPrintln(secUntil_key_date + " ==> " + secUntilRTP.getString(secUntil_key_date,"?"));
+                    //Print.sysPrintln(secUntil_key      + " ==> " + secUntilRTP.getString(secUntil_key     ,"?"));
+                    //Print.sysPrintln(secUntil_key_date + " ==> " + secUntilRTP.getString(secUntil_key_date,"?"));
                 } else {
                     long futSec = DateTime.getCurrentTimeSec() + StringTools.parseLong(secUntil,0L);
                     secUntilRTP.setString(secUntil_key_date, (new DateTime(futSec)).toString());
-                    Print.sysPrintln(secUntil_key      + " ==> " + secUntilRTP.getString(secUntil_key     ,"?"));
-                    Print.sysPrintln(secUntil_key_date + " ==> " + secUntilRTP.getString(secUntil_key_date,"?"));
+                    //Print.sysPrintln(secUntil_key      + " ==> " + secUntilRTP.getString(secUntil_key     ,"?"));
+                    //Print.sysPrintln(secUntil_key_date + " ==> " + secUntilRTP.getString(secUntil_key_date,"?"));
+                }
+            }
+        }
+
+        /* special case "secondsFromNow" */
+        // %{secondsFromNow=30}  <== 30 seconds from now
+        String ARG_secondsFromNow_ = "secondsFromNow";
+        Set<String> secondsFromNow_keys = RTConfig.getPropertyKeys(ARG_secondsFromNow_, false);
+        for (String secondsFromNow_key : secondsFromNow_keys) {
+            String secondsFromNow_key_date = secondsFromNow_key + ".date";
+            RTProperties secondsFromNowRTP = RTConfig.getPropertiesForKey(secondsFromNow_key, false); 
+            if (secondsFromNowRTP != null) {
+                // -- get/update the RTProperties where "secondsFromNow" is defined
+                String secondsFromNow = secondsFromNowRTP.getString(secondsFromNow_key,"");
+                if (StringTools.isBlank(secondsFromNow)) {
+                    // -- remove keys
+                    secondsFromNowRTP.removeProperty(secondsFromNow_key     );
+                    secondsFromNowRTP.removeProperty(secondsFromNow_key_date);
+                    //Print.sysPrintln(secondsFromNow_key      + " ==> <removed>");
+                    //Print.sysPrintln(secondsFromNow_key_date + " ==> <removed>");
+                } else {
+                    long futSec = DateTime.getCurrentTimeSec() + StringTools.parseLong(secondsFromNow,0L);
+                    secondsFromNowRTP.setString(secondsFromNow_key     , String.valueOf(futSec));
+                    secondsFromNowRTP.setString(secondsFromNow_key_date, (new DateTime(futSec)).format(DateTime.DEFAULT_DATE_FORMAT));
+                    //Print.sysPrintln(secondsFromNow_key      + " ==> " + secondsFromNowRTP.getString(secondsFromNow_key     ,"?"));
+                    //Print.sysPrintln(secondsFromNow_key_date + " ==> " + secondsFromNowRTP.getString(secondsFromNow_key_date,"?"));
                 }
             }
         }
@@ -710,7 +765,7 @@ public class CompiletimeVars
                     limitRTP.removeProperty(limit_key);
                     //Print.sysPrintln(limit_key + " ==> <removed>");
                 } else {
-                    Print.sysPrintln(limit_key + " ==> " + limit);
+                    //Print.sysPrintln(limit_key + " ==> " + limit);
                 }
             }
         }

@@ -249,7 +249,7 @@ public class TrackServer
 
         /* create server socket */
         try {
-            sst = new ServerSocketThread(ServerSocketThread.createDatagramSocket(port));
+            sst = new ServerSocketThread(ServerSocketThread.createDatagramSocket(null,port));
         } catch (Throwable t) { // trap any server exception
             Print.logException("ServerSocket error", t);
             throw t;

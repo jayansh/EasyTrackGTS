@@ -138,15 +138,41 @@ public class DBException
     // ----------------------------------------------------------------------------
 
     /**
+    *** Gets the exception message
+    *** @return The exception message
+    **/
+    public String getMessage()
+    {
+        return super.getMessage();
+    }
+
+    /**
+    *** Gets the exception message, including the cause
+    *** @return The exception message, including the cause
+    **/
+    public String getCauseMessage()
+    {
+        String superMsg = super.getMessage();
+        Throwable cause = this.getCause();
+        if (cause == null) {
+            return superMsg;
+        } else {
+            return "[" + superMsg + "] " + cause.getMessage();
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+
+    /**
     *** Prints a description of this exception to the logging output
     **/
     public void printException()
     {
         Throwable cause = this.getCause();
         if (cause instanceof SQLException) {
-            Print.logSQLError(1, this.getMessage(), (SQLException)cause);
+            Print.logSQLError(1, super.getMessage(), (SQLException)cause);
         } else {
-            Print.logException(this.getMessage(), this);
+            Print.logException(super.getMessage(), this);
         }
     }
     

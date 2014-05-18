@@ -546,6 +546,7 @@ public class GoogleGeocodeV3
         String status = jsonObj.getStringForName(TAG_status, ""); // expect "OK"
         if (!status.equalsIgnoreCase(STATUS_OK)          && 
             !status.equalsIgnoreCase(STATUS_ZERO_RESULTS)  ) {
+            // -- ie. OVER_QUERY_LIMIT
             Print.logDebug("Status : " + status); 
         }
 

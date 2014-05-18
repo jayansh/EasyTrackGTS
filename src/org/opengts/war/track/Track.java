@@ -193,7 +193,7 @@ public class Track
         /* pre-init Base URI var */
         RequestProperties.TRACK_BASE_URI();
 
-        /* enable cookies? */
+        /* enable cookies? "track.requireCookies" */
         if (RTConfig.hasProperty(DBConfig.PROP_track_requireCookies)) {
             REQUIRE_COOKIES = RTConfig.getBoolean(DBConfig.PROP_track_requireCookies,true);
         }
@@ -205,7 +205,7 @@ public class Track
 
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
-    
+
     public static String GetBaseURL(RequestProperties reqState)
     {
         return WebPageAdaptor.EncodeMakeURL(reqState, RequestProperties.TRACK_BASE_URI());
@@ -376,31 +376,32 @@ public class Track
 
         /* overriding host properties? */
         RTProperties hostProps = null;
-        String hostPropID = AttributeTools.getRequestString(request, CommonServlet.HOST_PROPERTIES_ID, null);
+        // -- check for "&lfid=" host properties id
+        String hostPropID = AttributeTools.getRequestString(request, CommonServlet.HOST_PROPERTIES_ID, null); // "lfid"/"laf"?
         if (StringTools.isBlank(hostPropID)) {
-            // get previous host properties
+            // -- get previous host properties
             hostProps = (RTProperties)AttributeTools.getSessionAttribute(request, CommonServlet.HOST_PROPERTIES, null);
         } else
         if (hostPropID.equalsIgnoreCase(CommonServlet.DEFAULT_HOST_PROPERTIES_ID) || 
             hostPropID.equalsIgnoreCase("x") ) {
-            // reset to default
+            // -- explicit reset to default
             hostProps = null;
             AttributeTools.setSessionAttribute(request, CommonServlet.HOST_PROPERTIES, null); // clear
         } else {
-            // get specified host properties from ID
+            // -- get specified host properties from ID
             hostProps = Resource.getPrivateLabelPropertiesForHost(hostPropID, null); // may return null
             if (hostProps != null) {
                 hostProps.setString(CommonServlet.HOST_PROPERTIES_ID, hostPropID);
             }
             AttributeTools.setSessionAttribute(request, CommonServlet.HOST_PROPERTIES, hostProps); // clears if null
         }
-
-        /* if no explicit host properties, try resources */
+        // -- if no explicit host properties, try resources
         if (hostProps == null) {
             //Print.logInfo("Looking up host properties by host/url: " + requestHostName + ", " + requestUrlPath);
             hostProps = Resource.getPrivateLabelPropertiesForHost(requestHostName, requestUrlPath);
-            //if (hostProps != null) { Print.logInfo("Found host/url host properties"); }
         }
+        // -- found?
+        //if (hostProps != null) { Print.logInfo("Found host/url host properties"); }
 
         /* check for DebugPushpins */
         boolean debugPP = false;
@@ -439,7 +440,10 @@ public class Track
     }
 
     /* handle POST/GET request */
-    private void _doWork(boolean isPost, HttpServletRequest request, HttpServletResponse response, PrivateLabel privLabel)
+    private void _doWork(
+        boolean isPost, HttpServletRequest request, 
+        HttpServletResponse response, 
+        PrivateLabel privLabel)
         throws ServletException, IOException
     {
 
@@ -454,7 +458,7 @@ public class Track
         String saUserID = saLogin? AttributeTools.getSessionString(request,Constants.PARM_SA_RELOGIN_USER,"") : null;
         long  saLoginTS = saLogin? AttributeTools.getSessionLong(  request,Constants.PARM_SA_RELOGIN_SESS,0L) : 0L;
 
-        /* secure only? */
+        /* secure (SSL) only? */
         boolean isSecure = request.isSecure();
         if (!isSecure && privLabel.getBooleanProperty(PrivateLabel.PROP_Track_forwardToSecureAccess,false)) {
             if (StringTools.startsWithIgnoreCase(requestURL,"http:")) {
@@ -528,7 +532,7 @@ public class Track
         }
 
         /* validate AccountID/UserID */
-        // the following prevents HTML/JavaScript injection
+        // the following prevents HTML/JavaScript injection via "accountID" or "userID"
         if ((privLabel == null) || privLabel.globalValidateIDs()) {
             //Print.logInfo("Validating account/user IDs");
             if (!AccountRecord.isValidID(accountID)) {
@@ -1337,10 +1341,30 @@ public class Track
         }
         reqState.setCurrentAccount(account); // never null
         reqState.setCurrentUser(user); // may be null
-        // login successful
+
+        // --------------------------------------
+        // -- login successful after this point
+
+        /* account specific Look&Feel ID */
+        // Resource.getPrivateLabelPropertiesForHost
+        {
+            RTProperties acctLafProps = null;
+            // -- first try account specific lafID
+            //if (account.hasLookAndFeelID()) {
+            //    acctLafProps = Resource.getPrivateLabelPropertiesForHost(account.getLookAndFeelID(), null);
+            //}
+            // -- check for account resource lafID
+            if (acctLafProps == null) {
+                acctLafProps = Resource.getPrivateLabelPropertiesForHost("-"+accountID, null);
+            }
+            // -- set Account LAF props if found
+            if (acctLafProps != null) {
+                RTConfig.pushTemporaryProperties(acctLafProps);
+            }
+        }
 
         /* Authenticate test */
-        // experimental
+        // -- experimental
         if (authRequest) {
             Track._writeAuthenticateXML(response, true);
             return;

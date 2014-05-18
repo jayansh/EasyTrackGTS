@@ -95,7 +95,6 @@
     <listener>
         <listener-class>org.opengts.war.tools.RTConfigContextListener</listener-class>
     </listener>
-
     <!-- ====================================================================== 
      === Servlet definitions
      -->

@@ -35,6 +35,8 @@
 //      providing a handle to HttpURLConnection.
 //     -Added "HttpIOException" to allow obtaining the HTTP response code in
 //      an error condition (ie. "403", "404", etc).
+//  2014/03/03  Martin D. Flynn
+//     -Added "/" to "encodeParameter"
 // ----------------------------------------------------------------------------
 package org.opengts.util;
 
@@ -239,6 +241,7 @@ public class HTMLTools
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
+    // -- Standard MIME Types:
     public  static final String CONTENT_TYPE_PLAIN      = "text/plain";
     public  static final String CONTENT_TYPE_TEXT       = CONTENT_TYPE_PLAIN;
     public  static final String CONTENT_TYPE_XML        = "text/xml";
@@ -267,7 +270,9 @@ public class HTMLTools
     public  static final String CONTENT_TYPE_MOV        = "video/quicktime";
     public  static final String CONTENT_TYPE_MPEG       = "video/mpeg";
 
-    public  static final String CONTENT_TYPE_ENTITY_CSV = "gts/entity-csv"; // custom GTS type
+    // -- GTS Custom MIME Types:
+    public  static final String CONTENT_TYPE_ENTITY_CSV = "gts/entity-csv"; // Entity list
+    public  static final String CONTENT_TYPE_RTPROP     = "gts/rtprop";     // "key=value key=value ..."
 
     /**
     *** Returns "zip" MIME type
@@ -968,7 +973,7 @@ public class HTMLTools
     // ------------------------------------------------------------------------
 
     /* encode HTML parameter */
-    private static final String ENC_CHARS = " %=<>&'\"";
+    private static final String ENC_CHARS = " %=<>&'\"/"; // Added "/" [2.5.4-B33]
 
     /**
     *** Encode specific characters in the specified text object

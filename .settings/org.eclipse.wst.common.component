@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="OpenGTS">
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <wb-resource deploy-path="/" source-path="/war/track" tag="defaultRootSource"/>
+ 	<wb-resource deploy-path="/events" source-path="/war/events" tag="events"/>
+ 	<wb-resource deploy-path="/track" source-path="/war/track" tag="track"/>
+	<wb-resource deploy-path="/gc101" source-path="/war/gc101" tag="gc101"/>
+	<wb-resource deploy-path="/gprmc" source-path="/war/gprmc" tag="gprmc"/>
+	<wb-resource deploy-path="/gpsmapper" source-path="/war/gpsmapper" tag="gpsmapper"/>
+	<wb-resource deploy-path="/mologogo" source-path="/war/mologogo" tag="mologogo"/>
+
+        <property name="context-root" value="OpenGTS"/>
+        <property name="java-output-path" value="/OpenGTS/build"/>
+    </wb-module>
+</project-modules>

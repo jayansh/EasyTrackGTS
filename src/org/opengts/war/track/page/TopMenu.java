@@ -143,6 +143,9 @@ public class TopMenu
         final MenuType menuType = EnumTools.getValueOf(MenuType.class, 
             privLabel.getStringProperty(PrivateLabel.PROP_TopMenu_menuType,null),
             MenuType.FIXED);
+        //Print.logInfo("PrivateLabel name: " + privLabel.getName());
+        //Print.logInfo("MenuType (prop): " + privLabel.getStringProperty(PrivateLabel.PROP_TopMenu_menuType,null));
+        //Print.logInfo("MenuType: " + menuType);
 
         /* show frame header: ie "Main Menu" */
         final boolean showHeader;

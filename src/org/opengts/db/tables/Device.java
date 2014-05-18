@@ -183,8 +183,13 @@
 //     -Support engine-hour accumulation based on Engine On/Off events.
 //  2013/11/11  Martin D. Flynn
 //     -Added FLD_equipmentStatus, FLD_licenseExpire, FLD_lastEngineOnHours, FLD_lastIgnitionOnHours
+//     -Added FLD_fuelRatePerHour? FLD_dcsConfigString? FLD_lastValidSpeedKPH? FLD_pendingMessage? FLD_pendingMessageACK? (??)
 //     -Added delta-distance check to event motion state change on event insertion.
 //      (see "EVENT_START_MOTION_RADIUS_M")
+//  2014/03/03  Martin D. Flynn
+//     -Made some adjustments to display warnings when unable to count InnoDB events.
+//     -Added KEY_DRIVER_PHONE [B28]
+//     -Added FLD_fuelCostPerLiter
 // ----------------------------------------------------------------------------
 package org.opengts.db.tables;
 
@@ -223,7 +228,7 @@ public class Device // Asset
         if (logLevel >= Print.LOG_WARN) {
             Device.LogEventDataInsertion = logLevel;
         } else {
-            Print.logWarn("'SetLogEventDataInsertion' ignoring excessive log level: " + 
+            Print.logWarn("'SetLogEventDataInsertion' ignoring excessive log level: " +
                 Print.getLogLevelString(logLevel) + " (using LOG_WARN instead)");
             Device.LogEventDataInsertion = Print.LOG_WARN;
         }
@@ -511,6 +516,40 @@ public class Device // Asset
         public String  getAbbrev(Locale loc)             { return aa.toString(loc); }
         public String  toString()                        { return dd.toString(); }
         public String  toString(Locale loc)              { return dd.toString(loc); }
+    }
+
+    // ------------------------------------------------------------------------
+    // Calculate Fuel Cost
+
+    public static double CalculateFuelCost(Account a, Device d, double liters)
+    {
+        Account A = (d != null)? d.getAccount() : a;
+        Device  D = d;
+
+        /* account defined? */
+        if (A == null) {
+            return 0.0;
+        }
+
+        /* no Liters */
+        if (liters <= 0.0) {
+            return 0.0;
+        }
+
+        /* get fuel cost per Liter */
+        double costPerLiter = 0.0;
+        if (D != null) {
+            // -- try Device
+            costPerLiter = D.getFuelCostPerLiter();
+        }
+        if (costPerLiter <= 0.0) {
+            // -- try Account
+            costPerLiter = A.getFuelCostPerLiter();
+        }
+
+        /* return cost */
+        return (costPerLiter > 0.0)? (costPerLiter * liters) : 0.0;
+
     }
 
     // ------------------------------------------------------------------------
@@ -1216,7 +1255,7 @@ public class Device // Asset
     public static String TABLE_NAME() { return DBProvider._translateTableName(_TABLE_NAME); }
 
     /* field definition */
-    // Device/Asset specific information:
+    // -- Device/Asset specific information:
     public static final String FLD_groupID               = "groupID";               // vehicle group (user informational only)
     public static final String FLD_equipmentType         = "equipmentType";         // equipment/vehicle type
     public static final String FLD_equipmentStatus       = "equipmentStatus";       // equipment/vehicle status (InService, InRepair, Available, etc)
@@ -1225,18 +1264,20 @@ public class Device // Asset
     public static final String FLD_vehicleID             = "vehicleID";             // vehicle id number (ie VIN)
     public static final String FLD_licensePlate          = "licensePlate";          // licensePlate / registration id
     public static final String FLD_licenseExpire         = "licenseExpire";         // licensePlate / registration expiration date
+    public static final String FLD_insuranceExpire       = "insuranceExpire";       // insurance expiration date
     public static final String FLD_driverID              = "driverID";              // driver id
     public static final String FLD_driverStatus          = "driverStatus";          // driver status
     public static final String FLD_fuelCapacity          = "fuelCapacity";          // fuel capacity liters
     public static final String FLD_fuelEconomy           = "fuelEconomy";           // approximate fuel economy km/L
     public static final String FLD_fuelRatePerHour       = "fuelRatePerHour";       // approximate L/h
+    public static final String FLD_fuelCostPerLiter      = "fuelCostPerLiter";      // fuel cost per liter
     public static final String FLD_speedLimitKPH         = "speedLimitKPH";         // Maximum speed km/h
     public static final String FLD_planDistanceKM        = "planDistanceKM";        // Planned trip distance traveled
     public static final String FLD_installTime           = "installTime";           // install time (date/time when device was installed)
     public static final String FLD_resetTime             = "resetTime";             // reset time (date/time when device was reset - typically odometer, fuel, etc)
     public static final String FLD_expirationTime        = "expirationTime";        // expiration time
-    // DataTransport specific attributes (see also Transport.java)
-    // (These fields contain the default DataTransport attributes)
+    // -- DataTransport specific attributes (see also Transport.java)
+    // -  (These fields contain the default DataTransport attributes)
     public static final String FLD_uniqueID              = "uniqueID";              // unique device ID
     public static final String FLD_deviceCode            = "deviceCode";            // DCServerConfig ID ("serverID")
     public static final String FLD_deviceType            = "deviceType";            // reserved
@@ -1255,6 +1296,7 @@ public class Device // Asset
     public static final String FLD_ipAddressValid        = "ipAddressValid";        // valid IP address block
     // Last Device IP Address:Port
     public static final String FLD_lastTcpSessionID      = "lastTcpSessionID";      // last TCP session ID
+    public static final String FLD_ipAddressLocal        = "ipAddressLocal";        // local IP address (to which device sent packet)
     public static final String FLD_ipAddressCurrent      = "ipAddressCurrent";      // current(last) IP address
     public static final String FLD_remotePortCurrent     = "remotePortCurrent";     // current(last) remote port
     public static final String FLD_listenPortCurrent     = "listenPortCurrent";     // current(last) local/listen port
@@ -1321,7 +1363,7 @@ public class Device // Asset
     public static final String FLD_lastFaultCode         = "lastFaultCode";         // last fault code properties
     //
     private static DBField FieldInfo[] = {
-        // Asset/Vehicle specific fields
+        // -- Asset/Vehicle specific fields
         newField_accountID(true),
         newField_deviceID(true),
         new DBField(FLD_groupID              , String.class        , DBField.TYPE_GROUP_ID()  , I18N.getString(Device.class,"Device.fld.groupID"              , "Group ID"                    ), "edit=2"),
@@ -1332,17 +1374,19 @@ public class Device // Asset
         new DBField(FLD_vehicleID            , String.class        , DBField.TYPE_STRING(24)  , I18N.getString(Device.class,"Device.fld.vehicleID"            , "VIN"                         ), "edit=2"),
         new DBField(FLD_licensePlate         , String.class        , DBField.TYPE_STRING(24)  , I18N.getString(Device.class,"Device.fld.licensePlate"         , "License Plate"               ), "edit=2"),
         new DBField(FLD_licenseExpire        , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.licenseExpire"        , "License Expiration Day"      ), "edit=2 format=date"),
+        new DBField(FLD_insuranceExpire      , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.insuranceExpire"      , "Insurance Expiration Day"    ), "edit=2 format=date"),
         new DBField(FLD_driverID             , String.class        , DBField.TYPE_DRIVER_ID() , I18N.getString(Device.class,"Device.fld.driverID"             , "Driver ID"                   ), "edit=2"),
         new DBField(FLD_driverStatus         , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.driverStatus"         , "Driver Status"               ), "edit=2"),
         new DBField(FLD_fuelCapacity         , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.fuelCapacity"         , "Fuel Capacity"               ), "edit=2 format=#0.0"),
         new DBField(FLD_fuelEconomy          , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.fuelEconomy"          , "Approx. Fuel Economy"        ), "edit=2 format=#0.0"),
         new DBField(FLD_fuelRatePerHour      , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.fuelRatePerHour"      , "Approx. Fuel Rate per Hour"  ), "edit=2 format=#0.0"),
+        new DBField(FLD_fuelCostPerLiter     , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.fuelCostPerLiter"     , "Approx. Fuel Cost per Liter" ), "edit=2 format=#0.00"),
         new DBField(FLD_speedLimitKPH        , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.speedLimitKPH"        , "Max Speed km/h"              ), "edit=2 format=#0.0"),
         new DBField(FLD_planDistanceKM       , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.planDistance"         , "Planned Trip Distance"       ), "edit=2 format=#0.0"),
         new DBField(FLD_installTime          , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.installTime"          , "Install Time"                ), "edit=2 format=time"),
         new DBField(FLD_resetTime            , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.resetTime"            , "Reset Time"                  ), "edit=2 format=time"),
         new DBField(FLD_expirationTime       , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.expirationTime"       , "Expiration Time"             ), "edit=2 format=time"),
-        // DataTransport fields (These fields contain the default DataTransport attributes)
+        // -- DataTransport fields (These fields contain the default DataTransport attributes)
         new DBField(FLD_uniqueID             , String.class        , DBField.TYPE_UNIQ_ID()   , I18N.getString(Device.class,"Device.fld.uniqueID"             , "Unique ID"                   ), "edit=2 altkey=true presep"),
         new DBField(FLD_deviceCode           , String.class        , DBField.TYPE_STRING(24)  , I18N.getString(Device.class,"Device.fld.deviceCode"           , "Server ID"                   ), "edit=2"),
         new DBField(FLD_deviceType           , String.class        , DBField.TYPE_STRING(24)  , I18N.getString(Device.class,"Device.fld.deviceType"           , "Device Type"                 ), "edit=2"),
@@ -1360,7 +1404,7 @@ public class Device // Asset
         new DBField(FLD_ipAddressValid       , DTIPAddrList.class  , DBField.TYPE_STRING(128) , I18N.getString(Device.class,"Device.fld.ipAddressValid"       , "Valid IP Addresses"          ), "edit=2"),
         new DBField(FLD_lastTotalConnectTime , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.lastTotalConnectTime" , "Last Total Connect Time"     ), "format=time"),
         new DBField(FLD_lastDuplexConnectTime, Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.lastDuplexConnectTime", "Last Duplex Connect Time"    ), "format=time"),
-        // Ping/Command
+        // -- Ping/Command
       //new DBField(FLD_pingCommandURI       , String.class        , DBField.TYPE_STRING(128) , I18N.getString(Device.class,"Device.fld.pingCommandURI"  , "Ping Command URL"            , "edit=2"),
         new DBField(FLD_pendingPingCommand   , String.class        , DBField.TYPE_TEXT        , I18N.getString(Device.class,"Device.fld.pendingPingCommand"   , "Pending Ping Command"        ), "edit=2"),
         new DBField(FLD_lastPingTime         , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.lastPingTime"         , "Last 'Ping' Time"            ), "format=time"),
@@ -1372,12 +1416,12 @@ public class Device // Asset
         new DBField(FLD_lastAckCommand       , String.class        , DBField.TYPE_TEXT        , I18N.getString(Device.class,"Device.fld.lastAckCommand"       , "Last Command Expecting ACK"  ), ""),
       //new DBField(FLD_lastAckResponse      , String.class        , DBField.TYPE_TEXT        , I18N.getString(Device.class,"Device.fld.lastAckResponse"      , "Last Command Response"       ), ""),
         new DBField(FLD_lastAckTime          , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.lastAckTime"          , "Last Received 'ACK' Time"    ), "format=time"),
-        // Device Communication Server Configuration
+        // -- Device Communication Server Configuration
         new DBField(FLD_dcsPropertiesID      , String.class        , DBField.TYPE_STRING(32)  , I18N.getString(Device.class,"Device.fld.dcsPropertiesID"      , "DCS Properties ID"           ), "edit=2"),
         new DBField(FLD_dcsConfigMask        , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.dcsConfigMask"        , "DCS Configuration Mask"      ), "edit=2"),
         new DBField(FLD_dcsConfigString      , String.class        , DBField.TYPE_STRING(80)  , I18N.getString(Device.class,"Device.fld.dcsConfigString"      , "DCS Configuration String"    ), "edit=2"),
         new DBField(FLD_dcsCommandHost       , String.class        , DBField.TYPE_STRING(32)  , I18N.getString(Device.class,"Device.fld.dcsCommandHost"       , "DCS Command Host"            ), "edit=2"),
-        // DMTP
+        // -- DMTP
         new DBField(FLD_supportsDMTP         , Boolean.TYPE        , DBField.TYPE_BOOLEAN     , I18N.getString(Device.class,"Device.fld.supportsDMTP"         , "Supports DMTP"               ), "edit=2"),
         new DBField(FLD_supportedEncodings   , Integer.TYPE        , DBField.TYPE_UINT8       , I18N.getString(Device.class,"Device.fld.supportedEncodings"   , "Supported Encodings"         ), "edit=2 format=X1 editor=encodings mask=Transport$Encodings"),
         new DBField(FLD_unitLimitInterval    , Integer.TYPE        , DBField.TYPE_UINT16      , I18N.getString(Device.class,"Device.fld.unitLimitInterval"    , "Accounting Time Interval Min"), "edit=2"),
@@ -1388,8 +1432,9 @@ public class Device // Asset
         new DBField(FLD_duplexProfileMask    , DTProfileMask.class , DBField.TYPE_BLOB        , I18N.getString(Device.class,"Device.fld.duplexProfileMask"    , "Duplex Profile Mask"         ), ""),
         new DBField(FLD_duplexMaxConn        , Integer.TYPE        , DBField.TYPE_UINT16      , I18N.getString(Device.class,"Device.fld.duplexMaxConn"        , "Max Duplex Conn per Interval"), "edit=2"),
         new DBField(FLD_duplexMaxConnPerMin  , Integer.TYPE        , DBField.TYPE_UINT16      , I18N.getString(Device.class,"Device.fld.duplexMaxConnPerMin"  , "Max Duplex Conn per Minute"  ), "edit=2"),
-        // Last Event
+        // -- Last Event/Connection
         new DBField(FLD_lastTcpSessionID     , String.class        , DBField.TYPE_STRING(32)  , I18N.getString(Device.class,"Device.fld.tcpSessionID"         , "Last TCP Session ID"         ), ""),
+      //new DBField(FLD_ipAddressLocal       , DTIPAddress.class   , DBField.TYPE_STRING(32)  , I18N.getString(Device.class,"Device.fld.ipAddressLocal"       , "Local IP Address"            ), ""),
         new DBField(FLD_ipAddressCurrent     , DTIPAddress.class   , DBField.TYPE_STRING(32)  , I18N.getString(Device.class,"Device.fld.ipAddressCurrent"     , "Current IP Address"          ), ""),
         new DBField(FLD_remotePortCurrent    , Integer.TYPE        , DBField.TYPE_UINT16      , I18N.getString(Device.class,"Device.fld.remotePortCurrent"    , "Current Remote Port"         ), ""),
         new DBField(FLD_listenPortCurrent    , Integer.TYPE        , DBField.TYPE_UINT16      , I18N.getString(Device.class,"Device.fld.listenPortCurrent"    , "Current Listen Port"         ), ""),
@@ -1423,9 +1468,9 @@ public class Device // Asset
         new DBField(FLD_lastStartTime        , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.lastStartTime"        , "Last Start Time"             ), "format=time"),
         new DBField(FLD_lastMalfunctionLamp  , Boolean.TYPE        , DBField.TYPE_BOOLEAN     , I18N.getString(Device.class,"Device.fld.lastMalfunctionLamp"  , "Last MIL"                    ), "edit=2"),
         new DBField(FLD_lastFaultCode        , String.class        , DBField.TYPE_STRING(96)  , I18N.getString(Device.class,"Device.fld.lastFaultCode"        , "Last Fault Code"             ), ""),
-        // Common fields
+        // -- Common fields
         newField_isActive(),
-        newField_displayName(), // short name
+        newField_displayName(), // short name, ShortName
         newField_description(),
         newField_notes(),
         newField_lastUpdateTime(),
@@ -1433,8 +1478,8 @@ public class Device // Asset
         newField_creationTime(),
     };
 
-    // Default Notification (may require RulesEngine support)
-    // startupInit.Device.NotificationFieldInfo=true
+    // -- Default Notification (may require RulesEngine support)
+    // -  startupInit.Device.NotificationFieldInfo=true
     public static final String FLD_allowNotify           = "allowNotify";           // allow notification
     public static final String FLD_lastNotifyTime        = "lastNotifyTime";        // last notification time
     public static final String FLD_lastNotifyCode        = "lastNotifyCode";        // last notification status code
@@ -1447,6 +1492,7 @@ public class Device // Asset
     public static final String FLD_notifyText            = "notifyText";            // notification message
     public static final String FLD_notifyUseWrapper      = "notifyUseWrapper";      // notification email wrapper
     public static final String FLD_notifyPriority        = "notifyPriority";        // notification priority
+    public static final String FLD_lastSubdivision       = "lastSubdivision";       // last subdivision
     public static final String FLD_parkedLatitude        = "parkedLatitude";        // parked latitude
     public static final String FLD_parkedLongitude       = "parkedLongitude";       // parked longitude
     public static final String FLD_parkedRadius          = "parkedRadius";          // parked radius meters
@@ -1473,6 +1519,7 @@ public class Device // Asset
         new DBField(FLD_notifyText           , String.class        , DBField.TYPE_TEXT        , I18N.getString(Device.class,"Device.fld.notifyText"           , "Notification Message"        ), "edit=2 editor=textArea utf8=true"),
         new DBField(FLD_notifyUseWrapper     , Boolean.TYPE        , DBField.TYPE_BOOLEAN     , I18N.getString(Device.class,"Device.fld.notifyUseWrapper"     , "Notification Use Wrapper"    ), "edit=2"),
         new DBField(FLD_notifyPriority       , Integer.TYPE        , DBField.TYPE_UINT16      , I18N.getString(Device.class,"Device.fld.notifyPriority"       , "Notification Priority"       ), "edit=2"),
+      //new DBField(FLD_lastSubdivision      , String.class        , DBField.TYPE_STRING(20)  , I18N.getString(Device.class,"Device.fld.lastSubdivision"      , "Last Subdivision/State"      ), ""),
         new DBField(FLD_parkedLatitude       , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.parkedLatitude"       , "Parked Latitude"             ), "format=#0.00000 edit=2"),
         new DBField(FLD_parkedLongitude      , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.parkedLongitude"      , "Parked Longitude"            ), "format=#0.00000 edit=2"),
         new DBField(FLD_parkedRadius         , Double.TYPE         , DBField.TYPE_DOUBLE      , I18N.getString(Device.class,"Device.fld.parkedRadius"         , "Parked Radius"               ), "format=#0.0 edit=2"),
@@ -1502,7 +1549,7 @@ public class Device // Asset
         new DBField(FLD_linkURL              , String.class        , DBField.TYPE_STRING(128) , I18N.getString(Device.class,"Device.fld.linkURL"              , "Link URL"                    ), "edit=2"),
         new DBField(FLD_linkDescription      , String.class        , DBField.TYPE_STRING(64)  , I18N.getString(Device.class,"Device.fld.linkDescription"      , "Link Description"            ), "edit=2"),
     };
-    
+
     // Fixed device location fields
     // startupInit.Device.FixedLocationFieldInfo=true
     public static final String FLD_fixedLatitude         = "fixedLatitude";         // fixed latitude
@@ -1518,7 +1565,7 @@ public class Device // Asset
         new DBField(FLD_fixedServiceTime     , Long.TYPE           , DBField.TYPE_UINT32      , I18N.getString(Device.class,"Device.fld.fixedServiceTime"     , "Last Service Time"           ), "format=time edit=2"),
     };
     
-    // GeoCorridor fields
+    // GeoCorridor fields (requires Event Notification Rules Engine)
     // startupInit.Device.GeoCorridorFieldInfo=true
     public static final String FLD_activeCorridor        = "activeCorridor";        // active GeoCorridor
     public static final DBField GeoCorridorFieldInfo[]   = {
@@ -1919,6 +1966,84 @@ public class Device // Asset
 
     // ------------------------------------------------------------------------
 
+    /**
+    *** Gets the insurance expiration date as a DayNumber value
+    *** @return The insurance expiration date as a DayNumber value
+    **/
+    public long getInsuranceExpire()
+    {
+        // DayNumber insExpire = new DayNumber(driver.getInsuranceExpire());
+        return this.getFieldValue(FLD_insuranceExpire, 0L);
+    }
+
+    /**
+    *** Sets the insurance expiration date as a DayNumber value
+    *** @param v The insurance expiration date as a DayNumber value
+    **/
+    public void setInsuranceExpire(long v)
+    {
+        this.setFieldValue(FLD_insuranceExpire, ((v >= 0L)? v : 0L));
+    }
+
+    /**
+    *** Sets the insurance expiration date
+    *** @param year   The expiration year
+    *** @param month1 The expiration month
+    *** @param day    The expiration day
+    **/
+    public void setInsuranceExpire(int year, int month1, int day)
+    {
+        this.setInsuranceExpire(DateTime.getDayNumberFromDate(year, month1, day));
+    }
+
+    /**
+    *** Sets the insurance expiration date as a DayNumber instance
+    *** @param dn The insurance expiration date as a DayNumber instance
+    **/
+    public void setInsuranceExpire(DayNumber dn)
+    {
+        this.setInsuranceExpire((dn != null)? dn.getDayNumber() : 0L);
+    }
+
+    /**
+    *** Returns true if the insurance is expired as-of the specified date
+    *** @param asofDay  The as-of expiration test DayNumber
+    **/
+    public boolean isInsuranceExpired(long asofDay)
+    {
+
+        /* get insurance expiration date */
+        long le = this.getInsuranceExpire();
+        if (le <= 0L) {
+            // date not specified
+            return false;
+        }
+
+        /* as-of date */
+        long ae = asofDay;
+        if (ae <= 0L) {
+            // as-of date not specified, use current day
+            Account acct = this.getAccount();
+            TimeZone tz = (acct != null)? acct.getTimeZone((TimeZone)null) : null;
+            ae = DateTime.getDayNumberFromDate(new DateTime(tz));
+        }
+
+        /* compare and return */
+        return (le < ae)? true : false;
+
+    }
+
+    /**
+    *** Returns true if the insurance is expired as-of the specified date
+    *** @param asof  The as-of expiration test DayNumber
+    **/
+    public boolean isInsuranceExpired(DayNumber asof)
+    {
+        return this.isInsuranceExpired((asof != null)? asof.getDayNumber() : 0L);
+    }
+
+    // ------------------------------------------------------------------------
+
     private Driver driver = null;
 
     /**
@@ -2079,6 +2204,27 @@ public class Device // Asset
     public void setFuelRatePerHour(double v)
     {
         this.setFieldValue(FLD_fuelRatePerHour, (v >= 0.0)? v : 0.0);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Gets the Fuel cost per Liter
+    *** @return The Fuel cost per Liter
+    **/
+    public double getFuelCostPerLiter()
+    {
+        Double v = (Double)this.getFieldValue(FLD_fuelCostPerLiter);
+        return (v != null)? v.doubleValue() : 0.0;
+    }
+
+    /**
+    *** Sets the Fuel cost per Liter
+    *** @param v The Fuel cost per Liter
+    **/
+    public void setFuelCostPerLiter(double v)
+    {
+        this.setFieldValue(FLD_fuelCostPerLiter, (v >= 0.0)? v : 0.0);
     }
 
     // ------------------------------------------------------------------------
@@ -2978,6 +3124,15 @@ public class Device // Asset
     public static boolean supportsBorderCrossing()
     {
         return Device.getFactory().hasField(FLD_borderCrossing);
+    }
+
+    /**
+    *** Returns true if Border-Crossing is enabled
+    *** @return True if Border-Crossing is enabled
+    **/
+    public boolean isBorderCrossing()
+    {
+        return (this.getBorderCrossing() == Device.BorderCrossingState.ON.getIntValue());
     }
 
     /**
@@ -3954,7 +4109,10 @@ public class Device // Asset
                 this.cacheIgnitionState = 0;
                 return this.cacheIgnitionState;
             } else {
-                // (lastIgnOff == lastIgnOn) unlikely
+                // (lastIgnOff == lastIgnOn) unlikely (but can occur)
+                //this.setLastIgnitionOffTime(0L);             // FLD_lastIgnitionOffTime
+                //this.setLastIgnitionOnTime(0L);              // FLD_lastIgnitionOnTime
+                // TODO: ? this.setLastIgnitionOnHours(0.0); // FLD_lastIgnitionOnHours
             }
         }
 
@@ -4350,6 +4508,36 @@ public class Device // Asset
     // ------------------------------------------------------------------------
 
     /**
+    *** Gets the local IP address to which this device sent its latest packet
+    *** @return The local IP address for this Device
+    **/
+    public DTIPAddress getIpAddressLocal()
+    {
+        DTIPAddress v = (DTIPAddress)this.getFieldValue(FLD_ipAddressLocal);
+        return v; // May return null!!
+    }
+
+    /**
+    *** Sets the local IP address to which this device sent its latest packet
+    *** @param v The local IP address for this Device
+    **/
+    public void setIpAddressLocal(DTIPAddress v)
+    {
+        this.setFieldValue(FLD_ipAddressLocal, v);
+    }
+
+    /**
+    *** Sets the local IP address to which this device sent its latest packet
+    *** @param v The local IP address for this Device
+    **/
+    public void setIpAddressLocal(String v)
+    {
+        this.setIpAddressCurrent((v != null)? new DTIPAddress(v) : null);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
     *** Gets the last known IP address used by the Device
     *** @return The last known IP address used by the Device
     **/
@@ -4581,6 +4769,27 @@ public class Device // Asset
     public String getLastValidAddress()
     {
         return ""; // not yet supported
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Gets the last valid subdivision/state
+    *** @return The last valid subdivision/state
+    **/
+    public String getLastSubdivision()
+    {
+        String v = (String)this.getFieldValue(FLD_lastSubdivision);
+        return StringTools.trim(v);
+    }
+
+    /**
+    *** Sets the last valid subdivision/state
+    *** @param v The last valid subdivision/state
+    **/
+    public void setLastSubdivision(String v)
+    {
+        this.setFieldValue(FLD_lastSubdivision, StringTools.trim(v));
     }
 
     // ------------------------------------------------------------------------
@@ -5001,6 +5210,20 @@ public class Device // Asset
 
         return null;
 
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Creates a unique Geozone ID which may be used by the ENRE predefined-actions
+    **/
+    public String getAutoGeozoneID(EventData ev)
+    {
+        StringBuffer sb = new StringBuffer();
+        sb.append(this.getDeviceID());
+        sb.append("_");
+        sb.append((ev != null)? ev.getTimestamp() : DateTime.getCurrentTimeSec());
+        return sb.toString();
     }
 
     // ------------------------------------------------------------------------
@@ -5889,8 +6112,12 @@ public class Device // Asset
     **/
     public boolean getCommandStateMaskBit(int bit)
     {
-        long v = this.getCommandStateMask();
-        return ((v & (1L << bit)) != 0L)? true : false;
+        if ((bit >= 0) && (bit < 64)) {
+            long v = this.getCommandStateMask();
+            return ((v & (1L << bit)) != 0L)? true : false;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -6620,7 +6847,7 @@ public class Device // Asset
     **/
     public String getFixedContactPhone()
     {
-        String v = StringTools.trim((String)this.getFieldValue(FLD_fixedContactPhone));
+        String v = StringTools.trim((String)this.getOptionalFieldValue(FLD_fixedContactPhone));
         return v;
     }
 
@@ -6630,7 +6857,7 @@ public class Device // Asset
     **/
     public void setFixedContactPhone(String v)
     {
-        this.setFieldValue(FLD_fixedContactPhone, StringTools.trim(v));
+        this.setOptionalFieldValue(FLD_fixedContactPhone, StringTools.trim(v));
     }
 
     // ------------------------------------------------------------------------
@@ -8562,7 +8789,8 @@ public class Device // Asset
     private static long     loadTestingCount        = 0L;
 
     /**
-    *** Gets the number of events between the specified timestamps (inclusive)
+    *** Gets the number of events between the specified timestamps (inclusive)<br>
+    *** Note: will return -1 if EventData table is InnoDB
     *** @param timeStart  The starting timestamp
     *** @param timeEnd    The ending timestamp
     *** @return The number of events between the specified timestamps (inclusive)
@@ -8570,7 +8798,7 @@ public class Device // Asset
     public long getEventCount(long timeStart, long timeEnd)
         throws DBException
     {
-        long count = EventData.getRecordCount(
+        long count = EventData.getRecordCount(  // -1 for InnoDB?
             this.getAccountID(), this.getDeviceID(),
             timeStart, timeEnd);
         return count;
@@ -9111,6 +9339,7 @@ public class Device // Asset
         boolean saveDriverStatus = false;
         if (Device.GetSaveEventDriverID()) {
             // DriverID
+            // evdb.setDriverID(evdb.getRfidTag());
             if (evdb.hasDriverID()) {
                 // update device driver-id
                 driverID = evdb.getDriverID();
@@ -9656,7 +9885,7 @@ public class Device // Asset
         }
 
         /* starting event count */
-        long delEventCount = this.getEventCount(-1L, priorToTime - 1L);
+        long delEventCount = this.getEventCount(-1L, priorToTime - 1L); // -1 for InnoDB
 
         /* delete all EventData entries prior to the specified date */
         // [DELETE FROM EventData WHERE accountID='account' and deviceID='device' and timestamp<priorToTime]
@@ -9681,7 +9910,7 @@ public class Device // Asset
         }
 
         /* number of records deleted (or supposed to have been deleted) */
-        return delEventCount;
+        return delEventCount; // -1 for InnoDB
 
     }
 
@@ -10170,7 +10399,8 @@ public class Device // Asset
                     try {
                         Print.logInfo("Sending Geozone auto notify email ...");
                         SendMail.SmtpProperties smtpProps = bpl.getSmtpProperties();
-                        SendMail.send(frEmail,toEmail.toString(),null,null,subj,body,null,smtpProps);
+                        boolean retry = false;
+                        SendMail.send(frEmail,toEmail.toString(),null,null,subj,body,null,smtpProps,retry);
                     } catch (Throwable t) { // NoClassDefFoundException, ClassNotFoundException
                         // this will fail if JavaMail support for SendMail is not available.
                         Print.logWarn("SendMail error: " + t);
@@ -10675,7 +10905,8 @@ public class Device // Asset
     // ------------------------------------------------------------------------
 
     /**
-    *** Count the number of events prior to the specified time
+    *** Count the number of events prior to the specified time<br>
+    *** Note: Will return -1 if EventData table is InnoDB.
     *** @param oldTimeSec  The timestamp before which events will be counted
     *** @return The number of events counted
     **/
@@ -10684,14 +10915,17 @@ public class Device // Asset
     {
         String acctID = this.getAccountID();
         String devID  = this.getDeviceID();
-        long count = EventData.getRecordCount(acctID, devID, -1L/*startTime*/, oldTimeSec);
+        long count = EventData.getRecordCount(acctID, devID, -1L/*startTime*/, oldTimeSec); // -1 for InnoDB?
         return count;
     }
 
     // ------------------------------------------------------------------------
 
     /**
-    *** Delete events prior to the specified time
+    *** Delete events prior to the specified time.<br>
+    *** Note: Will return -1 if EventData table is InnoDB.  
+    ***       Old events will still be deleted, however it will still go through the
+    ***       motions of attempting to delete events, event if the range is empty.
     *** @param oldTimeSec  The timestamp before which events will be deleted
     *** @param logMsg      A StringBuffer instance into which deletion log messages are placed.
     *** @return The number of events deleted
@@ -10701,7 +10935,7 @@ public class Device // Asset
         StringBuffer logMsg)
         throws DBException
     {
-        return EventData.deleteOldEvents(this, oldTimeSec, logMsg);
+        return EventData.deleteOldEvents(this, oldTimeSec, logMsg); // -1 for InnoDB
     }
 
     // ------------------------------------------------------------------------
@@ -11115,6 +11349,7 @@ public class Device // Asset
     private static final String KEY_DRIVER_DESC[]   = EventData.KEY_DRIVER_DESC;
     public  static final String KEY_DRIVER_BADGE[]  = EventData.KEY_DRIVER_BADGE;
     public  static final String KEY_DRIVER_LICENSE[]= EventData.KEY_DRIVER_LICENSE;
+    public  static final String KEY_DRIVER_PHONE[]  = EventData.KEY_DRIVER_PHONE;
 
     private static final String KEY_FAULT_CODE[]    = EventData.KEY_FAULT_CODE;
     private static final String KEY_FAULT_CODES[]   = EventData.KEY_FAULT_CODES;
@@ -11449,6 +11684,24 @@ public class Device // Asset
                 // return blank
                 return "";
             }
+        } else
+        if (EventData._keyMatch(key,Device.KEY_DRIVER_PHONE)) {
+            if (getTitle) {
+                return i18n.getString("Device.key.driverPhone", "Driver Phone");
+            } else {
+                String driverID = dev.getDriverID();
+                if (!StringTools.isBlank(driverID)) {
+                    Driver driver = dev.getDriver();
+                    if (driver != null) {
+                        return driver.getContactPhone();
+                    } else {
+                        Print.logDebug("Unable to read Driver: " + driverID);
+                        return "";
+                    }
+                }
+                // return blank
+                return "";
+            }
         } 
 
         /* OBD fault values */
@@ -11741,7 +11994,7 @@ public class Device // Asset
     private static final String ARG_UNIQID[]            = new String[] { "uniqueid"  , "unique", "uniq", "uid", "u" };
     private static final String ARG_CREATE[]            = new String[] { "create"               };
     private static final String ARG_EDIT[]              = new String[] { "edit"      , "ed"     };
-    private static final String ARG_EDITALL[]           = new String[] { "editall"   , "eda"    }; 
+    private static final String ARG_EDITALL[]           = new String[] { "editall"   , "eda"    };
     private static final String ARG_DELETE[]            = new String[] { "delete"               };
     private static final String ARG_EVENTS[]            = new String[] { "events"    , "ev"     };
     private static final String ARG_FORMAT[]            = new String[] { "format"    , "fmt"    };
@@ -12159,7 +12412,8 @@ public class Device // Asset
                         Print.logInfo("Sending email ...");
                         SendMail.SetThreadModel(SendMail.THREAD_CURRENT);
                         SendMail.SmtpProperties smtoProps = privLabel.getSmtpProperties();
-                        SendMail.send(frEmail,toEmail,null,null,subj,body,null,smtoProps);
+                        boolean retry = false;
+                        SendMail.send(frEmail,toEmail,null,null,subj,body,null,smtoProps,retry);
                         // SystemAudit.sentRuleNotification(acctID, null, devID, subj);
                         System.exit(0); // success
                     } catch (Throwable t) { // NoClassDefFoundException, ClassNotFoundException
@@ -12234,8 +12488,11 @@ public class Device // Asset
             long futureTime = nowTime + sec;
             Print.sysPrintln("Counting events after \"" + (new DateTime(futureTime)) + "\" ...");
             try {
-                long rcdCount = EventData.getRecordCount(acctID,devID,futureTime,-1L);
-                if (rcdCount <= 0L) {
+                long rcdCount = EventData.getRecordCount(acctID,devID,futureTime,-1L); // -1 for InnoDB?
+                if (rcdCount < 0L) { // InnoDB
+                    Print.sysPrintln("Unable to determine number of future events (EventData table is InnoDB?)");
+                } else
+                if (rcdCount == 0L) {
                     Print.sysPrintln("No future events found");
                 } else {
                     Print.sysPrintln("Found "+rcdCount+" future events");
@@ -12343,15 +12600,21 @@ public class Device // Asset
                         System.exit(1);
                     }
                     StringBuffer sbMsg = new StringBuffer();
-                    long delCount = deviceRcd.deleteOldEvents(oldTimeSec,sbMsg);
-                    String msg = (sbMsg.length() > 0)? (" ("+sbMsg+")") : "";
-                    Print.sysPrintln("  Device: " + _devIDStr + " - Deleted " + delCount + " old events" + msg);
+                    long delCount = deviceRcd.deleteOldEvents(oldTimeSec,sbMsg); // -1 for InnoDB
+                    String delMsg = (sbMsg.length() > 0)? (" ("+sbMsg+")") : "";
+                    if (delCount >= 0L) {
+                        Print.sysPrintln("  Device: " + _devIDStr + " - Deleted " + delCount + " old events" + delMsg);
+                    } else
+                    if (delCount < 0L) {
+                        Print.sysPrintln("  Device: " + _devIDStr + " - Deleted old events (InnoDB?)" + delMsg);
+                    }
                 } else {
                     long rcdCount = deviceRcd.countOldEvents(oldTimeSec);
-                    if (rcdCount <= 0L) {
-                        Print.sysPrintln("  Device: " + _devIDStr + " - No old events found");
-                    } else {
+                    if (rcdCount >= 0L) {
                         Print.sysPrintln("  Device: " + _devIDStr + " - Counted " + rcdCount + " old events");
+                    } else
+                    if (rcdCount < 0L) {
+                        Print.sysPrintln("  Device: " + _devIDStr + " - Unable to count events (InnoDB?)");
                     }
                 }
                 System.exit(0);

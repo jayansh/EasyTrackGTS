@@ -258,7 +258,7 @@ public class ZoneInfo
         final String  pageName = this.getPageName();
         final boolean showOverlapPriority  = Geozone.supportsPriority() && privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showOverlapPriority,false);
         final boolean showSpeedLimit       = Geozone.supportsSpeedLimitKPH() && privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showSpeedLimit,false);
-        final boolean showPurposeIDs       = Geozone.supportsCorridor() && privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showPurposeID,false);
+        final boolean showPurposeIDs       = privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showPurposeID,false);
         final boolean showCorridorIDs      = Geozone.supportsCorridor() && privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showCorridorID,false);
         final boolean showRevGeocodeZone   = privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showReverseGeocodeZone,true);
         final boolean showArriveDepartZone = Device.hasRuleFactory() || privLabel.getBooleanProperty(PrivateLabel.PROP_ZoneInfo_showArriveDepartZone,false);
@@ -484,23 +484,23 @@ public class ZoneInfo
             try {
                 if (selZone != null) {
                     boolean saveOK = true;
-                    // Overlap priority
+                    // -- Overlap priority
                     if (showOverlapPriority) {
                         selZone.setPriority(zonePriority);
                     }
-                    // Speed limit
+                    // -- Speed limit
                     if (showSpeedLimit) {
                         Account.SpeedUnits speedUnit = Account.getSpeedUnits(currAcct); // not null
                         double kph = speedUnit.convertToKPH(zoneSpeedLimit);
                         selZone.setSpeedLimitKPH(kph);
                     }
-                    // ReverseGeocode
+                    // -- ReverseGeocode
                     if (showRevGeocodeZone) {
                         selZone.setReverseGeocode(zoneRevGeocode);
                     } else {
                         selZone.setReverseGeocode(true);
                     }
-                    // Arrive/Depart notification
+                    // -- Arrive/Depart notification
                     if (showArriveDepartZone) {
                         selZone.setArrivalZone(zoneArrNotify);
                         selZone.setDepartureZone(zoneDepNotify);
@@ -508,7 +508,7 @@ public class ZoneInfo
                             selZone.setAutoNotify(zoneAutoNotify);
                         }
                     }
-                    // Client upload zone
+                    // -- Client upload zone
                     if (showClientUploadZone != 0) {
                         if (zoneClientID > 0) {
                             selZone.setClientUpload(true);
@@ -522,47 +522,49 @@ public class ZoneInfo
                             selZone.setClientID(0);
                         }
                     }
-                    // assigned group id
+                    // -- assigned group id
                     if (!selZone.getGroupID().equalsIgnoreCase(zoneGroupID)) {
                         selZone.setGroupID(zoneGroupID);
                     }
-                    // Radius (meters)
+                    // -- Radius (meters)
                     if (zoneRadius > 0L) {
                         selZone.setRadius((int)zoneRadius);
                     }
-                    // description
+                    // -- description
                     if (!StringTools.isBlank(zoneColor)) {
                         selZone.setShapeColor(zoneColor);
                     }
-                    // GeoPoints
+                    // -- GeoPoints
                     selZone.clearGeoPoints();
-                  //int pointCount = (mapProvider != null)? mapProvider.getGeozoneSupportedPointCount(selZone.getZoneType()) : 0;
                     int pointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState, selZone.getZoneType());
-                    for (int z = 0, p = 0; z < pointCount; z++) {
+                    Vector<GeoPoint> gpList = new Vector<GeoPoint>();
+                    for (int z = 0/*, p = 0*/; z < pointCount; z++) {
                         double zoneLat = StringTools.parseDouble(AttributeTools.getRequestString(request,PARM_ZONE_LATITUDE (z),null),0.0);
                         double zoneLon = StringTools.parseDouble(AttributeTools.getRequestString(request,PARM_ZONE_LONGITUDE(z),null),0.0);
                         if (GeoPoint.isValid(zoneLat,zoneLon)) {
-                            selZone.setGeoPoint(p++, zoneLat, zoneLon);
+                            //selZone.setGeoPoint(p++, zoneLat, zoneLon);
+                            gpList.add(new GeoPoint(zoneLat,zoneLon));
                         }
                     }
-                    // description
+                    selZone.setGeoPoints(gpList);
+                    // -- description
                     if (!StringTools.isBlank(zoneDesc)) {
                         selZone.setDescription(zoneDesc);
                     }
-                    // associated Purpose ID
+                    // -- associated Purpose ID
                     if (showPurposeIDs && !selZone.getZonePurposeID().equals(zonePurpID)) {
                         selZone.setZonePurposeID(zonePurpID);
                     }
-                    // associated GeoCorridor ID
+                    // -- associated GeoCorridor ID
                     if (showCorridorIDs && !selZone.getCorridorID().equals(zoneCorrID)) {
                         selZone.setCorridorID(zoneCorrID);
                     }
-                    // save
+                    // -- save
                     if (saveOK) {
                         selZone.save();
                         m = i18n.getString("ZoneInfo.zoneUpdated","Geozone information updated"); // UserErrMsg
                     } else {
-                        // error occurred, should stay on this page
+                        // -- error occurred, should stay on this page
                         editZone = true;
                     }
                 } else {
@@ -633,14 +635,13 @@ public class ZoneInfo
                     JavaScriptTools.writeJSVar(out, "jsvZoneRadiusMeters", radiusMeters);
                     JavaScriptTools.writeJSVar(out, "jsvZoneColor"       , zoneColor);
 
-                  //int pointCount = (mapProvider != null)? mapProvider.getGeozoneSupportedPointCount(zoneTypeInt) : 0;
                     int pointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState, zoneTypeInt);
                     out.write("// Geozone points\n");
                     JavaScriptTools.writeJSVar(out, "jsvZoneCount"       , pointCount);
                     JavaScriptTools.writeJSVar(out, "jsvZoneIndex"       , DEFAULT_POINT_INDEX);
                     out.write("var jsvZoneList = new Array(\n"); // consistent with JSMapPoint
                     for (int z = 0; z < pointCount; z++) {
-                        GeoPoint gp = (_selZone != null)? _selZone.getGeoPoint(z) : null;
+                        GeoPoint gp = (_selZone != null)? _selZone.getGeoPointAt(z,null) : null;
                         if (gp == null) { gp = GeoPoint.INVALID_GEOPOINT; }
                         out.write("    { lat:" + gp.getLatitude() + ", lon:" + gp.getLongitude() + " }");
                         if ((z+1) < pointCount) { out.write(","); }
@@ -739,13 +740,12 @@ public class ZoneInfo
                         String zoneTypeStr = FilterText(zone.getZoneTypeDescription(locale));
                         String zoneRevGeo  = FilterText(ComboOption.getYesNoText(locale,zone.getReverseGeocode()));
                         String zoneRadius  = zone.hasRadius()? String.valueOf(zone.getRadius()) : "--";
-                        GeoPoint centerPt  = zone.getGeoPoint(DEFAULT_POINT_INDEX); // may be null if invalid
+                        GeoPoint centerPt  = zone.getGeoPointAt(DEFAULT_POINT_INDEX,null); // may be null if invalid
                         if (centerPt == null) { centerPt = new GeoPoint(0.0, 0.0); }
                         String zoneCenter  = centerPt.getLatitudeString(GeoPoint.SFORMAT_DEC_5,null) + " "+GeoPoint.PointSeparator+" " + centerPt.getLongitudeString(GeoPoint.SFORMAT_DEC_5,null);
                         String checked     = _selZoneID.equals(zone.getGeozoneID())? "checked" : "";
                         String styleClass  = ((r++ & 1) == 0)? CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD : CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN;
 
-                      //int pointCount     = (mapProvider != null)? mapProvider.getGeozoneSupportedPointCount(zoneTypeInt) : 0;
                         int pointCount     = ZoneInfo.getGeozoneSupportedPointCount(reqState, zoneTypeInt);
                         String typeColor   = (pointCount > 0)? "black" : "red";
 
@@ -823,8 +823,6 @@ public class ZoneInfo
                         out.write("<form name='"+FORM_ZONE_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
                         out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
                         out.write(FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID"))+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_ID+"' value='' size='32' maxlength='32'>");
-                      //int polyPointCount = (mapProvider != null)? mapProvider.getGeozoneSupportedPointCount(polygonType ) : 0;
-                      //int corrPointCount = (mapProvider != null)? mapProvider.getGeozoneSupportedPointCount(corridorType) : 0;
                         int polyPointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState,polygonType );
                         int corrPointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState,corridorType);
                         if ((polyPointCount > 0) || (corrPointCount > 0)) {
@@ -1056,11 +1054,14 @@ public class ZoneInfo
                         out.print("<input class='formButton' type='button' name='reset' value='"+i18nResetBtn+"' title=\""+i18nResetTooltip+"\" onclick=\"javascript:_zoneReset();\">");
                     }
                     out.println("<br>");
-                  //int pointCount = (mapProvider != null)? mapProvider.getGeozoneSupportedPointCount(selZoneType) : 0;
+                    out.println("<div style='height:200px; overflow-y:auto;'>"); // beginning of vertice list
                     int pointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState, selZoneType);
                     for (int z = 0; z < pointCount; z++) {
-                        String latStr = (_selZone != null)? String.valueOf(_selZone.getLatitude(z) ) : "";
-                        String lonStr = (_selZone != null)? String.valueOf(_selZone.getLongitude(z)) : "";
+                        GeoPoint gp = _selZone.getGeoPointAt(z,null);
+                        double gpLat = (gp != null)? gp.getLatitude()  : 0.0;
+                        double gpLon = (gp != null)? gp.getLongitude() : 0.0;
+                        String latStr = (_selZone != null)? String.valueOf(gpLat) : "";
+                        String lonStr = (_selZone != null)? String.valueOf(gpLon) : "";
                         // id='"+PARM_ZONE_INDEX+"'
                         if (pointCount > 1) {
                             String chk = (z == 0)? " checked" : "";
@@ -1075,6 +1076,7 @@ public class ZoneInfo
                         out.println(Form_TextField(MapProviderAdapter.ID_ZONE_LONGITUDE(z), PARM_ZONE_LONGITUDE(z), _editZone, lonStr, null,  9, 10, lonCSS));
                         if ((z+1) < pointCount) { out.println("<br>"); }
                     }
+                    out.println("</div>"); // end of vertice list
                     // Speed limit
                     if (mapSupportsGeozones && showSpeedLimit) {
                         Account.SpeedUnits speedUnit = Account.getSpeedUnits(currAcct); // not null
@@ -1089,7 +1091,8 @@ public class ZoneInfo
                     // Purpose
                     if (showPurposeIDs) {
                         String purpID = (_selZone != null)? _selZone.getZonePurposeID() : "";
-                        String P[] = StringTools.split(privLabel.getStringProperty(PrivateLabel.PROP_ZoneInfo_zonePurposeList,null),',');
+                        String Pstr   = privLabel.getStringProperty(PrivateLabel.PROP_ZoneInfo_zonePurposeList,null);
+                        String P[]    = !StringTools.isBlank(Pstr)? StringTools.split(Pstr,',') : null;
                         out.print("<hr>\n");
                         out.println("<div class='zonePurposeID' title=\""+""+"\">");
                         out.println("<b>"+i18n.getString("ZoneInfo.purposeID","Purpose")+":</b> ");

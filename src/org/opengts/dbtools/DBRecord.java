@@ -265,17 +265,18 @@ public abstract class DBRecord<gDBR extends DBRecord>
         /* InnoDB? */
         boolean innodb = fact.isMySQLInnoDB();
         if (innodb) {
+            String utableName = fact.getUntranslatedTableName();
             if (!dsel.hasWhere()) {
                 // use "TABLE STATUS" for InnoDB to count all reacords
-                Print.logDebug("Using TableStatus for InnoDB record count ...");
+                Print.logDebug("Using TableStatus for InnoDB record count: " + utableName);
                 return fact.getMySQLTableStatus();
             } else
             if (!fact.getAllowInnoDBCOUNT()) {
                 // has a "Where" clause, but "COUNT(*)" explicitly disallowed
-                Print.logError("'COUNT(*)' not allowed for this InnoDB!");
+                Print.logError("'COUNT(*)' not allowed for this InnoDB! " + utableName + " (Where: "+dsel.getWhere()+")");
                 return -1L;
             }
-            Print.logDebug("Warn: Using 'COUNT(*)' for InnoDB query ...");
+            Print.logDebug("Warn: Using 'COUNT(*)' for InnoDB query: " + utableName);
         }
 
         /* we're only interested in 'COUNT(*)' */
@@ -697,7 +698,8 @@ public abstract class DBRecord<gDBR extends DBRecord>
                 DBRecordKey<T> rcdKey = fact.createKey(rs); // may throw DBException
                 if (rcdKey != null) {
                     T rcd = rcdKey.getDBRecord();
-                    rcd.setAllFieldValues(rs);
+                    rcd.setAllFieldValues(rs); // TODO: possible bug
+                    // rcd.setAllFieldValues(rs, dsel.getSelectedFields());
                     if (rcdHandler != null) {
                         int rcdStatus = rcdHandler.handleDBRecord(rcd);
                         if (rcdStatus == DBRecordHandler.DBRH_STOP) {

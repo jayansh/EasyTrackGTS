@@ -308,13 +308,27 @@ public class GoogleMaps
         /* authorization key */
         String mapCtlURL = (mrtp != null)? mrtp.getString(PROP_mapcontrol,null) : null;
         if (StringTools.isBlank(mapCtlURL)) {
-            StringBuffer sb = new StringBuffer();
             // Initialize URL
             //  - http://maps.google.com/maps?file=api&v=2
             //  - http://maps.google.com/maps/api/js?v=3
             //  - http://maps.googleapis.com/maps/api/js
-            boolean useSSL = mrtp.getBoolean(PROP_useSSL, false);
+            StringBuffer sb = new StringBuffer();
+            // -- "https://" or "http://"
+            String useSSLStr = mrtp.getString(PROP_useSSL, null);
+            boolean useSSL = false; // mrtp.getBoolean(PROP_useSSL, false);
+            if (StringTools.isBlank(useSSLStr)) {
+                // -- default: follow parent URL secure protocol
+                useSSL = reqState.isSecure()? true : false;
+            } else 
+            if (useSSLStr.equalsIgnoreCase("auto")) {
+                // -- auto: follow parent URL secure protocol
+                useSSL = reqState.isSecure()? true : false;
+            } else {
+                // -- explicit: use specified ssl mode
+                useSSL = StringTools.parseBoolean(useSSLStr, false);
+            }
             sb.append(useSSL? "https://" : "http://");
+            // -- API version
             if (this.isVersion3()) {
                 sb.append("maps.google.com/maps/api/js?v=3");
                 // weather/cloud
@@ -330,19 +344,22 @@ public class GoogleMaps
                 }
             } else
             if (this.isVersion2()) {
+                // -- OBSOLETE
                 sb.append("maps.google.com/maps?file=api&v=2");
             } else
             if (this.isVersionJS()) {
+                // -- generic JavaScript
                 sb.append("maps.googleapis.com/maps/api/js?sensor=false");
             } else {
-                // default to V2
-                sb.append("maps.google.com/maps?file=api&v=2");
+                // -- default to V3 (weather not loaded)
+                sb.append("maps.google.com/maps/api/js?v=3");
+              //sb.append("maps.google.com/maps?file=api&v=2");
             }
-            // "key="
+            // -- "key="
             String channelVal = (mrtp != null)? mrtp.getString(PROP_channel,"") : "";
             String authKey    = this.getAuthorization();
             if (!StringTools.isBlank(authKey) && !authKey.startsWith("*")) {
-                // a Google API key has been specified
+                // -- a Google API key has been specified
                 if (authKey.startsWith(PremierPrefix_)) {
                     sb.append("&client=").append(authKey);
                     if (StringTools.isBlank(channelVal)) {
@@ -355,28 +372,28 @@ public class GoogleMaps
                     sb.append("&key=").append(authKey);
                 }
             } else {
-                // no Google API key specified
+                // -- no Google API key specified
                 if (this.isVersion2()) {
                     Print.logError("Google Map V2 key not specified");
                 }
             }
-            // "&channel="
+            // -- "&channel="
             if (!StringTools.isBlank(channelVal)) {
                 sb.append("&channel=").append(channelVal);
             }
-            // "&sensor="
+            // -- "&sensor="
             String sensorVal = (mrtp != null)? mrtp.getString(PROP_sensor,"true") : "true";
             if (!StringTools.isBlank(sensorVal)) {
                 sb.append("&sensor=").append(sensorVal);
             }
-            // "&oe=" character encoding
+            // -- "&oe=" character encoding
             sb.append("&oe=").append("utf-8");
-            // "&hl=" localization
+            // -- "&hl=" localization
             String localStr = reqState.getPrivateLabel().getLocaleString();
             if (!StringTools.isBlank(localStr)) {
                 sb.append("&hl=").append(localStr);
             }
-            // URL
+            // -- URL
             mapCtlURL = sb.toString();
         }
 
@@ -412,10 +429,10 @@ public class GoogleMaps
         /* return supported point count */
         RTProperties rtp = this.getProperties();
         switch (gzType) {
-            case POINT_RADIUS        : return rtp.getBoolean(PROP_zone_map_multipoint,false)? Geozone.GetGeoPointCount() : 1;
+            case POINT_RADIUS        : return rtp.getBoolean(PROP_zone_map_multipoint,false)? Geozone.GetMaxVerticesCount() : 1;
             case BOUNDED_RECT        : return 0; // not yet supported
-            case SWEPT_POINT_RADIUS  : return rtp.getBoolean(PROP_zone_map_corridor,false)? Geozone.GetGeoPointCount() : 0;
-            case POLYGON             : return rtp.getBoolean(PROP_zone_map_polygon,false)? Geozone.GetGeoPointCount() : 0;
+            case SWEPT_POINT_RADIUS  : return rtp.getBoolean(PROP_zone_map_corridor  ,false)? Geozone.GetMaxVerticesCount() : 0;
+            case POLYGON             : return rtp.getBoolean(PROP_zone_map_polygon   ,false)? Geozone.GetMaxVerticesCount() : 0;
         }
         return 0;
 

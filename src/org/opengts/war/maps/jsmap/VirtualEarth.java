@@ -148,10 +148,10 @@ public class VirtualEarth
         /* return supported point count */
         RTProperties rtp = this.getProperties();
         switch (gzType) {
-            case POINT_RADIUS        : return rtp.getBoolean(PROP_zone_map_multipoint,false)? Geozone.GetGeoPointCount() : 1;
+            case POINT_RADIUS        : return rtp.getBoolean(PROP_zone_map_multipoint,false)? Geozone.GetMaxVerticesCount() : 1;
             case BOUNDED_RECT        : return 0; // not yet supported
-            case SWEPT_POINT_RADIUS  : return rtp.getBoolean(PROP_zone_map_corridor,false)  ? Geozone.GetGeoPointCount() : 0;
-            case POLYGON             : return rtp.getBoolean(PROP_zone_map_polygon,false)   ? Geozone.GetGeoPointCount() : 0;
+            case SWEPT_POINT_RADIUS  : return rtp.getBoolean(PROP_zone_map_corridor  ,false)? Geozone.GetMaxVerticesCount() : 0;
+            case POLYGON             : return rtp.getBoolean(PROP_zone_map_polygon   ,false)? Geozone.GetMaxVerticesCount() : 0;
         }
         return 0;
 

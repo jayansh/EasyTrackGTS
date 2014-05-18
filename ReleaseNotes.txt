@@ -1,15 +1,10 @@
 
-Version 2.5.3 [2014/01/01]
+Version 2.5.5 [2014/05/05]
 - NEW: Added additional status codes.
-- NEW: Added generalized replacement handling to SMSOutboundGateway.java
-- NEW: "Driving/Stopped Time Summary" report supported in Fleet/Group detail reports.
-- NEW: Added disk utilization checking to "checkInstall" command.
-- NEW: Added "equipmentStatus" / "licenseExpire" columns to Device table.
-- NEW: Added additional fields to report FieldLayout.
-- NEW: Added fleet detail reporting support to MotionReport.
-- CHG: "Driving/Stopped Time Summary" report moved to Device/Vehicle Detail reports.
-- DCS: gprmc] Added support for CellTower lookup (thanks to STefan Mayer)
-- DCS: template] fixed "createGPSEvent" to property set "lastModemID".
+- NEW: Added new fields to EventData table
+- NEW: Added support for fuel-cost to Account/Device table and reports.
+- DCS: gprmc] Added battery-temperature support.
+- DCS: gprmc] Automatically adjust non-decimal battery level value to a percent.
 
 -----------------------------------------------------------------------------------
 

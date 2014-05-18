@@ -78,6 +78,8 @@
 //     -Added support for obtaining SQLServer alternate keys (see SQLServer_AlternateKeys)
 //  2012/09/20  Martin D. Flynn
 //     -Added "ALTER ROLE [db_owner] ..." to MS-SQLServer db init.
+//  2014/02/17  Martin D. Flynn
+//     -SQLServer "ALTER ROLE" error is no longer fatal (displays error and continues)
 // ----------------------------------------------------------------------------
 package org.opengts.dbtools;
 
@@ -2458,12 +2460,18 @@ public class DBProvider
                         }
                     }
                     // SQLServer: USE <dbname>; ALTER ROLE [db_owner] ADD MEMBER [<user>]
-                    try {
-                        // "ALTER ROLE db_owner ADD MEMBER gts" should work as well.
+                    {
+                        // -- required for SQLServer 2012
+                        // -- not supported by SQLServer 2005
                         String alterRole = "USE " + dbName + "; ALTER ROLE [db_owner] ADD MEMBER [" + grantUser + "]";
-                        dbc.executeUpdate(alterRole);
-                    } catch (SQLException sqe) {
-                        throw sqe;
+                        try {
+                            // "ALTER ROLE db_owner ADD MEMBER gts" should work as well.
+                            dbc.executeUpdate(alterRole);
+                        } catch (SQLException sqe) {
+                            // -- will fail for 2005 SQLServer
+                            Print.logException("Alter Role failed: " + alterRole + " (continuing...)", sqe);
+                            //throw sqe; <== removed for v2.5.4-B26
+                        }
                     }
                     // SQLServer: USE <dbname>; GRANT SELECT,INSERT,UPDATE,DELETE,REFERENCES TO <user>
                     try {

@@ -48,6 +48,8 @@
 //     -Initial implementation of TKnano-1(ASCII) support (EXPERIMENTAL - not yet complete)
 //  2013/11/11  Martin D. Flynn
 //     -[GTSE] additional event codes.
+//  2014/03/03  Martin D. Flynn
+//     -Added support for TK102B protocol format.
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 package org.opengts.servers.tk10x;
@@ -141,11 +143,13 @@ public class TrackClientPacketHandler
     public enum TKDeviceType {
         UNKNOWN  (0,"Unknown" ),
         TK102    (1,"TK102"   ),
-        TK103_1  (2,"TK103-1" ),
-        TK103_2  (3,"TK103-2" ),
-        TK103_3  (4,"TK103-3" ),
-        TKnano_1 (5,"TKnano-1"), // EXPERIMENTAL: may not be supported
-        TKnano_2 (5,"TKnano-2"); // EXPERIMENTAL: may not be supported
+        TK102_2  (2,"TK102-2" ),
+        TK102B   (3,"TK102B"  ),
+        TK103_1  (4,"TK103-1" ),
+        TK103_2  (5,"TK103-2" ),
+        TK103_3  (6,"TK103-3" ),
+        TKnano_1 (7,"TKnano-1"), // EXPERIMENTAL: may not be supported
+        TKnano_2 (8,"TKnano-2"); // EXPERIMENTAL: may not be supported
         // ---
         private int    vv = 0;
         private String dd = null;
@@ -224,16 +228,43 @@ public class TrackClientPacketHandler
             return minBytes | ServerSocketThread.PACKET_LEN_INCREMENTAL_;
         }
 
+        /* TK102B: check for packet */
+        if (packet[0] == '[') {
+            // TK102B: "[!0000000001.(...)]"
+            // -- at least 14 bytes, to include the "(" character
+            if (packetLen < 14) {
+                // -- read at least up to "(" char
+                // - required to skip past binary length byte at index-12
+                return 14 | ServerSocketThread.PACKET_LEN_INCREMENTAL_;
+            }
+            // -- indicated packet length
+            // - the packet lengths appear to be specified incorrectly in the packet
+            //   so do not rely on this stated packet length
+            //int pktLen = (int)packet[12] & 0xFF;
+            //if (packetLen < (13 + pktLen)) {
+            //    return (13 + pktLen) | ServerSocketThread.PACKET_LEN_INCREMENTAL_;
+            //}
+            // -- check for end of packet
+            if (packet[packetLen - 1] == ']') {
+                // -- found end-of-packet
+                this.tkDeviceType = TKDeviceType.TK102B;
+                return packetLen;
+            } else {
+                // -- read next byte
+                return (packetLen + 1) | ServerSocketThread.PACKET_LEN_INCREMENTAL_;
+            }
+        }
+
         /* TK103-3: check for packet */
         if (packet[0] == '(') {
             // tk103-3: "(...)"
             // PacketTerminator: ')'
             this.tkDeviceType = TKDeviceType.TK103_3;
             if ((packetLen > 1) && (packet[packetLen - 1] == ')')) {
-                // found end-of-packet
+                // -- found end-of-packet
                 return packetLen;
             } else {
-                // read next byte
+                // -- read next byte
                 return (packetLen + 1) | ServerSocketThread.PACKET_LEN_INCREMENTAL_;
             }
         }
@@ -245,10 +276,12 @@ public class TrackClientPacketHandler
             // PacketTerminator: #
             this.tkDeviceType = TKDeviceType.TKnano_1;
             if ((packetLen > 1) && (packet[packetLen - 1] == '#')) {
-                // found end of packet
+                // -- found end of packet
                 return packetLen;
+            } else {
+                // -- read next byte
+                return (packetLen + 1) | ServerSocketThread.PACKET_LEN_INCREMENTAL_;
             }
-            return (packetLen + 1) | ServerSocketThread.PACKET_LEN_INCREMENTAL_; // read next byte
         } else
         if (packet[0] == '$') {
             // TKnano-2: may be a TKnano-2 binary packet
@@ -265,7 +298,7 @@ public class TrackClientPacketHandler
             if (PACKET_LEN_END_OF_STREAM) {
                 return ServerSocketThread.PACKET_LEN_END_OF_STREAM;
             } else {
-                // should instead explicitly look for the ';' terminator?
+                // -- should instead explicitly look for the ';' terminator?
                 return ServerSocketThread.PACKET_LEN_LINE_TERMINATOR;
             }
         } else
@@ -277,7 +310,7 @@ public class TrackClientPacketHandler
             if (PACKET_LEN_END_OF_STREAM) {
                 return ServerSocketThread.PACKET_LEN_END_OF_STREAM;
             } else {
-                // should instead explicitly look for the ';' terminator?
+                // -- should instead explicitly look for the ';' terminator?
                 return ServerSocketThread.PACKET_LEN_LINE_TERMINATOR;
             }
         }
@@ -286,6 +319,7 @@ public class TrackClientPacketHandler
         if (packetLen == 1) {
             byte b = packet[0];
             if (b <= ' ') {
+                // -- discard single space/control char
                 return 1; // consume/ignore
             }
         }
@@ -379,6 +413,12 @@ public class TrackClientPacketHandler
             }
             Print.logInfo("Sending TK103-1 IMEI# response 'ON' ...");
             return "ON".getBytes(); // ACK "ON"
+        }
+
+        /* TK102B */
+        if (s.startsWith("[")) {
+            this.tkDeviceType = TKDeviceType.TK102B;
+            return this.parseInsertRecord_TK102B(s); // TK102B
         }
 
         /* default to TK102 or TK103-1 */
@@ -494,7 +534,7 @@ public class TrackClientPacketHandler
             fixtime, statusCode, null,
             geoPoint, gpsAge, HDOP, numSats,
             speedKPH, headingDeg, altitudeM, odomKM,
-            gpioInput, batteryV);
+            gpioInput, batteryV, 0.0/*battLvl*/);
 
         /* return ACK */
         return null;
@@ -588,8 +628,8 @@ public class TrackClientPacketHandler
         long     odomVal    = StringTools.parseHexLong(s.substring(G+54,G+62),0L);                 // 54,62 Miles?
         double   altitudeM  = 0.0;
         GeoPoint geoPoint   = new GeoPoint(latitude,longitude);
-        double   batteryV   = 0.0;
         long     gpsAge     = 0L;
+        double   batteryV   = 0.0;
         double   HDOP       = 0.0;
         int      numSats    = 0;
 
@@ -659,7 +699,7 @@ public class TrackClientPacketHandler
             fixtime, statusCode, null,
             geoPoint, gpsAge, HDOP, numSats,
             speedKPH, headingDeg, altitudeM, odomKM,
-            gpioInput, batteryV);
+            gpioInput, batteryV, 0.0/*battLvl*/);
 
         /* return ACK */
         return rtnACK? ackB : null;
@@ -735,7 +775,7 @@ public class TrackClientPacketHandler
         double   altitudeM = 0.0;
 
         /* speed/heading */
-        double speedKPH   = StringTools.parseDouble(fld[ 9],0.0) * GeoPoint.KILOMETERS_PER_NAUTICAL_MILE;
+        double speedKPH   = StringTools.parseDouble(fld[ 9],0.0) * KILOMETERS_PER_KNOT;
         double headingDeg = StringTools.parseDouble(fld[10],0.0);
         if (speedKPH < MINIMUM_SPEED_KPH) {
             //Print.logInfo("Actual Speed: " + speedKPH);
@@ -780,7 +820,7 @@ public class TrackClientPacketHandler
             fixtime, statusCode, statCodeSet,
             geoPoint, gpsAge, HDOP, numSats,
             speedKPH, headingDeg, altitudeM, odomKM,
-            gpioInput, batteryV);
+            gpioInput, batteryV, 0.0/*battLvl*/);
 
         /* return ACK */
         return null;
@@ -789,6 +829,139 @@ public class TrackClientPacketHandler
 
     // -----------------------------------------------------
     // TKnano-2: Binary (EXPERIMENTAL: may not be supported)
+    // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // TK102B/TK102-3: (TCP)
+    /**
+    *** TK102-2: parse and insert data record 
+    **/
+    private byte[] parseInsertRecord_TK102B(String s) // handleCommon
+    {
+        Print.logInfo("Parsing: TK102B ("+this.tkDeviceType+") ...");
+
+        /* pre-validate */
+        if (s == null) {
+            Print.logError("String is null");
+            return null;
+        } else
+        if (!s.startsWith("[") || !s.endsWith(")]")) {
+            Print.logError("Unrecognized packet header/trailer");
+            return null;
+        } else
+        if ((s.length() <= 13) || (s.charAt(13) != '(')) {
+            Print.logError("Expected '(' at column 13 not found");
+            return null;
+        }
+
+        /* second character */
+        char header = s.charAt(1);
+
+        /* sequence number */
+        String seqStr = s.substring(2,12);
+
+        /* packet length */
+        // int pktLen = (byte)s.charAt(12);
+
+        /* IMEI packet? */
+        if (header == '!') { // 0x21
+            // assume IMEI starts at column 14
+            int imeiS = 14;
+            int imeiE = s.indexOf(",",imeiS);
+            int imeiL = imeiE - imeiS;
+            if ((imeiL <= 0) || imeiL > 15) {
+                Print.logError("Invalid IMEI found");
+                return null;
+            }
+            this.tkModemID = s.substring(imeiS,imeiE);
+            StringBuffer ack = new StringBuffer();
+            ack.append("[\"0000000001");
+            ack.append(s.substring(13));
+            return ack.toString().getBytes();
+        }
+
+        /* "Quit request" */
+        if (header == '#') { // 0x23
+            // -- Quit request
+            StringBuffer ack = new StringBuffer(s);
+            ack.setCharAt(1,'$'); // 0x24
+            return ack.toString().getBytes();
+        }
+
+        /* skip unsupported packet headers */
+        if (header == '%') { // 0x25
+            return null; // 0x26
+        } else
+        if (header == 'J') { // 0x4A
+            return null; // 0x4A
+        }
+
+        /* accept only '=' ';' here */
+        if (header != ';') { // 0x3B
+            // Ok, continue
+        } else
+        if (header != '=') { // 0x3D
+            // Ok, continue
+        } else {
+            Print.logWarn("Ignoring unrecognized packet header");
+            return null;
+        }
+
+        /* skip unrecognized packets */
+        if (s.length() < 66) {
+            Print.logError("Insufficient packet length (expect 66): " + s.length());
+            return null;
+        }
+
+        /* parse */
+        String   timeStr    = s.substring(17,23); // hhmmss
+        boolean  validGPS   = s.substring(23,24).equalsIgnoreCase("A");
+        double   latitude   = this._parseLatitude( s.substring(24,33),s.substring(33,34));
+        double   longitude  = this._parseLongitude(s.substring(34,44),s.substring(44,45));
+        double   speedKPH   = StringTools.parseDouble(s.substring(45,50),0.0) * KILOMETERS_PER_KNOT;
+        double   headingDeg = StringTools.parseDouble(s.substring(50,52),0.0) * 10.0;
+        String   dateStr    = s.substring(52,58); // DDMMYY
+        double   battLvl    = StringTools.parseDouble(s.substring(58,61),0.0) / 100.0;
+        double   batteryV   = 0.0;
+        long     fixtime    = this._getUTCSeconds_DMY_HMS(dateStr, timeStr);
+        double   altitudeM  = 0.0;
+        GeoPoint geoPoint   = new GeoPoint(latitude,longitude);
+        long     gpsAge     = 0L;
+        double   odomKM     = 0.0;
+        double   HDOP       = 0.0;
+        int      numSats    = 0;
+        long     gpioInput  = -1L;
+
+        /* validate GPS */
+        if (validGPS && !geoPoint.isValid()) {
+            validGPS = false;
+        }
+
+        /* adjustments to speed/heading */
+        if (speedKPH < MINIMUM_SPEED_KPH) {
+            //Print.logInfo("Actual Speed: " + speedKPH);
+            speedKPH   = 0.0;
+            headingDeg = 0.0;
+        } else
+        if (headingDeg < 0.0) {
+            headingDeg = 0.0;
+        }
+
+        /* status code */
+        int statusCode = StatusCodes.STATUS_LOCATION;
+
+        // ------------------------------------------------
+        // TK102B: Common data handling below 
+        this.handleCommon(this.tkModemID, 
+            fixtime, statusCode, null,
+            geoPoint, gpsAge, HDOP, numSats,
+            speedKPH, headingDeg, altitudeM, odomKM,
+            gpioInput, batteryV, battLvl);
+
+        /* no ack? */
+        return null;
+
+    }
+
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
     // TK102: (TCP)
@@ -939,7 +1112,7 @@ public class TrackClientPacketHandler
             fixtime, statusCode, null,
             geoPoint, gpsAge, HDOP, numSats,
             speedKPH, headingDeg, altitudeM, odomKM,
-            gpioInput, batteryV);
+            gpioInput, batteryV, 0.0/*battLvl*/);
 
         /* return ACK */
         return null;
@@ -987,6 +1160,25 @@ public class TrackClientPacketHandler
     ***               and SS is second.
     *** @return Time in UTC seconds.
     **/
+    private long _getUTCSeconds_DMY_HMS(String ddmmyy, String hhmmss)
+    {
+        if ((ddmmyy.length() < 6) || (hhmmss.length() < 6)) {
+            return 0L;
+        } else {
+            long dmy = StringTools.parseLong(ddmmyy,0L);
+            long hms = StringTools.parseLong(hhmmss,0L);
+            return this._getUTCSeconds_DMY_HMS(dmy, hms);
+        }
+    }
+
+    /**
+    *** Computes seconds in UTC time given values from GPS device.
+    *** @param dmy    Date received from GPS in DDMMYY format, where DD is day, MM is month,
+    ***               YY is year.
+    *** @param hms    Time received from GPS in HHMMSS format, where HH is hour, MM is minute,
+    ***               and SS is second.
+    *** @return Time in UTC seconds.
+    **/
     private long _getUTCSeconds_DMY_HMS(long dmy, long hms)
     {
     
@@ -1023,7 +1215,7 @@ public class TrackClientPacketHandler
                 }
             }
         }
-        
+
         /* return UTC seconds */
         long sec = DateTime.DaySeconds(DAY) + TOD;
         return sec;
@@ -1178,7 +1370,7 @@ public class TrackClientPacketHandler
         long     fixtime, int statusCode, HashSet<Integer> statCodeSet,
         GeoPoint geoPoint, long gpsAge, double HDOP, int numSats,
         double   speedKPH, double headingDeg, double altitudeM, double odomKM,
-        long     gpioInput, double batteryV)
+        long     gpioInput, double batteryV, double battLvl)
     {
 
         /* valid GeoPoint? */
@@ -1199,7 +1391,10 @@ public class TrackClientPacketHandler
         }
         Print.logInfo("Speed    : " + StringTools.format(speedKPH ,"#0.0") + " kph " + headingDeg);
         if (batteryV > 0.0) {
-        Print.logInfo("Battery  : " + StringTools.format(batteryV ,"#0.0") + " Volts");
+        Print.logInfo("Battery V: " + StringTools.format(batteryV ,"#0.0") + " Volts");
+        }
+        if (battLvl > 0.0) {
+        Print.logInfo("Battery %: " + StringTools.format(battLvl*100.0,"#0.0") + " %");
         }
 
         /* find Device */
@@ -1265,7 +1460,7 @@ public class TrackClientPacketHandler
                         z.getTimestamp(), zsc, z.getGeozone(),
                         geoPoint, gpsAge, HDOP, numSats,
                         speedKPH, headingDeg, altitudeM, odomKM,
-                        gpioInput, batteryV);
+                        gpioInput, batteryV, battLvl);
                     Print.logInfo("Geozone    : " + z);
                 }
             }
@@ -1290,7 +1485,7 @@ public class TrackClientPacketHandler
                                 inpTime, inpCode, null/*geozone*/,
                                 geoPoint, gpsAge, HDOP, numSats,
                                 speedKPH, headingDeg, altitudeM, odomKM,
-                                gpioInput, batteryV);
+                                gpioInput, batteryV, battLvl);
                         }
                     }
                 }
@@ -1307,7 +1502,7 @@ public class TrackClientPacketHandler
                     fixtime, sc, null/*geozone*/,
                     geoPoint, gpsAge, HDOP, numSats,
                     speedKPH, headingDeg, altitudeM, odomKM,
-                    gpioInput, batteryV);
+                    gpioInput, batteryV, battLvl);
                 if (statusCode == sc) {
                     // unlikely, but check anyway
                     statusCode = StatusCodes.STATUS_IGNORE;
@@ -1340,7 +1535,7 @@ public class TrackClientPacketHandler
                 fixtime, sc, null/*geozone*/,
                 geoPoint, gpsAge, HDOP, numSats,
                 speedKPH, headingDeg, altitudeM, odomKM,
-                gpioInput, batteryV);
+                gpioInput, batteryV, battLvl);
         } else
         if (statusCode != StatusCodes.STATUS_LOCATION) {
             // Not a "Location" event
@@ -1348,7 +1543,7 @@ public class TrackClientPacketHandler
                 fixtime, statusCode, null/*geozone*/,
                 geoPoint, gpsAge, HDOP, numSats,
                 speedKPH, headingDeg, altitudeM, odomKM,
-                gpioInput, batteryV);
+                gpioInput, batteryV, battLvl);
         } else
         if (XLATE_LOCATON_INMOTION && (speedKPH > 0.0)) {
             // Traslate "Location" to "InMotion"
@@ -1357,7 +1552,7 @@ public class TrackClientPacketHandler
                 fixtime, sc, null/*geozone*/,
                 geoPoint, gpsAge, HDOP, numSats,
                 speedKPH, headingDeg, altitudeM, odomKM,
-                gpioInput, batteryV);
+                gpioInput, batteryV, battLvl);
         }
         if (validGPS && !device.isNearLastValidLocation(geoPoint,MINIMUM_MOVED_METERS)) {
             // Only include "Location" if not nearby previous event
@@ -1365,7 +1560,7 @@ public class TrackClientPacketHandler
                 fixtime, statusCode, null/*geozone*/,
                 geoPoint, gpsAge, HDOP, numSats,
                 speedKPH, headingDeg, altitudeM, odomKM,
-                gpioInput, batteryV);
+                gpioInput, batteryV, battLvl);
         }
 
         /* save device changes */
@@ -1392,7 +1587,7 @@ public class TrackClientPacketHandler
         long     gpsTime, int statusCode, Geozone geozone,
         GeoPoint geoPoint, long gpsAge, double HDOP, int numSats,
         double   speedKPH, double heading, double altitudeM, double odomKM,
-        long     gpioInput, double batteryV)
+        long     gpioInput, double batteryV, double battLvl)
     {
         String accountID    = device.getAccountID();
         String deviceID     = device.getDeviceID();
@@ -1409,6 +1604,7 @@ public class TrackClientPacketHandler
         evdb.setOdometerKM(odomKM);
         evdb.setInputMask(gpioInput);
         evdb.setBatteryVolts(batteryV);
+        evdb.setBatteryLevel(battLvl);
         return evdb;
     }
 
@@ -1419,7 +1615,7 @@ public class TrackClientPacketHandler
         long     gpsTime, int statusCode, Geozone geozone,
         GeoPoint geoPoint, long gpsAge, double HDOP, int numSats,
         double   speedKPH, double heading, double altitudeM, double odomKM,
-        long     gpioInput, double batteryV)
+        long     gpioInput, double batteryV, double battLvl)
     {
 
         /* create event */
@@ -1427,7 +1623,7 @@ public class TrackClientPacketHandler
             gpsTime, statusCode, geozone,
             geoPoint, gpsAge, HDOP, numSats,
             speedKPH, heading, altitudeM, odomKM,
-            gpioInput, batteryV);
+            gpioInput, batteryV, battLvl);
 
         /* insert event */
         // this will display an error if it was unable to store the event

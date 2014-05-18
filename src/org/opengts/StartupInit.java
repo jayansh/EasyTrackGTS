@@ -258,7 +258,7 @@ public class StartupInit
     **/
     protected EventUtil.OptionalEventFields createOptionalEventFieldsHandler()
     {
-        
+
         /* always use EventData to resolve optionalEventFields? */
         final boolean useEventDataToResolveFields = true;
 
@@ -609,6 +609,8 @@ public class StartupInit
             addDBFields(tblName, fields, EventData.OPTCOLS_ThermoFieldInfo              , false, EventData.ThermoFieldInfo, 4);
             // startupInit.EventData.AnalogFieldInfo=true
             addDBFields(tblName, fields, EventData.OPTCOLS_AnalogFieldInfo              , false, EventData.AnalogFieldInfo);
+            // startupInit.EventData.TripSummary=true
+            addDBFields(tblName, fields, EventData.OPTCOLS_TripSummary                  , false, EventData.TripSummary);
             // startupInit.EventData.EndOfDaySummary=true
             addDBFields(tblName, fields, EventData.OPTCOLS_EndOfDaySummary              , false, EventData.EndOfDaySummary);
             // startupInit.EventData.ServingCellTowerData=true

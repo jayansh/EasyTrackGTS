@@ -47,7 +47,7 @@
 //      fully utilize this type of geozone.
 //  2012/04/03  Martin D. Flynn
 //     -Updated map layer creation interface
-//     -Added support for MapQuest OSM/Arial layers
+//     -Added support for MapQuest OSM/Aerial layers
 //  2013/08/06  Martin D. Flynn
 //     -Fixed spelling, renamed "Arial" to "Aerial"
 // ----------------------------------------------------------------------------
@@ -205,19 +205,19 @@ public class OpenLayers
         RTProperties rtp = this.getProperties();
         switch (gzType) {
             case POINT_RADIUS        : // 0
-                ptCnt = rtp.getBoolean(PROP_zone_map_multipoint,false)? Geozone.GetGeoPointCount() : 1;
+                ptCnt = rtp.getBoolean(PROP_zone_map_multipoint,false)? Geozone.GetMaxVerticesCount() : 1;
                 break;
             case BOUNDED_RECT        : // 1
                 return 0; // not yet supported
             case SWEPT_POINT_RADIUS  : // 2
-                ptCnt = rtp.getBoolean(PROP_zone_map_corridor  ,false)? Geozone.GetGeoPointCount() : 0;
+                ptCnt = rtp.getBoolean(PROP_zone_map_corridor  ,false)? Geozone.GetMaxVerticesCount() : 0;
                 break;
             case POLYGON             : // 3
                 //Print.logInfo("Polygon supported: " + rtp.getBoolean(PROP_zone_map_polygon,false));
                 //if (!rtp.getBoolean(PROP_zone_map_polygon,false)) {
                 //    rtp.printProperties("OpenLayers Properties: ");
                 //}
-                ptCnt = rtp.getBoolean(PROP_zone_map_polygon   ,false)? Geozone.GetGeoPointCount() : 0;
+                ptCnt = rtp.getBoolean(PROP_zone_map_polygon   ,false)? Geozone.GetMaxVerticesCount() : 0;
                 break;
         }
         if (ptCnt <= 0) {

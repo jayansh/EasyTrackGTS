@@ -76,11 +76,21 @@
 // ----------------------------------------------------------------------------
 package org.opengts.db;
 
-import java.lang.*;
-import java.util.*;
-import java.math.*;
-import java.io.*;
-import java.sql.*;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.Collection;
+import java.util.Set;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.Vector;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.io.OutputStream;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import org.opengts.util.*;
 import org.opengts.dbtools.*;
@@ -1230,7 +1240,7 @@ public class EventUtil
                 NEARBY_GEOZONE_RADIUS = 1000.0; // default 1000 meters
             } else {
                 NEARBY_GEOZONE_RADIUS = StringTools.parseDouble(nearbyGzRadM, 0.0);
-                if (NEARBY_GEOZONE_RADIUS > 10000.0) { NEARBY_GEOZONE_RADIUS = 10000.0; } // max radius
+                if (NEARBY_GEOZONE_RADIUS > 15000.0) { NEARBY_GEOZONE_RADIUS = 15000.0; } // max radius
             }
             boolean GET_ALL_CONTAINED_GEOZONES = privLabel.getBooleanProperty(BasicPrivateLabel.PROP_TrackMap_showAllContainedGeozones, true);
             if (NEARBY_GEOZONE_RADIUS > 0.0) {
@@ -1242,7 +1252,7 @@ public class EventUtil
                 Print.logDebug("(XML) ["+accountID+"] Including only 'geozoneID' Geozone shapes found");
             }
 
-            /* parked zone */
+            /* parked zone from Device record */
             if (includeParkedGeofence && !isFleet && 
                 !ListTools.isEmpty(edp) && (edp[0] instanceof EventData)) {
                 Device dev   = ((EventData)edp[0]).getDevice();
@@ -3214,6 +3224,7 @@ public class EventUtil
             String units = speedUnits.toString(locale);
             double speedLimKPH = ev.getSpeedLimitKPH();
             double limit = (speedLimKPH > 0.0)? speedUnits.convertFromKPH(speedLimKPH) : 0.0;
+            this._writeKeyValue_JSON(pwout,PFX2,"Speed_kph"  , StringTools.format(speedKPH,"0.0"), false);
             this._writeKeyValue_JSON(pwout,PFX2,"Speed"      , StringTools.format(speed,"0.0"), false);
             this.writeKeyValue_JSON( pwout,PFX2,"Speed_units", units, false);
             if (limit > 0.0) { 
@@ -3235,8 +3246,9 @@ public class EventUtil
             Account.AltitudeUnits altUnits = Account.getAltitudeUnits(account);
             int    alt   = (int)Math.round(altUnits.convertFromMeters(altitudeM));
             String units = altUnits.toString(locale);
-            this.writeKeyValue_JSON(pwout,PFX2,"Altitude"      , alt  , false);
-            this.writeKeyValue_JSON(pwout,PFX2,"Altitude_units", units, false);
+            this._writeKeyValue_JSON(pwout,PFX2,"Altitude_meters", StringTools.format(altitudeM,"0.0"), false);
+            this.writeKeyValue_JSON( pwout,PFX2,"Altitude"       , alt      , false);
+            this.writeKeyValue_JSON( pwout,PFX2,"Altitude_units" , units    , false);
         }
 
         // Odometer
@@ -3245,6 +3257,7 @@ public class EventUtil
             Account.DistanceUnits distUnits = Account.getDistanceUnits(account);
             double odometer = distUnits.convertFromKM(odomKM);
             String units    = distUnits.toString(locale);
+            this._writeKeyValue_JSON(pwout,PFX2,"Odometer_km"   , StringTools.format(odomKM,"0.000"), false);
             this._writeKeyValue_JSON(pwout,PFX2,"Odometer"      , StringTools.format(odometer,"0.000"), false);
             this.writeKeyValue_JSON( pwout,PFX2,"Odometer_units", units   , false);
         }
@@ -3328,7 +3341,8 @@ public class EventUtil
             Account.TemperatureUnits tempUnits = Account.getTemperatureUnits(account);
             double tempC = ev.getCoolantTemp();
             double temp  = tempUnits.convertFromC(tempC);
-            String units = tempUnits.toString();
+            String units = tempUnits.toString(locale);
+            this._writeKeyValue_JSON(pwout,PFX2,"EngineCoolantTemperature_C"    , StringTools.format(tempC,"0.0"), false);
             this._writeKeyValue_JSON(pwout,PFX2,"EngineCoolantTemperature"      , StringTools.format(temp,"0.0"), false);
             this.writeKeyValue_JSON( pwout,PFX2,"EngineCoolantTemperature_units", units, false);
         }
@@ -3338,7 +3352,8 @@ public class EventUtil
             Account.VolumeUnits volUnits = Account.getVolumeUnits(account);
             double fuelL = ev.getFuelTotal();
             double fuel  = volUnits.convertFromLiters(fuelL);
-            String units = volUnits.toString();
+            String units = volUnits.toString(locale);
+            this._writeKeyValue_JSON(pwout,PFX2,"EngineFuelUsed_Liter", StringTools.format(fuelL,"0.0"), false);
             this._writeKeyValue_JSON(pwout,PFX2,"EngineFuelUsed"      , StringTools.format(fuel,"0.0"), false);
             this.writeKeyValue_JSON( pwout,PFX2,"EngineFuelUsed_units", units, false);
         }

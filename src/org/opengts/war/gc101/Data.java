@@ -60,6 +60,8 @@
 //     -Added support for batteryLevel, gpioInput, HDOP, #Sats
 //  2012/04/16/03  Martin D. Flynn
 //     -Fixed NPE when "rmc" parameter is invalid.
+//  2014/03/03  Martin D. Flynn
+//     -Fixed packets sent via POST
 // ----------------------------------------------------------------------------
 package org.opengts.war.gc101;
 
@@ -312,20 +314,25 @@ public class Data
         /* "&cmd=version"? */
         if (isPost) {
             String cmd = AttributeTools.getRequestString(request, PARM_COMMAND, "");
+            if (StringTools.isBlank(cmd)) {
+                // -- no command requested (fixed 2.5.4-B33)
+            } else
             if (cmd.equalsIgnoreCase("version") || 
                 cmd.equalsIgnoreCase("ver")     ||
                 cmd.equalsIgnoreCase("ve")        ) {
                 String vers = DEVICE_CODE+"-"+VERSION;
                 Print.logInfo("Version Command: " + vers);
-                this.plainTextResponse(response, "OK:version:"+vers);
+                this.plainTextResponse(response, "OK:version:ver="+vers+";");
                 return;
             } else
             if (cmd.equalsIgnoreCase("mobileid") ||
                 cmd.equalsIgnoreCase("id")         ) {
+                // -- MobileID exists
                 Print.logInfo("Command not supported: " + cmd);
                 this.plainTextResponse(response, "ERROR:command:"+cmd);
                 return;
             } else {
+                // -- unknown/unsupported command
                 Print.logInfo("Command not supported: " + cmd);
                 this.plainTextResponse(response, "ERROR:command:"+cmd);
                 return;

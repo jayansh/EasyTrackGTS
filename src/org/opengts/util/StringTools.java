@@ -97,6 +97,8 @@
 //     -Added ELAPSED_FORMAT_MMMSS
 //  2013/08/06  Martin D. Flynn
 //     -Added "trimTrailingComments"
+//  2014/03/03  Martin D. Flynn
+//     -Added "compareVersions"
 // ----------------------------------------------------------------------------
 package org.opengts.util;
 
@@ -6756,6 +6758,141 @@ public class StringTools
             "{", KEY_END, ARG_DELIM, DFT_DELIM,
             false/*replaceEsc*/).toString();
         return repText.toString();
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+    *** Compare version strings of the form "a.b.c-B##".<br>
+    *** Examples:<br>
+    ***   "1.2.3" < "1.2.3.4"<br>
+    ***   "5.22" > "5.9"<br>
+    ***   "3.4-B9" < "3.4-B12"<br>
+    *** This comparison method makes the general assumption that "a", "b", "c", etc. (above)
+    *** contain only numeric characters.  If they contain any alpha characters, then this 
+    *** comparison method may not produce the desired results.
+    *** @param V1  The first version string of the form "a.b.c-B##"
+    *** @param V2  The second version string of the form "a.b.c-B##"
+    *** @returns -1 if (V1 < V2), 0 if (V1 == V2), 1 if (V1 > V2)
+    **/
+    public static int compareVersions(String V1, String V2)
+    {
+
+        /* check for nulls? */
+        if ((V1 == null) && (V2 != null)) {
+            return -1;
+        } else 
+        if ((V1 == null) && (V2 == null)) {
+            return 0;
+        } else
+        if ((V1 != null) && (V2 == null)) {
+            return 1;
+        }
+
+        /* remove trailing comments, and compare uppercase */
+        { // -- local scope
+            int x = V1.indexOf("/");
+            if (x < 0) { x = V1.indexOf(":"); }
+            V1 = ((x>=0)?V1.substring(0,x):V1).toUpperCase();
+        }
+        { // -- local scope
+            int x = V2.indexOf("/");
+            if (x < 0) { x = V2.indexOf(":"); }
+            V2 = ((x>=0)?V2.substring(0,x):V2).toUpperCase();
+        }
+
+        /* extract the build-version */
+        String B1 = null;
+        String B2 = null;
+        { // -- Version #1: local scope
+            int b = V1.indexOf("-");
+            if (b >= 0) {
+                B1 = V1.substring(b+1);
+                V1 = V1.substring(0,b); 
+            }
+        }
+        { // -- Version #2: local scope
+            int b = V2.indexOf("-");
+            if (b >= 0) { 
+                B2 = V2.substring(b+1);
+                V2 = V2.substring(0,b); 
+            }
+        }
+
+        /* parse/compare versions */
+        String C1[] = V1.split("\\.");
+        String C2[] = V2.split("\\.");
+        int  maxLen = (C1.length <= C2.length)? C1.length : C2.length;
+        for (int i = 0; i < maxLen; i++) {
+            // -- string lengths
+            int C1Len = C1[i].length();
+            int C2Len = C2[i].length();
+            // -- compare
+            int c;
+            if (C1Len == C2Len) {
+                // -- equal lengths, compare lexographically
+                // -  ie. "32" ?= "43"
+                c = C1[i].compareTo(C2[i]);
+                // -- Note: this does not handle cases were the strings contain
+                // -  non-alpha characters:
+                // -  ie. "9b" > "21"
+            } else {
+                // -- unequal lengths (the longer length wins)
+                // -  ie. "22" != "213"
+                // -  "22" < "213"
+                // -  "107" > "54"
+                c = (C1Len < C2Len)? -1 : 1;
+                // -- Note: this does not handle cases were the strings contain
+                // -  non-alpha characters:
+                // -  ie. "2b" > "9"
+            }
+            // -- return now if not-equal
+            if (c != 0) {
+                return c;
+            }
+        }
+
+        /* check version lengths */
+        // -- the string with the more sub-versions wins
+        if (C1.length > maxLen) {
+            // -- "1.2.3.4" > "1.2.3"
+            return 1;
+        } else
+        if (C2.length > maxLen) {
+            // -- "1.2.3" < "1.2.3.4"
+            return -1;
+        }
+
+        /* compare build versions */
+        // -- a version with a build is less than one without
+        if ((B1 != null) && (B2 == null)) {
+            // -- "1.2.3-B01" < "1.2.3"
+            return -1;
+        } else 
+        if ((B1 == null) && (B2 == null)) {
+            // -- "1.2.3" == "1.2.3"
+            return 0;
+        } else
+        if ((B1 == null) && (B2 != null)) {
+            // -- "1.2.3" > "1.2.3-B01"
+            return 1;
+        }
+
+        /* versions are equal, now check build# */
+        // -- compare "B01" to "B02"
+        int B1Len = B1.length();
+        int B2Len = B2.length();
+        if (B1Len == B2Len) {
+            // -- equal lengths, compare lexographically
+            return B1.compareTo(B2);
+        } else {
+            // -- unequal lengths (the longer length wins)
+            return (B1Len < B2Len)? -1 : 1;
+            // -- Note: this does not handle the following cases
+            // -  "B02" > "B9"
+            // -  "A99" > "B2"
+        }
+
     }
 
     // ------------------------------------------------------------------------

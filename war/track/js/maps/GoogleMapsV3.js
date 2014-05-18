@@ -76,6 +76,8 @@ var DRAG_RULER              = 1;
 var DRAG_GEOZONE_CENTER     = 2;
 var DRAG_GEOZONE_RADIUS     = 3;
 
+var DRAW_ACCURACY_RADIUS    = false;
+
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // google.maps.Marker
@@ -1199,9 +1201,9 @@ JSMap.prototype._addPushpin = function(pp) // JSMapPushpin
         /* point pt */
         var gPT = jsNewGLatLng(pp.lat, pp.lon); // GLatLng
 
-        /* accuracy radius */
+        /* create accuracy radius */
         var accRadM = pp.accRadM;
-        if (accRadM > 30) {
+        if (DRAW_ACCURACY_RADIUS && (accRadM > 30/*meters*/)) {
             // point-radius shape
             var color  = pp.isCellLoc? "#FF5555" : "#5555FF";
             var circle = jsNewGCircle(gPT, accRadM, color, 1, 0.8, color, 0.1);

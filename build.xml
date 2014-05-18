@@ -2239,6 +2239,7 @@ File     : build.xml
   <import file="ant/build_celltrac.xml"     optional="true"/>
   <import file="ant/build_ctrac.xml"        optional="true"/>
   <import file="ant/build_intellitrac.xml"  optional="true"/>
+  <import file="ant/build_intraca.xml"      optional="true"/>
   <import file="ant/build_gsspot.xml"       optional="true"/>
   <import file="ant/build_axonn.xml"        optional="true"/>
   <import file="ant/build_fa888.xml"        optional="true"/>

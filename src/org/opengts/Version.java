@@ -43,8 +43,8 @@
 //  2011/12/06 v2.3.9,  2012/02/03 v2.4.0,  2012/04/20 v2.4.1,  2012/05/27 v2.4.2,
 //  2012/06/29 v2.4.3,  2012/08/01 v2.4.4,  2012/09/02 v2.4.5,  2012/11/02 v2.4.6,
 //  2012/12/27 v2.4.7,  2013/03/01 v2.4.8,  2013/04/08 v2.4.9,  2013/06/05 v2.5.0,
-//  2013/08/06 v2.5.1,  2013/09/30 v2.5.2,
-//  2014/01/01 v2.5.3
+//  2013/08/06 v2.5.1,  2013/09/30 v2.5.2,  2014/01/01 v2.5.3,  2014/03/03 v2.5.4,
+//  2014/05/05 v2.5.5
 // ----------------------------------------------------------------------------
 package org.opengts;
 
@@ -71,7 +71,7 @@ public class Version
 
     // This string is parsed via 'grep' & 'sed' scripts.
     // ONLY the version value specified within the quotes should change.
-    private static final String VERSION = "2.5.3"; // B43
+    private static final String VERSION = "2.5.5"; // 2.5.5-B16
 
     // This public constant should only be accessed externally by the 'GTSAdmin' application.
     public  static final String GTS_ENTERPRISE_PREFIX = "E";
@@ -85,7 +85,7 @@ public class Version
     // ------------------------------------------------------------------------
 
     // package release (modified by command-line 'sed' script to insert actual epoch time)
-    private static final long PACKAGE_TIMESTAMP = 1388625896L;
+    private static final long PACKAGE_TIMESTAMP = 1399275226L;
     public static final String SERVICE_ACCOUNT_ID = "opengts";
 
     // ------------------------------------------------------------------------

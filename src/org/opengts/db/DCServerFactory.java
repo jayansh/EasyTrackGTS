@@ -515,11 +515,11 @@ public class DCServerFactory
             DocumentBuilder db = dbf.newDocumentBuilder();
             doc = db.parse(xmlFile);
         } catch (ParserConfigurationException pce) {
-            Print.logException("Parse error: ", pce);
+            Print.logException("Parse error: " + xmlFile, pce);
         } catch (SAXException se) {
-            Print.logException("Parse error: ", se);
+            Print.logException("Parse error: " + xmlFile, se);
         } catch (IOException ioe) {
-            Print.logException("Parse error: ", ioe);
+            Print.logException("Parse error: " + xmlFile, ioe);
         }
         
         /* return */
@@ -613,8 +613,7 @@ public class DCServerFactory
                     dcsFileName,
                     DCSERVERS_DIR + "/" + dcsFileName
                 }); // may still return null if not found
-                if (xmlFile == null) {
-                    //Print.logStackTrace("DCServerConfig XML file not found: " + dcsFileName);
+                if ((xmlFile == null) && !dcsName.startsWith("w-")) {
                     Print.logWarn("DCServerConfig XML file not found: " + dcsFileName);
                 }
             }
@@ -650,11 +649,14 @@ public class DCServerFactory
 
         /* top-level attributes */
         if (recurseLvl == 0) {
+            // -- global values
             BIND_ADDRESS   = XMLTools.getAttribute(   dcsDef, ATTR_bindAddress, BIND_ADDRESS  , true);
             BIND_ADDRESS   = StringTools.blankDefault(RTConfig.getString(ATTR_bindAddress,null),BIND_ADDRESS);
             LISTEN_BACKLOG = XMLTools.getAttributeInt(dcsDef, ATTR_backlog    , LISTEN_BACKLOG, true);
           //PORT_OFFSET    = XMLTools.getAttributeInt(dcsDef, ATTR_portOffset , PORT_OFFSET   , true);
             INCLUDE_DIR    = XMLTools.getAttribute(   dcsDef, ATTR_includeDir , INCLUDE_DIR   , true);
+        } else {
+            // -- local values
         }
 
         /* prepare for include: XML parent dir */
@@ -1415,22 +1417,23 @@ public class DCServerFactory
             Print.logDebug("Loading only DCServer name: " + DCServerFactory.GetSpecificDCServerName());
         }
 
-        /* load 'dcserver.xml' */
+        /* load 'dcserver.xml' (which recursively loads all other dcserver_xxxx.xml files) */
         DCServerFactory.loadDCServerXML(null);
 
-        /* ServerSocketThread bind interface */
-        if (StringTools.isBlank(BIND_ADDRESS)) {
-            // bind to any/all available address(es)
+        /* ServerSocketThread global bind interface */
+        String bindAddress = BIND_ADDRESS;
+        if (StringTools.isBlank(bindAddress)) {
+            // -- bind to any/all available address(es)
             ServerSocketThread.setBindAddress(null);
         } else {
-            // bind to a specific IP address
+            // -- bind to a specific IP address (network interface)
             try {
-                InetAddress localBA = InetAddress.getByName(BIND_ADDRESS);
+                InetAddress localBA = InetAddress.getByName(bindAddress);
                 Print.logDebug("ServerSocketThread Local Bind Address: " + localBA);
                 ServerSocketThread.setBindAddress(localBA);
             } catch (UnknownHostException uhe) {
                 //Print.logException("Setting local bind interface", uhe);
-                Print.logError("Local Bind Address Unknown Host: " + BIND_ADDRESS);
+                Print.logError("Local Bind Address Unknown Host: " + bindAddress);
                 ServerSocketThread.setBindAddress(null);
             }
         }
@@ -3209,16 +3212,17 @@ public class DCServerFactory
     // ------------------------------------------------------------------------
     // test/debug entry point
 
-    private static final String ARG_LIST[]              = new String[] { "list"                  };
-    private static final String ARG_LOOKUP[]            = new String[] { "lookup"       , "find" };
-    private static final String ARG_SERVER[]            = new String[] { "server"       , "dcs"  };
-    private static final String ARG_ACCOUNT[]           = new String[] { "account"      , "acct" };
-    private static final String ARG_DEVICE[]            = new String[] { "device"       , "dev"  };
-    private static final String ARG_CMDTYPE[]           = new String[] { "cmdType"      , "ct"   };
-    private static final String ARG_CMDNAME[]           = new String[] { "cmdName"      , "cn"   };
-    private static final String ARG_ARG[]               = new String[] { "arg"          , "a"    };
-    private static final String ARG_RESULT_CODE[]       = new String[] { "resultCode"   , "rc"   };
-    private static final String ARG_EVENT_CODE_MAP[]    = new String[] { "eventCodeMap" , "ecm"  };
+    private static final String ARG_LIST[]              = new String[] { "list"                        };
+    private static final String ARG_LOOKUP[]            = new String[] { "lookup"       , "find"       };
+    private static final String ARG_SERVER[]            = new String[] { "server"       , "dcs"        };
+    private static final String ARG_ACCOUNT[]           = new String[] { "account"      , "acct"       };
+    private static final String ARG_DEVICE[]            = new String[] { "device"       , "dev"        };
+    private static final String ARG_CMDTYPE[]           = new String[] { "cmdType"      , "ct"         };
+    private static final String ARG_CMDNAME[]           = new String[] { "cmdName"      , "cn"         };
+    private static final String ARG_ARG[]               = new String[] { "arg"          , "a"          };
+    private static final String ARG_RESULT_CODE[]       = new String[] { "resultCode"   , "rc"         };
+    private static final String ARG_EVENT_CODE_MAP[]    = new String[] { "eventCodeMap" , "ecm"        };
+    private static final String ARG_CALC_ANALOG[]       = new String[] { "calcAnalog"   , "gainOffset" };
 
     /**
     *** Command-Line usage
@@ -3253,6 +3257,25 @@ public class DCServerFactory
         String cmdArg0   = RTConfig.getString(ARG_ARG        , "");
         String resCode   = RTConfig.getString(ARG_RESULT_CODE, "");
         String cmdArgs[] = new String[] { cmdArg0 };
+
+        /* calculate Analog Gain/Offset for a percent(%) result */
+        if (RTConfig.hasProperty(ARG_CALC_ANALOG)) {
+            double R[] = RTConfig.getDoubleArray(ARG_CALC_ANALOG,null);
+            if (ListTools.size(R) < 2) {
+                Print.sysPrintln("ERROR: invalid voltage range specification");
+            } else
+            if (R[0] == R[1]) {
+                Print.sysPrintln("ERROR: Invalid voltage range specified");
+            } else {
+                // PERCENT = (GAIN * VALUE) + OFFSET
+                double EMPTY  = R[0];
+                double FULL   = R[1];
+                double GAIN   = 1.0 / (FULL - EMPTY);
+                double OFFSET = -(EMPTY / (FULL - EMPTY));
+                Print.sysPrintln("GAIN="+GAIN + ", OFFSET="+OFFSET);
+            }
+            System.exit(0);
+        }
 
         /* ResultCode test */
         if (RTConfig.hasProperty(ARG_RESULT_CODE)) {

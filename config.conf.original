@@ -93,6 +93,17 @@
 #startupInit.Geozone.PriorityFieldInfo=true
 #startupInit.Geozone.CorridorFieldInfo=true
 
+# --- Geozone
+#Geozone.maximumVertices=20
+#Geozone.dftRadius.pointRadius=3000
+#Geozone.dftRadius.sweptPointRadius=1000
+
+# --- EventData
+#EventData.keyedAccountDeviceTime=true
+#EventData.keyedCreationTime=false
+#EventData.logMissingColumns=true
+#EventData.odometerOffsetType=BEST
+
 # --- FuelRegister
 #FuelRegister.installFuelManager=true
 #FuelRegister.ignoreNegativeFuelLevels=true
@@ -100,12 +111,6 @@
 #FuelRegister.ignoreWhileMoving=false
 #FuelRegister.levelIncreaseThreshold=0.50
 #FuelRegister.levelDecreaseThreshold=0.30
-
-# --- EventData
-#EventData.keyedAccountDeviceTime=true
-#EventData.keyedCreationTime=false
-#EventData.logMissingColumns=true
-#EventData.odometerOffsetType=BEST
 
 # -----------------------------------------------------------------------------
 # --- Device table properties
@@ -196,6 +201,7 @@
 #smtp.password=password
 #smtp.enableSSL=false
 #smtp.enableTLS=true
+#smtp.timeoutMS=60000
 #smtp.sysadmin.emailAddress=
 
 # - SendMail ThreadPool
@@ -321,8 +327,12 @@
 
 # - Google V3 API only
 #Domain.MapProvider.google.version=3
+#Domain.MapProvider.google.useSSL=false
+#Domain.MapProvider.google.addWeatherOverlay=true
+#Domain.MapProvider.google.addCloudOverlay=true
 #Domain.MapProvider.google.addTrafficOverlay=true
 #Domain.MapProvider.google.addOpenStreetMap=false
+#Domain.MapProvider.google.addBingMap=false
 
 # --- private.xml: GoogleKML properties
 #Domain.Properties.googleKML.lastPushpinID=blue
@@ -580,6 +590,8 @@
 #Domain.Properties.deviceInfo.showDcsConfigString=false
 #Domain.Properties.deviceInfo.showPreferredGroupID=false
 #Domain.Properties.deviceInfo.showAssignedUserID=false
+#Domain.Properties.deviceInfo.showReportedOdometer=false
+#Domain.Properties.deviceInfo.showReportedEngineHours=false
 #Domain.Properties.deviceInfo.showMaintenanceOdometer=false
 #Domain.Properties.deviceInfo.showMaintenanceHours=false
 #Domain.Properties.deviceInfo.showMaintenanceNotes=false
@@ -621,6 +633,7 @@
 #Domain.Properties.sysAdminAccounts.showPasswords=false
 #Domain.Properties.sysAdminAccounts.showAccountManager=true
 #Domain.Properties.sysAdminAccounts.showRetainEvents=false
+#Domain.Properties.sysAdminAccounts.showAllowWebService=true
 #Domain.Properties.sysAdminAccounts.showAutoAddDevices=false
 #Domain.Properties.sysAdminAccounts.showDataPushURL=false
 #Domain.Properties.sysAdminAccounts.showNotes=true
@@ -721,12 +734,42 @@
 
 # -----------------------------------------------------------------------------
 
+# --- report.xml: ReportFactory config
+#ReportFactory.showCustomOptions=true
+#ReportFactory.optionsShowGeozoneID=true
+
 # --- report.xml: general column options
+#ReportDefinition.columnIndexMapLink=true
+#ReportDefinition.columnPushpin=true
 #ReportDefinition.columnLatLon=true
+#ReportDefinition.columnBattery=true
+#ReportDefinition.columnInputState8=true
+#ReportDefinition.columnInputState16=false
+#ReportDefinition.columnOdometer=false
+#ReportDefinition.columnReportDistance=false
 #ReportDefinition.columnFuelUsage=false
 #ReportDefinition.columnFuelEconomy=false
-#ReportDefinition.columnOdometer=false
-#ReportDefinition.columnIndexMapLink=true
+#ReportDefinition.columnGeozoneDesc=false
+#ReportDefinition.columnAttachURL=false
+#ReportDefinition.columnFaultCodes=false
+#ReportDefinition.columnServiceNotes=false
+#ReportDefinition.columnThermo1=false
+#ReportDefinition.columnThermo2=false
+#ReportDefinition.columnThermo3=false
+#ReportDefinition.columnThermo4=false
+#ReportDefinition.columnThermo5=false
+#ReportDefinition.columnThermo6=false
+#ReportDefinition.columnThermo7=false
+#ReportDefinition.columnThermo8=false
+#ReportDefinition.columnTripWorkDistance=false
+#ReportDefinition.columnTripWorkElapsed=false
+#ReportDefinition.columnOdomDelta=false
+
+# --- report.xml: Geozone eport options
+#ReportDefinition.columnGeozoneVisitCount=false
+#ReportDefinition.columnGeozoneCorridorID=false
+#ReportDefinition.columnGeozoneFuelDelta=false
+#ReportDefinition.columnGeozoneOdomDelta=false
 
 # --- report.xml: Trip report options
 #ReportDefinition.optionTripStartType_default=true
@@ -737,12 +780,21 @@
 #ReportDefinition.optionSummary_waymark1=false
 
 # --- report.xml: TripReport options
+#ReportDefinition.TripReport.SelectionLimit=3002
+#ReportDefinition.TripReport.ReportLimit=2002
+#ReportDefinition.TripReport.showIdleElapsed=false
 #ReportDefinition.TripReport.showFuelTotal=false
 #ReportDefinition.TripReport.showFuelTrip=true
 #ReportDefinition.TripReport.showFuelEconomy=true
 #ReportDefinition.TripReport.estimateFuelTotal=false
 #ReportDefinition.TripReport.kilometersPerLiter=0.0
 #ReportDefinition.TripReport.tripStartStopOnly=false
+#ReportDefinition.TripReport.showSpeedingDuration=false
+#ReportDefinition.TripReport.speedingThresholdKPH=0.0
+#ReportDefinition.TripReport.minimumSpeedingDuration=0
+#ReportDefinition.TripReport.tripStopLookAheadSeconds=0
+#ReportDefinition.TripReport.showFuelEconomyType=false
+#ReportDefinition.TripReport.showDriver=false
 
 # --- report.xml: EventDetailOBD - Event Detail OBD options
 #ReportDefinition.EventDetailOBD.statusDesc=true
@@ -766,7 +818,6 @@
 #ReportDefinition.EventDetailOBD.coolantTemp=true
 #ReportDefinition.EventDetailOBD.brakeGForce=true
 #ReportDefinition.EventDetailOBD.brakePressure=true
-#ReportDefinition.EventDetailOBD.idleHbrakePosours=true
 #ReportDefinition.EventDetailOBD.oilLevel=true
 #ReportDefinition.EventDetailOBD.oilPressure=true
 #ReportDefinition.EventDetailOBD.ptoEngaged=true
@@ -777,6 +828,44 @@
 #ReportDefinition.EventDetailOBD.airPressure=true
 #ReportDefinition.EventDetailOBD.airFilterPressure=true
 #ReportDefinition.EventDetailOBD.turboPressure=true
+#ReportDefinition.EventDetailOBD.malfunctionLamp=true
+#ReportDefinition.EventDetailOBD.faultCode=true
+#ReportDefinition.EventDetailOBD.faultCodes=true
+
+# --- report.xml: DistanceTraveled
+#ReportDefinition.DistanceTraveled.startOdometer=true
+#ReportDefinition.DistanceTraveled.stopOdometer=true
+#ReportDefinition.DistanceTraveled.odomDelta=true
+#ReportDefinition.DistanceTraveled.plannedDistance=true
+#ReportDefinition.DistanceTraveled.startFuel=true
+#ReportDefinition.DistanceTraveled.stopFuel=true
+#ReportDefinition.DistanceTraveled.fuelDelta=true
+
+# --- report.xml: DigitalIOReport
+#ReportDefinition.DigitalIOReport.odometerDelta=true
+
+# --- report.xml: FuelSummaryReport
+#ReportDefinition.FuelSummaryReport.showFuelEconomyType=true
+
+# --- report.xml: Fleet motion report options
+#ReportDefinition.FleetMotion.tabulateByWorkHours=true
+#ReportDefinition.FleetMotion.WorkHours.sun=
+#ReportDefinition.FleetMotion.WorkHours.mon=
+#ReportDefinition.FleetMotion.WorkHours.tue=
+#ReportDefinition.FleetMotion.WorkHours.wed=
+#ReportDefinition.FleetMotion.WorkHours.thu=
+#ReportDefinition.FleetMotion.WorkHours.fri=
+#ReportDefinition.FleetMotion.WorkHours.sat=
+
+# --- report.xml: Motion summary report options
+#ReportDefinition.MotionSummary.tabulateByWorkHours=true
+#ReportDefinition.MotionSummary.WorkHours.sun=
+#ReportDefinition.MotionSummary.WorkHours.mon=
+#ReportDefinition.MotionSummary.WorkHours.tue=
+#ReportDefinition.MotionSummary.WorkHours.wed=
+#ReportDefinition.MotionSummary.WorkHours.thu=
+#ReportDefinition.MotionSummary.WorkHours.fri=
+#ReportDefinition.MotionSummary.WorkHours.sat=
 
 # -----------------------------------------------------------------------------
 
