@@ -7,44 +7,9 @@
     <meta name="description" content="">
     <meta name="author" content="">
    
-    <title>Vehicle Detail Report</title>
+    <title>Vehicle Detail Report|Easy Track GTS</title>
 
-    <!-- Bootstrap core CSS -->
-    <link href="../css/bootstrap.css" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
-    <link href="../css/navbar.css" rel="stylesheet">
-      <link href="../css/style.css" rel="stylesheet">
-      <link href="../css/sticky-footer.css" rel="stylesheet">
-
-    <!-- Just for debugging purposes. Don't actually copy this line! -->
-    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
-
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-
-    <script src="http://jonthornton.github.io/jquery-timepicker/jquery.timepicker.js"></script>
-    <link rel="stylesheet" type="text/css" href="http://jonthornton.github.io/jquery-timepicker/jquery.timepicker.css" />
-
-    <script src="lib/bootstrap-datepicker.js"></script>
-    <link rel="stylesheet" type="text/css" href="../lib/bootstrap-datepicker.css" />
-
-    <script src="lib/pikaday.js"></script>
-    <link rel="stylesheet" type="text/css" href="../lib/pikaday.css" />
-
-    <script src="lib/jquery.ptTimeSelect.js"></script>
-    <link rel="stylesheet" type="text/css" href="../lib/jquery.ptTimeSelect.css" />
-    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/ui-lightness/jquery-ui.css" type="text/css" media="all" />
-
-    <script src="../lib/moment.min.js"></script>
-    <script src="../lib/site.js"></script>
-    <link rel="stylesheet" type="text/css" href="../lib/site.css" />
-
-    <script src="../js/jquery.datepair.js"></script>
+     <#include "header.ftl">
       
   </head>
 
@@ -68,7 +33,7 @@
               <span class="icon-bar"></span>
               <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">GPS Tracking</a>
+            <a class="navbar-brand" href="#">Easy Track GTS</a>
           </div>
           <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
@@ -102,7 +67,8 @@
                      </ul>
               </li>
             </ul>
-             <form class="navbar-form navbar-right">
+              <a href="#"><img style="float:right; margin-top:10px;" src="../images/logout-icon.png" width='40'height='40'/></a>
+             <form class="navbar-form navbar-right" style="margin-right:10px;">
             <input type="text" class="form-control" placeholder="Search...">
   
               </form>
@@ -117,7 +83,7 @@
       <div class="sidebar " style="margin-left: 250px;">
 <div class="col-md-8 ">
  <div class="panel panel-primary">
-    <div class="panel-heading">GPS Tracking Reports</div>
+    <div class="panel-heading">Easy Track GTS</div>
     <div class="panel-body">
         
    
@@ -143,7 +109,7 @@
     <input type="text" class="time end form-control input-lg" placeholder="Time" />
 </p>
  <script>
-    // initialize input widgets first
+     // initialize input widgets first
     $('#basicExample .time').timepicker({
         'showDuration': true,
         'timeFormat': 'g:ia'
@@ -151,12 +117,12 @@
 
     $('#basicExample .date').datepicker({
         'format': 'm/d/yyyy',
-        'autoclose': true
+        'autoclose': false
     });
 
     // initialize datepair
     $('#basicExample').datepair();
-</script>      
+</script>       
 
 <label>Time Zone:</label>
 <select  class="form-control input-lg">
@@ -249,15 +215,6 @@
 </div>
       </div>
 
-    <div id="footer">
-      <div class="container">
-        <p class="text-muted">copyright 2014.</p>
-      </div>
-    </div>
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-   <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>-->
-    <script src="../js/bootstrap.js"></script>
+    <#include "footer.ftl">
   </body>
 </html>

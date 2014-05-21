@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title> GPS Tracking</title>
+        <title>Easy Track GTS</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="../css/bootstrap.css" rel="stylesheet"/>
@@ -16,12 +16,7 @@
     <![endif]-->
     </head>
     <body>
-    <#--assign username = requestParameters.USERNAME?default((sessionAttributes.autoUserLogin.userLoginId)?default(""))>
-    <#if username != "">
-        <#assign focusName = false>
-    <#else>
-        <#assign focusName = true>
-    </#if>
+    
 
         <!--header/Logo-->
         <div class="header-title">
@@ -47,12 +42,7 @@
        <!-- <div class="alert alert-danger">
         <strong>Sorry!</strong> Unable to login.
       </div>-->
-<div id="footer">
-      
-        <p class="text-muted">copyright 2014.</p>
-      
-    </div>
-       <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-        <script src="../js/bootstrap.js"></script>
+      <#include "footer.ftl">
+
     </body>
 </html>
