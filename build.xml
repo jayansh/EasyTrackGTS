@@ -873,12 +873,13 @@ File     : build.xml
             <include name="audit.jar"/>
             <include name="custom.jar"/>
             <include name="customtrack.jar"/>
+            <include name="freemarker.jar"/>
         </lib>
         <fileset dir="${build.track}">
             <include name="**/*"/>
             <exclude name="WEB-INF/web.xml"/>
             <exclude name="WEB-INF/classes/**/*"/>
-            <exclude name="WEB-INF/lib/**/*"/>
+            
         </fileset>
     </war>
 
