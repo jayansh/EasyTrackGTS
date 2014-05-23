@@ -55,6 +55,12 @@ import org.opengts.db.tables.*;
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
 
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
+import freemarker.template.Version;
+
 public class AccountLogin
     extends WebPageAdaptor
     implements Constants
@@ -205,7 +211,7 @@ public class AccountLogin
 
     // ------------------------------------------------------------------------
 
-    public void writePage(
+    public void writePageOrig(
         final RequestProperties reqState,
         String pageMsg)
         throws IOException
@@ -405,5 +411,135 @@ public class AccountLogin
     }
 
     // ------------------------------------------------------------------------
+
+    public void writePage(
+            final RequestProperties reqState,
+            String pageMsg)
+            throws IOException
+        {
+            final PrivateLabel privLabel = reqState.getPrivateLabel();
+            final I18N i18n = privLabel.getI18N(AccountLogin.class);
+          //final boolean legacy = this.getProperties().getBoolean(PROP_legacyLAF,false);
+            final boolean legacy = privLabel.getBooleanProperty(PrivateLabel.PROP_AccountLogin_legacyLAF,false);
+            final boolean borderedCss = legacy; // this.getProperties().getBoolean(PROP_boarderedLogin,true);
+            final String HR = legacy? "<hr>" : "<hr style='height: 5px;'/>";
+            
+            
+            /* Style */
+            HTMLOutput HTML_CSS = new HTMLOutput() {
+                public void write(PrintWriter out) throws IOException {
+                    String cssDir = AccountLogin.this.getCssDirectory(); 
+                    WebPageAdaptor.writeCssLink(out, reqState, "AccountLogin.css", cssDir);
+                }
+            };
+
+            /* write frame */
+            String cssAccountLogin[] = borderedCss? CSS_ACCOUNT_LOGIN_BORDER : CSS_ACCOUNT_LOGIN_NOBORD;
+            HTMLOutput HTML_CONTENT = new HTMLOutput(cssAccountLogin, pageMsg) {
+                public void write(PrintWriter out) throws IOException {
+                	
+                	Map<String, Object> utilMap = new HashMap<String, Object>();
+                	  // baseURL
+                    URIArg  baseURI    = MakeURL(RequestProperties.TRACK_BASE_URI(),null,null,null);
+                    HttpServletRequest req = reqState.getHttpServletRequest();
+                    String rtpArg      = (req != null)? req.getParameter(AttributeTools.ATTR_RTP) : null;
+                    if (!StringTools.isBlank(rtpArg)) { baseURI.addArg(AttributeTools.ATTR_RTP,rtpArg); }
+                    String  baseURL    = EncodeURL(reqState, baseURI);
+                    String  accountID  = StringTools.trim(AccountRecord.getFilteredID(AttributeTools.getRequestString(req,Constants.PARM_ACCOUNT,"")));
+                    String  userID     = StringTools.trim(AccountRecord.getFilteredID(AttributeTools.getRequestString(req,Constants.PARM_USER   ,"")));
+                    // other args
+                    String  newURL     = reqState.getPrivateLabel().hasWebPage(PAGE_ACCOUNT_NEW )? 
+                        //EncodeMakeURL(reqState,RequestProperties.TRACK_BASE_URI(),PAGE_ACCOUNT_NEW ) : null;
+                        privLabel.getWebPageURL(reqState,PAGE_ACCOUNT_NEW) : null;
+                    String  forgotURL  = reqState.getPrivateLabel().hasWebPage(PAGE_PASSWD_EMAIL)? 
+                        //EncodeMakeURL(reqState,RequestProperties.TRACK_BASE_URI(),PAGE_PASSWD_EMAIL) : null;
+                        privLabel.getWebPageURL(reqState,PAGE_PASSWD_EMAIL) : null;
+                    boolean acctLogin  = reqState.getPrivateLabel().getAccountLogin();
+                    boolean userLogin  = reqState.getPrivateLabel().getUserLogin();
+                    boolean emailLogin = reqState.getPrivateLabel().getAllowEmailLogin();
+                    boolean showPasswd = reqState.getShowPassword();
+                    boolean showLocale = privLabel.getBooleanProperty(PrivateLabel.PROP_AccountLogin_showLocaleSelection, false);
+                    boolean showDemo   = reqState.getEnableDemo();
+                    String  target     = "_self"; // reqState.getPageFrameContentOnly()? "_self" : "_top";  // target='_top'
+                    boolean loginOK    = privLabel.getBooleanProperty(BasicPrivateLabelLoader.ATTR_allowLogin, true);
+                    String  ro         = loginOK? "" : "readonly";
+                    String focusFieldID = "";
+                    
+                    if (acctLogin) {
+                        String fldID = "accountLoginField";
+                        focusFieldID = fldID;
+                    }
+                    // user login field
+                    if (userLogin && emailLogin) {
+                        String fldID = "userLoginField";
+                        if (StringTools.isBlank(focusFieldID)) { focusFieldID = fldID; }
+                    } else
+                    if (userLogin) {
+                        String fldID = "userLoginField";
+                        if (StringTools.isBlank(focusFieldID)) { focusFieldID = fldID; }
+                    } else
+                    if (emailLogin) {
+                        String fldID = "emailLoginField";
+                        if (StringTools.isBlank(focusFieldID)) { focusFieldID = fldID; }
+                    }
+                    // ----------------------------------
+                    
+                    
+                	// 1. Configure FreeMarker
+                    //
+                    // You should do this ONLY ONCE, when your application starts,
+                    // then reuse the same Configuration object elsewhere.
+                    
+                    Configuration cfg = new Configuration();
+                    
+                    // Where do we load the templates from:
+                    cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+                    
+                    // Some other recommended settings:
+                    cfg.setIncompatibleImprovements(new Version(2, 3, 20));
+                    cfg.setDefaultEncoding("UTF-8");
+                    cfg.setLocale(Locale.US);
+                    cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+                    utilMap.put("FORM_LOGIN", FORM_LOGIN);
+                    utilMap.put("baseURL", baseURL);
+                    utilMap.put("target", target);
+                    
+                    // 2.2. Get the template
+
+                    Template template = cfg.getTemplate("track/ftl/login.ftl");
+                      
+                   
+                    utilMap.put("username", userID);
+                    
+                    // Write output to the console
+                    Writer consoleWriter = new OutputStreamWriter(System.out);
+                    try {
+						template.process(utilMap, consoleWriter);
+					} catch (TemplateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+                    try {
+                      template.process(utilMap, out);
+                    } catch (TemplateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+                  }
+            };
+
+            /* write frame */
+            String onload = (!StringTools.isBlank(pageMsg) && reqState._isLoginErrorAlert())? JS_alert(true,pageMsg) : null;
+            CommonServlet.writePageFrame(
+                reqState,
+                onload,null,                // onLoad/onUnload
+                HTML_CSS,                   // Style sheets
+                HTMLOutput.NOOP,            // JavaScript
+                null,                       // Navigation
+                HTML_CONTENT);              // Content
+
+        }
 
 }

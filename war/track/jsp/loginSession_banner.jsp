@@ -43,9 +43,9 @@ response.setDateHeader("EXPIRES"  , 0         );
   </gts:var>
 
   <!-- page title -->
-  <gts:var>
+<%--   <gts:var> 
   <title>${pageTitle}</title>
-  </gts:var>
+	 </gts:var> --%>
 
   <!-- default style -->
   <link rel='stylesheet' type='text/css' href='css/General.css'/>
@@ -63,19 +63,12 @@ response.setDateHeader("EXPIRES"  , 0         );
   <!-- local style -->
   <style type="text/css">
     BODY { 
-        background-color: #DBDEEB; 
+       
 <gts:var if="isLocaleRTL" value="true">
         direction: RTL;
 </gts:var>
     }
-    TD.titleText {
-        /* background: #DBDEEB url('./images/Banner_White90.png') center no-repeat; */
-        background: #DBDEEB url('./images/Banner_WhiteShadow.png') center no-repeat;
-        font-family: arial,verdana,sans-serif;
-        font-size: 28pt;
-        font-weight: bold;
-        text-align: center;
-        color: #000000;
+  
     }
   </style>
 
@@ -91,100 +84,55 @@ response.setDateHeader("EXPIRES"  , 0         );
 
 <body onload="<gts:track section='body.onload'/>" onunload="<gts:track section='body.onunload'/>">
 
-<table width="100%" height="100%" align="center" border="0" cellspacing="0" cellpadding="0" style="padding-top: 5px;">
-<tbody>
 
-  <!-- Begin Page header/navigation ======================================== -->
-  <tr>
-  <td width="100%">
-    <table class="bannerTable" width="860" border="0" cellpadding="0" cellspacing="0" align="center">
-    <tbody>
-    <tr>
 
-      <gts:var>
-      <td width="860" height="120" class="titleText" halign="center">
-        ${pageTitle}<br>
-        <font style="font-size: 9pt;"><i>(Powered by <a href="http://www.opengts.org" target="_blank" style="color:#444444;">OpenGTS</a>)</i></font>
-      </td>
-      </gts:var>
+<%--       <gts:var> 
+     
+        ${pageTitle}
+       
 
-    </tr>
-    </tbody>
-    </table>
-  </td>
-  </tr>
-  <tr>
-  <td align="center">
-     <table width="860" border="0" cellpadding="0" cellspacing="0">
-     <tbody>
-     <tr>
-       <td class="navBarClear" nowrap align="left">&nbsp;<gts:var ifKey="isLoggedIn" value="true"><i>${i18n.Account}:</i> ${accountDesc} (${userDesc})</gts:var></td>
-       <td class="navBarClear" nowrap align="right" width="100%"><gts:var>&nbsp;${navigation}&nbsp;&nbsp;</gts:var></td>
-     </tr>
-     </tbody>
-     </table>
-  </td>
+		</gts:var> --%>
+
+   
+  
+      <gts:var ifKey="isLoggedIn" value="true"><i>${i18n.Account}:</i> ${accountDesc} (${userDesc})</gts:var>
+       <gts:var>&nbsp;${navigation}&nbsp;&nbsp;</gts:var>
+     
   </tr>
   <!-- End Page header/navigation ======================================== -->
 
   <!-- Begin Page contents ======================================== -->
-  <tr height="100%">
-  <td>
-    <table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
-    <tbody>
-    <tr>
-        <td valign='top' align='center' height='100%'>
-           <table class="<gts:track section='content.class.table'/>" cellspacing='0' cellpadding='0' border='0'>
-           <tbody>
+ 
+       
+<%--           "<gts:track section='content.class.table'/>"  --%>
+           
               <!-- The MenuBar is display iff 'content.class.table' is "contentTable"/"contentMapTable" -->
-              <tr><gts:track section="content.menubar"/></tr>
-              <tr height='100%'>
-                <td class="<gts:track section='content.class.cell'/>">
+             <gts:track section="content.menubar"/>
+           
+<%--                <gts:track section='content.class.cell'/> --%>
                     <gts:track section="content.body"/>
-                </td>
-              </tr>
-              <tr>
-                <td id="<gts:track section='content.id.message'/>" class="<gts:track section='content.class.message'/>">
-                    <gts:track section="content.message"/>
-                </td>
-              </tr>
-           </tbody>
-           </table>
-        </td>
-    </tr>
-    </tbody>
-    </table>
-  </td>
-  </tr>
+                
+<%--                <gts:track section='content.id.message'/>" class="<gts:track section='content.class.message'/>"> --%>
+<%--                     <gts:track section="content.message"/> --%>
+               
   <!-- End Page contents ======================================== -->
 
   <!-- Begin Page footer ======================================== -->
-  <tr>
-    <td style="font-size: 7pt; border-bottom: 1px solid #888888;">&nbsp;</td>
-  </tr>
-  <tr>
-  <td>
-    <table class="copyrightFooterClear" width="100%" border="0" cellpadding="0" cellspacing="0">
-    <tbody>
-    <tr>
-      <td style="padding: 0px 0px 2px 5px;">&nbsp;</td>
-      <td width="100%">
-         &nbsp;
-         <gts:var>${copyright}</gts:var>
-      </td>
-      <td nowrap style="padding-bottom: 2px;">
-         <span style="font-size: 7pt; font-style: oblique; color: #888888;"><gts:var ifTrue="login.showGTSVersion">${version}</gts:var></span>&nbsp;&nbsp;
-         <gts:var ifTrue="login.showPiLink"><a style="font-size: 11pt; text-decoration: none;" href="${login.piLink=http://www.opengts.org}" target="_blank">&pi;</a>&nbsp;</gts:var>
-      </td>
-    </tr>
-    </tbody>
-    </table>
-  </td>
-  </tr>
+  
+ 
+  
+    
+   
+   
+        
+<%--          <gts:var>${copyright}</gts:var> --%>
+     
+<%--          <gts:var>${version}</gts:var> --%>
+<%--          <gts:var ifTrue="login.showPiLink"><a style="font-size: 11pt; text-decoration: none;" href="${login.piLink=http://www.opengts.org}" target="_blank">&pi;</a>&nbsp;</gts:var> --%>
+      
   <!-- End Page footer ======================================== -->
 
-</tbody>
-</table>
+
 </body>
 
 <!-- ======================================================================================= -->
