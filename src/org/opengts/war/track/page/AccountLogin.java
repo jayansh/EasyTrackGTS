@@ -493,8 +493,8 @@ public class AccountLogin
                     Configuration cfg = new Configuration();
                     
                     // Where do we load the templates from:
-                    cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
-                    
+                    // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+                    cfg.setServletContextForTemplateLoading(req.getSession().getServletContext(), "/");
                     // Some other recommended settings:
                     cfg.setIncompatibleImprovements(new Version(2, 3, 20));
                     cfg.setDefaultEncoding("UTF-8");
