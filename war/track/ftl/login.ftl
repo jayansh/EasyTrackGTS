@@ -29,6 +29,9 @@
          <img style="margin-top:20px;" src="track/images/logo.png" width="143" height="50" alt="jaysan"/>
         </div>
         <div class="container">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
 
       <form class="form-signin" role="form" name='${FORM_LOGIN}' method='post' action='${baseURL}' target='${target}'>
         <h2 class="form-signin-heading">Please sign in</h2>
@@ -42,6 +45,9 @@
         <a href="#">Forgot your Password?</a>
       </form>
 
+    </div>
+    </div>
+    </div>
     </div>
         <!--If Username/Password is incorrect Show this Message-->
        <!-- <div class="alert alert-danger">
