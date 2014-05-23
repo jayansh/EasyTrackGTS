@@ -412,128 +412,128 @@ public class CommonServlet
         out.write(" leftmargin='0' rightmargin='0' topmargin='0' bottommargin='0'>\n");
         
         // Framing table start
-        out.write("<table cellspacing='0' cellpadding='0' border='0' width='100%' height='100%'>\n");
-        out.write("<tbody>\n");
+//        out.write("<table cellspacing='0' cellpadding='0' border='0' width='100%' height='100%'>\n");
+//        out.write("<tbody>\n");
 
         // Top row
-        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_HEADER)) {
-            out.write("\n");
-            out.write("<!-- Begin Page header -->\n");
-            out.write("<tr>\n");
-            out.write("<td colspan='3'>\n");
-            //***** header here *******
-            pageDecor.writeHeader(out, reqState);
-            //*************************
-            out.write("</td>\n");
-            out.write("</tr>\n");
-            out.write("<!-- End Page header -->\n");
-            out.write("\n");
-        }
+//        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_HEADER)) {
+//            out.write("\n");
+//            out.write("<!-- Begin Page header -->\n");
+//            out.write("<tr>\n");
+//            out.write("<td colspan='3'>\n");
+//            //***** header here *******
+//            pageDecor.writeHeader(out, reqState);
+//            //*************************
+//            out.write("</td>\n");
+//            out.write("</tr>\n");
+//            out.write("<!-- End Page header -->\n");
+//            out.write("\n");
+//        }
 
         // Navigation row
-        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_NAVIGATION)) {
-            out.write("\n");
-            out.write("<!-- Begin Page navigation -->\n");
-            out.write("<tr>\n");
-            out.write("<td colspan='3'>\n");
-            //***** navigation here *******
-            if (navigation != null) { 
-                navigation.write(out); 
-            } else {
-                pageDecor.writeNavigation(out, reqState);
-            }        
-            //*************************
-            out.write("</td>\n");
-            out.write("</tr>\n");
-            out.write("<!-- End Page navigation -->\n");
-            out.write("\n");
-        }
+//        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_NAVIGATION)) {
+//            out.write("\n");
+//            out.write("<!-- Begin Page navigation -->\n");
+//            out.write("<tr>\n");
+//            out.write("<td colspan='3'>\n");
+//            //***** navigation here *******
+//            if (navigation != null) { 
+//                navigation.write(out); 
+//            } else {
+//                pageDecor.writeNavigation(out, reqState);
+//            }        
+//            //*************************
+//            out.write("</td>\n");
+//            out.write("</tr>\n");
+//            out.write("<!-- End Page navigation -->\n");
+//            out.write("\n");
+//        }
 
         // Middle row
-        out.write("<tr>\n");
+//        out.write("<tr>\n");
         
         // left wing
-        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_LEFT)) {
-            out.write("\n");
-            out.write("<!-- Begin Page left -->\n");
-            out.write("<td valign='top' align='left'>\n");
-            //***** left panel here ***
-            pageDecor.writeLeft(out, reqState);
-            //*************************
-            out.write("</td>\n");
-            out.write("<!-- End Page left -->\n");
-            out.write("\n");
-        }
+//        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_LEFT)) {
+//            out.write("\n");
+//            out.write("<!-- Begin Page left -->\n");
+//            out.write("<td valign='top' align='left'>\n");
+//            //***** left panel here ***
+//            pageDecor.writeLeft(out, reqState);
+//            //*************************
+//            out.write("</td>\n");
+//            out.write("<!-- End Page left -->\n");
+//            out.write("\n");
+//        }
 
         // content (should always be enabled)
-        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_CONTENT)) {
-            out.write("\n");
-            out.write("<!-- Begin Page Contents -->\n");
-            out.write("<td valign='top' align='center' height='100%'>\n");
-            //***** contents here ************************
-            if (contents != null) {
-                String tableClass = contents.getTableClass();
-                if (!StringTools.isBlank(tableClass)) {
-                    out.write("<table class='"+tableClass+"' cellspacing='0' cellpadding='0' border='0'>\n");
-                    if (CommonServlet.CSS_CONTENT_FRAME[0].equals(tableClass)) {
-                        out.write("<tr>\n");
-                        MenuBar.writeTableRow(out, pageName, reqState);
-                        out.write("</tr>\n");
-                    }
-                    out.write("<tr>\n");
-                    out.write("<td class=" + contents.getCellClass() + " align='center' valign='top'>");
-                    contents.write(out); 
-                    out.write("</td>");
-                    out.write("</tr>\n");
-                    String frameMessage = contents.getTableMessage();
-                    if (!StringTools.isBlank(frameMessage)) {
-                        out.write("<tr><td id='"+CommonServlet.ID_CONTENT_MESSAGE+"' class='"+CommonServlet.CSS_CONTENT_MESSAGE+"'>"+StringTools.trim(frameMessage)+"</td></tr>\n");
-                    }
-                    out.write("</table>\n");
-                } else {
-                    contents.write(out); 
-                }
-            }
-            //********************************************
-            out.write("</td>\n");
-            out.write("<!-- End Page contents -->\n");
-            out.write("\n");
-        }
-
-        // right wing
-        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_RIGHT)) {
-            out.write("\n");
-            out.write("<!-- Begin Page right -->\n");
-            out.write("<td valign='top' align='right'>\n");
-            //***** right panel here ***
-            pageDecor.writeRight(out, reqState);
-            //**************************
-            out.write("</td>\n");
-            out.write("<!-- End Page right -->\n");
-            out.write("\n");
-        }
-        
-        // end of middle row
-        out.write("</tr>\n");
-
-        // Bottom row
-        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_FOOTER)) {
-            out.write("\n");
-            out.write("<!-- Begin Page footer -->\n");
-            out.write("<tr>\n");
-            out.write("<td colspan='3'>\n");
-            //***** footer here *******
-            pageDecor.writeFooter(out, reqState);
-            //*************************
-            out.write("</td>\n");
-            out.write("</tr>\n");
-            out.write("<!-- End Page footer -->\n");
-            out.write("\n");
-        }
-
-        // Framing table end
-        out.write("</tbody>\n");
-        out.write("</table>\n");
+//        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_CONTENT)) {
+//            out.write("\n");
+//            out.write("<!-- Begin Page Contents -->\n");
+//            out.write("<td valign='top' align='center' height='100%'>\n");
+//            //***** contents here ************************
+//            if (contents != null) {
+//                String tableClass = contents.getTableClass();
+//                if (!StringTools.isBlank(tableClass)) {
+//                    out.write("<table class='"+tableClass+"' cellspacing='0' cellpadding='0' border='0'>\n");
+//                    if (CommonServlet.CSS_CONTENT_FRAME[0].equals(tableClass)) {
+//                        out.write("<tr>\n");
+//                        MenuBar.writeTableRow(out, pageName, reqState);
+//                        out.write("</tr>\n");
+//                    }
+//                    out.write("<tr>\n");
+//                    out.write("<td class=" + contents.getCellClass() + " align='center' valign='top'>");
+//                    contents.write(out); 
+//                    out.write("</td>");
+//                    out.write("</tr>\n");
+//                    String frameMessage = contents.getTableMessage();
+//                    if (!StringTools.isBlank(frameMessage)) {
+//                        out.write("<tr><td id='"+CommonServlet.ID_CONTENT_MESSAGE+"' class='"+CommonServlet.CSS_CONTENT_MESSAGE+"'>"+StringTools.trim(frameMessage)+"</td></tr>\n");
+//                    }
+//                    out.write("</table>\n");
+//                } else {
+//                    contents.write(out); 
+//                }
+//            }
+//            //********************************************
+//            out.write("</td>\n");
+//            out.write("<!-- End Page contents -->\n");
+//            out.write("\n");
+//        }
+//
+//        // right wing
+//        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_RIGHT)) {
+//            out.write("\n");
+//            out.write("<!-- Begin Page right -->\n");
+//            out.write("<td valign='top' align='right'>\n");
+//            //***** right panel here ***
+//            pageDecor.writeRight(out, reqState);
+//            //**************************
+//            out.write("</td>\n");
+//            out.write("<!-- End Page right -->\n");
+//            out.write("\n");
+//        }
+//        
+//        // end of middle row
+//        out.write("</tr>\n");
+//
+//        // Bottom row
+//        if (reqState.writePageFrameSection(RequestProperties.PAGE_FRAME_FOOTER)) {
+//            out.write("\n");
+//            out.write("<!-- Begin Page footer -->\n");
+//            out.write("<tr>\n");
+//            out.write("<td colspan='3'>\n");
+//            //***** footer here *******
+//            pageDecor.writeFooter(out, reqState);
+//            //*************************
+//            out.write("</td>\n");
+//            out.write("</tr>\n");
+//            out.write("<!-- End Page footer -->\n");
+//            out.write("\n");
+//        }
+//
+//        // Framing table end
+//        out.write("</tbody>\n");
+//        out.write("</table>\n");
 
         // Body end
         out.write("</body>\n");
