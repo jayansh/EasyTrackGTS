@@ -24,9 +24,13 @@
          <img style="margin-top:20px;" src="../images/logo.png" width="143" height="50" alt="jaysan"/>
         </div>
         <div class="container">
+    <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
 
+  
       <form class="form-signin" role="form">
-        <h2 class="form-signin-heading">Please sign in</h2>
+        <h2 class="form-signin-heading text-center" >sign in</h2>
         <input type="text" class="form-control" placeholder="Account" required autofocus>
          <input type="text" class="form-control" placeholder="Username" value="" required autofocus>
         <input type="password" class="form-control" placeholder="Password" required>
@@ -37,6 +41,9 @@
         <a href="#">Forgot your Password?</a>
       </form>
 
+    </div>
+    </div>
+    </div>
     </div>
         <!--If Username/Password is incorrect Show this Message-->
        <!-- <div class="alert alert-danger">
