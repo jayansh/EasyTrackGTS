@@ -205,7 +205,6 @@ public class ExpandMenu
                     }
                 }
                 anchorStart += ">";
-
                 /* inline? */
                 if (showInline) {
 

@@ -90,8 +90,6 @@ response.setDateHeader("EXPIRES"  , 0         );
   
       <gts:var ifKey="isLoggedIn" value="true"><i>${i18n.Account}:</i> ${accountDesc} (${userDesc})</gts:var>
        <gts:var>&nbsp;${navigation}&nbsp;&nbsp;</gts:var>
-     
-  </tr>
   <!-- End Page header/navigation ======================================== -->
 
   <!-- Begin Page contents ======================================== -->

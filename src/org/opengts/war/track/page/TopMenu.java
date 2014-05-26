@@ -244,7 +244,8 @@ public class TopMenu
                     case BUTTON:
                     case BUTTON_ICON: {
                         int maxIPR = privLabel.getIntProperty(PrivateLabel.PROP_TopMenu_maximumIconsPerRow,-1);
-                        IconMenu.writeMenu(out, reqState, "topMenuIcon", maxIPR, showIcon);
+                        //IconMenu.writeMenu(out, reqState, "topMenuIcon", maxIPR, showIcon);
+                        IconMenu.writeDashboard(out, reqState, "topMenuIcon", maxIPR, showIcon);
                     } break;
                 }
 

@@ -46,17 +46,22 @@ import java.io.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import javax.servlet.jsp.JspWriter;
-
 import javax.xml.parsers.*;
+
 import org.w3c.dom.*;
 import org.xml.sax.*;
-
 import org.opengts.util.*;
 import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
-
+import org.opengts.war.track.Constants;
 import org.opengts.war.track.Track;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
+import freemarker.template.Version;
 
 public class MenuBar
     implements org.opengts.war.track.Constants
@@ -230,7 +235,8 @@ public class MenuBar
     public static void writeTableRow(JspWriter out, String pageName, RequestProperties reqState)
         throws IOException
     {
-        MenuBar.writeTableRow(new PrintWriter(out, out.isAutoFlush()), pageName, reqState);
+//        MenuBar.writeTableRow(new PrintWriter(out, out.isAutoFlush()), pageName, reqState);
+        MenuBar.writeMenuBar(new PrintWriter(out, out.isAutoFlush()), pageName, reqState);
     }
 
     /* write out the menu bar */
@@ -314,6 +320,75 @@ public class MenuBar
         out.write("<!-- End Menu Bar -->\n");
     }
 
+    
+    /* write out the menu bar us using html5 */
+    public static void writeMenuBar(PrintWriter out, String pageName, RequestProperties reqState)
+            throws IOException
+    {
+        final PrivateLabel privLabel = reqState.getPrivateLabel();
+
+        
+            /* add all other menu items (except logout) */
+            Map<String,MenuGroup> menuGrpMap = privLabel.getMenuGroupMap();
+            Map<String,Object> menuBarMap = new HashMap<String,Object>();
+            Map<String,Object> menuMap = new HashMap<String,Object>();
+            List<String> menuList = new ArrayList<String>();
+            for (String mgn : menuGrpMap.keySet()) {
+                MenuGroup mg = menuGrpMap.get(mgn);
+                String menuName = mg.getTitle(reqState.getLocale());
+                List<String> subMenuList = new ArrayList<String>();
+                menuList.add(menuName);
+                if (mg.showInMenuBar()) {
+                    java.util.List<WebPage> menuItems = mg.getWebPageList(reqState);
+                    for (WebPage wp : menuItems) {
+                        String wpname = wp.getPageName();
+
+                        // skip these pages if they show up
+                        if (wpname.equals(Track.PAGE_LOGIN)      ) { continue; }
+                        if (wpname.equals(Track.PAGE_MENU_TOP)   ) { continue; }
+                        if (wpname.equals(Track.PAGE_ALERT_PANEL)) { continue; }
+                      //if (wpname.equals(Track.PAGE_PASSWD)     ) { continue; }
+
+                        // add menu bar tab
+                        String desc = wp.getNavigationTab(reqState);
+                        if ((pageName == null) || !pageName.equals(wpname)) {
+                            String url = wp.encodePageURL(reqState);
+                            subMenuList.add("<a href='"+url+"','_top')\">"+desc+"</a>\n");
+                        } else {
+                            subMenuList.add("<a href='#'>"+desc+"</a>");
+                        }
+                       
+                        
+                    }
+                   
+                }
+                menuMap.put(menuName,subMenuList);
+            }
+            menuBarMap.put("menuList", menuList);
+            menuBarMap.put("menuNameMap", menuMap);
+            
+            
+            Configuration cfg = new Configuration();
+            
+            // Where do we load the templates from:
+            // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+            cfg.setServletContextForTemplateLoading(reqState.getHttpServletRequest().getSession().getServletContext(), "/");
+            // Some other recommended settings:
+            cfg.setIncompatibleImprovements(new Version(2, 3, 20));
+            cfg.setDefaultEncoding("UTF-8");
+            cfg.setLocale(Locale.US);
+            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+
+            // 2.2. Get the template
+            Template template = cfg.getTemplate("track/ftl/menubar.ftl");
+
+            try {
+              template.process(menuBarMap, out);
+            } catch (TemplateException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+    }
     // ------------------------------------------------------------------------
 
 }

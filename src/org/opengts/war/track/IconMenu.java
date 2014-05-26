@@ -32,9 +32,14 @@ import javax.servlet.http.*;
 import javax.servlet.jsp.JspWriter;
 
 import org.opengts.util.*;
-
 import org.opengts.db.tables.*;
 import org.opengts.war.tools.*;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
+import freemarker.template.Version;
 
 public class IconMenu
 {
@@ -148,7 +153,8 @@ public class IconMenu
     public static void writeMenu(JspWriter out, RequestProperties reqState, String menuID, int maxIconsPerRow, boolean showIcon)
         throws IOException
     {
-        IconMenu.writeMenu(new PrintWriter(out, out.isAutoFlush()), reqState, menuID, maxIconsPerRow, showIcon);
+        //IconMenu.writeMenu(new PrintWriter(out, out.isAutoFlush()), reqState, menuID, maxIconsPerRow, showIcon);
+        IconMenu.writeDashboard(new PrintWriter(out, out.isAutoFlush()), reqState, menuID, maxIconsPerRow, showIcon);
     }
 
     public static void writeMenu(PrintWriter out, RequestProperties reqState, String menuID, int maxIconsPerRow, boolean showIcon)
@@ -177,7 +183,6 @@ public class IconMenu
 
         /* start menu */
         out.println("<table id='"+topMenuID+"' class='"+menuTableClass+"' cellpadding='0' cellspacing='0' border='0' width='100%'>");
-
         /* iterate through menu groups */
         Map<String,MenuGroup> menuMap = privLabel.getMenuGroupMap();
         for (String mgn : menuMap.keySet()) {
@@ -211,7 +216,6 @@ public class IconMenu
                 if (!wp.isOkToDisplay(reqState)) {
                     continue; 
                 }
-
                 /* start menu group */
                 if (!didDisplayGroup) {
                     didDisplayGroup = true;
@@ -292,6 +296,103 @@ public class IconMenu
 
     }
 
+    /**
+     * Replacing OpenGTS writeMenu with EasyTrack's Html5 based dashboard.
+     * @param out
+     * @param reqState
+     * @param menuID
+     * @param maxIconsPerRow
+     */
+    public static void writeDashboard(PrintWriter out, RequestProperties reqState, String menuID, int maxIconsPerRow, boolean showIcon) 
+            throws IOException 
+        {
+        
+        PrivateLabel privLabel = reqState.getPrivateLabel();
+        Locale       locale    = reqState.getLocale();
+        String  parentPageName = null;
+        Account       account  = reqState.getCurrentAccount();
+        
+        // 1. Configure FreeMarker
+        //
+        // You should do this ONLY ONCE, when your application starts,
+        // then reuse the same Configuration object elsewhere.
+        
+        Configuration cfg = new Configuration();
+        
+        // Where do we load the templates from:
+        // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+        cfg.setServletContextForTemplateLoading(reqState.getHttpServletRequest().getSession().getServletContext(), "/");
+        // Some other recommended settings:
+        cfg.setIncompatibleImprovements(new Version(2, 3, 20));
+        cfg.setDefaultEncoding("UTF-8");
+        cfg.setLocale(Locale.US);
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        Map<String, Object> utilMap = new HashMap<String, Object>();
+        Map<String,MenuGroup> menuGrpMap = privLabel.getMenuGroupMap();
+        out.write("<ul class='nav nav-justified'>");
+        for (String mgn : menuGrpMap.keySet()) {
+            MenuGroup mg = menuGrpMap.get(mgn);
+            if (!mg.showInTopMenu()) {
+                continue; // skip this group
+            }
+            
+            out.write("<li  class='dropdown'>");
+            int count = 0;
+            for (WebPage wp : mg.getWebPageList(reqState)) {
+                String menuName  = wp.getPageName();
+                String url       = wp.encodePageURL(reqState);//, RequestProperties.TRACK_BASE_URI());
+                
+                /* skip login page */
+                if (menuName.equalsIgnoreCase(Constants.PAGE_LOGIN)) { 
+                    //Print.logInfo("Skipping Login ...");
+                    continue; // omit login
+                }
+
+                /* skip sysAdmin pages */
+                if (wp.systemAdminOnly() && !Account.isSystemAdmin(account)) {
+                    //Print.logInfo("Skipping SysAdmin item ...");
+                    continue;
+                }
+
+                /* skip pages that are not ok to display */
+                if (!wp.isOkToDisplay(reqState)) {
+                    continue; 
+                }
+                /* menu description */
+                // replace all spaces with a newline "<BR>"
+                String menuDesc = StringTools.trim(wp.getNavigationDescription(reqState)); // short
+//                menuDesc = filterButtonMenuDescription(menuDesc);
+
+                /* menu help */
+                String menuHelp = StringTools.trim(wp.getMenuHelp(reqState, parentPageName));
+                if(count == 0){
+                    out.write("<a href=\"#\"><img  style=\"margin-right:150px;\"src=\"track/images/"+mgn.substring(mgn.indexOf(".")+1)+".png\" width=\"200\" height=\"200\" alt='"+parentPageName+"'/></a>");
+                }
+                out.write("<button class='btn btn-primary'  style='margin-top:10px;margin-left:10px;' title='"+menuHelp+"' onclick=\"window.location.href='"+url+"'\">"+menuDesc+"</button>");
+                if(count == 1 || count%2 ==1){
+                    out.write("<br>");
+                }
+                count ++;
+            }
+            out.write("</li>");
+        }
+        out.write("</ul>");
+        utilMap.put("menuGrpMap", menuGrpMap);
+        utilMap.put("privLabel", privLabel);
+        utilMap.put("locale", locale);
+        utilMap.put("account", account);
+        utilMap.put("reqState",reqState);
+
+        // 2.2. Get the template
+        Template template = cfg.getTemplate("track/ftl/Dashboard.ftl");
+
+        try {
+          template.process(utilMap, out);
+        } catch (TemplateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
     /* break menu description text into reasonable length lines */
     private static String filterButtonMenuDescription(String str)
     {
