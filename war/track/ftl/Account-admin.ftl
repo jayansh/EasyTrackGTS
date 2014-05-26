@@ -17,21 +17,7 @@
       
       
       
-    <div class="container">
-<!-- <div class="header">
-     
-     <img style="margin-top:20px;" src="../images/logo.png" width="143" height="50" alt="jaysan"/>
-        
-  <div id="welcomeuser">
-    <p>Welcome Username</p>
-<button type="button" class="btn btn-sm btn-primary">Logout</button>
-  
-                 
-                 
-   </div>
-      </div>-->
-        
-	  </div>
+    
 	  
 	<#include "menubar.ftl">
             <div class="sidebar " style="margin-left: 250px;">
