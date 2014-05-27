@@ -28,6 +28,8 @@ response.setDateHeader("EXPIRES"  , 0         );
   <gts:var>
   <meta name="author" content="GeoTelematic Solutions, Inc."/>
   <meta http-equiv="content-type" content='text/html; charset=UTF-8'/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta http-equiv="cache-control" content='no-cache'/>
   <meta http-equiv="pragma" content="no-cache"/>
   <meta http-equiv="expires" content="0"/>
