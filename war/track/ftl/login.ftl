@@ -26,7 +26,7 @@
         <!--header/Logo-->
         <div class="header-title">
         <!--<h1>GPS Tracking System</h1>-->
-         <img style="margin-top:20px;" src="track/images/logo.png" width="143" height="50" alt="jaysan"/>
+         <img  src="track/images/logo.gif"  alt="jaysan"/>
         </div>
         <div class="container">
         <div class="modal-dialog">
