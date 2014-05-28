@@ -41,13 +41,13 @@
        <label> Last Event:Date time</label>
        
                                 <div class="input-group date" id="datetimepickerfrom">
-                                    <input value class="form-control" type="text">
+                                    <input value class="form-control" type="text" placeholder="Date">
                                     <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
                                     </span> 
                                     </div>
-                                  to
+                                 <label> to</label>
                                  <div class="input-group date" id="datetimepickerto">
-                                      <input value class="form-control" type="text">
+                                      <input value class="form-control" type="text" placeholder="Date">
                                     <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
                                     </span>
                               </div>
@@ -65,21 +65,7 @@
   </script>
                  
  
-   <!-- <script>
-     // initialize input widgets first
-    $('#basicExample .time').timepicker({
-        'showDuration': true,
-        'timeFormat': 'g:ia'
-    });
 
-    $('#basicExample .date').datepicker({
-        'format': 'm/d/yyyy',
-        'autoclose': false
-    });
-
-    // initialize datepair
-    $('#basicExample').datepair();
-  </script>  -->    
 
     <label>${timeZoneTitle}</label>
 

@@ -34,13 +34,13 @@
       
       
         <div class="input-group date" id="datetimepickerfrom">
-                                    <input value class="form-control" type="text">
+                                    <input value class="form-control" type="text" placeholder="Date">
                                     <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
                                     </span> 
                                     </div>
-                                  to
+                                <label>  to </label>
                                  <div class="input-group date" id="datetimepickerto">
-                                      <input value class="form-control" type="text">
+                                      <input value class="form-control" type="text" placeholder="Date">
                                     <span class="input-group-addon"><span class="glyphicon-calendar glyphicon"></span>
                                     </span>
                               </div>
