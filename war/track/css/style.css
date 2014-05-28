@@ -181,13 +181,13 @@ position: absolute;
     float:none;
     position: relative;
 }
-.calendar{
+/*.calendar{
     float:right;
   position: relative;
   margin-right: 100px;
   margin-top: -40px;
   
-}
+}*/
 .caret-reversed {
      display: inline-block;
   width: 0;
@@ -198,3 +198,4 @@ position: absolute;
   border-right: 4px solid transparent;
   border-left: 4px solid transparent;
 }
+
