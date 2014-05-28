@@ -8,7 +8,7 @@
       
       <link href="track/css/sticky-footer.css" rel="stylesheet">
 
-      <link rel="stylesheet" type="text/css" href="track/css/bootstrap-datepicker.css" />
+      <link rel="stylesheet" type="text/css" href="track/css/jquery.datetimepicker.css" />
   
       <link rel="stylesheet" href="track/css/jquery-ui.css" type="text/css" media="all" />
     
@@ -29,10 +29,10 @@
      
      <script src="track/js/jquery.min.js"></script>
      
-     <script src="track/js/moment.min.js"></script>
+     
     
    
     
-    <script src="track/js/bootstrap-datetimepicker.js"></script>
+    <script src="track/js/jquery.datetimepicker.js"></script>
     
     <!--JavaScript/-->

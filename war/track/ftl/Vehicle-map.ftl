@@ -68,8 +68,10 @@
    
   });
   </script>
-                 
- 
+  <script type="text/javascript">
+jQuery('#datetimepicker').datetimepicker();
+    jQuery('#datetimepicker1').datetimepicker();
+</script>
 
 <#if showTimezoneSelect>
 <!-- Timezone select -->
