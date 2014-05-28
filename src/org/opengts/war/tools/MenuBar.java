@@ -327,12 +327,12 @@ public class MenuBar
     {
         final PrivateLabel privLabel = reqState.getPrivateLabel();
 
-        
             /* add all other menu items (except logout) */
             Map<String,MenuGroup> menuGrpMap = privLabel.getMenuGroupMap();
             Map<String,Object> menuBarMap = new HashMap<String,Object>();
             Map<String,Object> menuMap = new HashMap<String,Object>();
             List<String> menuList = new ArrayList<String>();
+            
             for (String mgn : menuGrpMap.keySet()) {
                 MenuGroup mg = menuGrpMap.get(mgn);
                 String menuName = mg.getTitle(reqState.getLocale());

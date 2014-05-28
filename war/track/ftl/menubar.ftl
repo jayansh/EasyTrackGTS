@@ -1,5 +1,4 @@
 <!-- Static navbar -->
-<!--#assign gts=JspTaglibs["./Track"]-->
       <div class="navbar navbar-inverse" role="navigation">
         <div class="container-fluid">
           <div class="navbar-header">

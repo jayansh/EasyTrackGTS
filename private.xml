@@ -317,7 +317,7 @@ Notes:
         <Property key="menuBar.includeTextAnchor">false</Property>              <!-- [true|false] include text anchor tag (link) -->
 
         <!-- TopMenu menu type -->
-        <Property key="topMenu.menuType">expand</Property>                      <!-- [fixed|expand|button] menu type -->
+        <Property key="topMenu.menuType">button</Property>                      <!-- [fixed|expand|button] menu type -->
         <!--
          ===  fixed       : Fixed (non-expandable) text menu items
          ===  fixed-icon  : Fixed text menu items with icon representation (set by "IconImage" tag)
@@ -450,7 +450,7 @@ Notes:
 
         <!-- DeviceChooser properties -->
         <Property key="deviceChooser.sortBy">description</Property>             <!-- [id|name|description] sort by -->
-        <Property key="deviceChooser.useTable">true</Property>                  <!-- [true|false] use DeviceChooser table selection -->
+        <Property key="deviceChooser.useTable">false</Property>                  <!-- [true|false] use DeviceChooser table selection -->
         <Property key="deviceChooser.idPosition">last</Property>                <!-- [none|first|last] ID column position -->
         <Property key="deviceChooser.search">false</Property>                   <!-- [true|false] enable description search -->
         <Property key="deviceChooser.matchContains">true</Property>             <!-- [true|false] match on 'contains' (otherwise 'startsWith') -->
