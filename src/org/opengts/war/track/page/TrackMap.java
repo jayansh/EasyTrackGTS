@@ -106,6 +106,8 @@ import org.opengts.war.track.*;
 import org.opengts.war.maps.JSMap;
 import org.opengts.war.report.ReportPresentation;
 
+import com.jaysan.opengts.track.TemplateLoader;
+
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -1274,9 +1276,13 @@ public abstract class TrackMap
                     out.println("<select name='"+Calendar.PARM_TIMEZONE[0]+"' onchange=\"javascript:calSelectTimeZone(document.TimeZoneSelect."+Calendar.PARM_TIMEZONE[0]+".value)\">");
                     String timeZone = reqState.getTimeZoneString(null);
                     java.util.List _tzList = reqState.getTimeZonesList();
+                    utilMap.put("FORM_SELECT_TIMEZONE", FORM_SELECT_TIMEZONE);
+                    utilMap.put("noopAction", noopAction);
                     utilMap.put("timeZoneTitle", i18n.getString("TrackMap.timeZone","TimeZone:"));
                     utilMap.put("timeZoneList", _tzList);
                     utilMap.put("timeZone", timeZone);
+                    utilMap.put("SELECT_TIMEZONE_NAME", Calendar.PARM_TIMEZONE[0]);
+                    utilMap.put("SELECT_TIMEZONE_ONCHANGE", "javascript:calSelectTimeZone(document.TimeZoneSelect."+Calendar.PARM_TIMEZONE[0]+".value)");
                     for (Iterator i = _tzList.iterator(); i.hasNext();) {
                         String tmz = (String)i.next();
                         String sel  = tmz.equals(timeZone)? "selected" : "";
@@ -1293,21 +1299,32 @@ public abstract class TrackMap
                 String i18nUpdateBtn = i18n.getString("TrackMap.updateAll","Update");
                 String i18nUpdateTip = i18n.getString("TrackMap.updateAll.tooltip","Click to update map points");
                 out.println("<form id='UpdateMap' name='UpdateMap' method='get' target='_self'>"); // target='_top'
+                utilMap.put("showUpdateAll", showUpdateAll);
+                utilMap.put("showUpdateLast", showUpdateLast);
+                utilMap.put("autoUpdateEnabled", autoUpdateEnabled);
+                
                 if (showUpdateAll) {
                     out.println("<!-- 'Update All' -->");
                     out.print  ("<input class='formButton' id='"+ID_MAP_UPDATE_BTN+"' type='button' name='update' value='"+i18nUpdateBtn+"' title=\""+i18nUpdateTip+"\" onclick=\"javascript:trackMapClickedUpdateAll();\">");
+                    utilMap.put("ID_MAP_UPDATE_BTN", ID_MAP_UPDATE_BTN);
+                    utilMap.put("i18nUpdateBtn", i18nUpdateBtn);
+                    utilMap.put("i18nUpdateTip", i18nUpdateTip);
                 }
                 if (showUpdateLast) {
                     String i18nLastBtn = i18n.getString("TrackMap.updateLast","Last");
                     String i18nLastTip = i18n.getString("TrackMap.updateLast.tooltip","Click to update last location");
                     out.println("<!-- 'Update Last' -->");
                     out.print  ("<input class='formButton' id='"+ID_MAP_LAST_BTN+"' type='button' name='update' value='"+i18nLastBtn+"' title=\""+i18nLastTip+"\" onclick=\"javascript:trackMapClickedUpdateLast();\">");
+                    utilMap.put("i18nLastBtn", i18nLastBtn);
+                    utilMap.put("i18nLastTip", i18nLastTip);
                 }
                 if (autoUpdateEnabled) {
                     String i18nAutoBtn = i18n.getString("TrackMap.startAutoUpdate","Auto");
                     String i18nAutoTip = i18n.getString("TrackMap.startAutoUpdate.tooltip","Click to start/stop auto-update");
                     out.println("<!-- 'Auto Update' -->");
                     out.print  ("<input class='formButton' id='"+ID_MAP_AUTOUPDATE_BTN+"' type='button' name='autoUpdate' value='"+i18nAutoBtn+"' title=\""+i18nAutoTip+"\" onclick=\"javascript:trackMapClickedAutoUpdate();\">");
+                    utilMap.put("i18nAutoBtn", i18nAutoBtn);
+                    utilMap.put("i18nAutoTip", i18nAutoTip);
                 }
                 out.println("</form>");
 
@@ -1326,6 +1343,8 @@ public abstract class TrackMap
                 }
                 */
 
+                utilMap.put("replayEnable", replayEnable);
+                utilMap.put("showPushpinReplay", showPushpinReplay);
                 // "Replay Map"
                 if (replayEnable && showPushpinReplay) {
                     String i18nReplayBtn = i18n.getString("TrackMap.replayMap","Replay");
@@ -1344,6 +1363,7 @@ public abstract class TrackMap
                     out.print  (    "</td>");
                     out.println(  "</tr></table>"); // }
                     out.println("</form>");
+                    utilMap.put("i18nReplayBtn", i18nReplayBtn);
                 }
 
                 out.println("</td>");
@@ -1590,16 +1610,17 @@ public abstract class TrackMap
                 // You should do this ONLY ONCE, when your application starts,
                 // then reuse the same Configuration object elsewhere.
                 
-                Configuration cfg = new Configuration();
-                
-                // Where do we load the templates from:
-                // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
-                cfg.setServletContextForTemplateLoading(reqState.getHttpServletRequest().getSession().getServletContext(), "/");
-                // Some other recommended settings:
-                cfg.setIncompatibleImprovements(new Version(2, 3, 20));
-                cfg.setDefaultEncoding("UTF-8");
-                cfg.setLocale(Locale.US);
-                cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+//                Configuration cfg = new Configuration();
+//                
+//                // Where do we load the templates from:
+//                // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+//                cfg.setServletContextForTemplateLoading(reqState.getHttpServletRequest().getSession().getServletContext(), "/");
+//                // Some other recommended settings:
+//                cfg.setIncompatibleImprovements(new Version(2, 3, 20));
+//                cfg.setDefaultEncoding("UTF-8");
+//                cfg.setLocale(Locale.US);
+//                cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+                Configuration cfg = TemplateLoader.getConfiguration();
                 
                 // 2.2. Get the template
 

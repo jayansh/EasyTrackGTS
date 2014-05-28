@@ -87,6 +87,8 @@ import org.opengts.war.tools.*;
 import org.opengts.war.track.page.AccountLogin;
 import org.opengts.war.track.page.TrackMap;
 
+import com.jaysan.opengts.track.TemplateLoader;
+
 public class Track
     extends CommonServlet
     implements Constants
@@ -321,6 +323,10 @@ public class Track
     private void _doWork_wrapper(boolean isPost, HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
     {
+        if(TemplateLoader.getConfiguration()==null){
+            TemplateLoader.initialize(request.getSession().getServletContext());
+        }
+        
         AttributeTools.parseRTP(request);
         AttributeTools.parseMultipartFormData(request);
 
@@ -436,7 +442,6 @@ public class Track
             //privLabel.popRTProperties();
             RTConfig.popAllTemporaryProperties();
         }
-
     }
 
     /* handle POST/GET request */

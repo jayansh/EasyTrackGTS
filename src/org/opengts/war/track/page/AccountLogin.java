@@ -51,9 +51,10 @@ import org.opengts.util.*;
 import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -490,16 +491,17 @@ public class AccountLogin
                     // You should do this ONLY ONCE, when your application starts,
                     // then reuse the same Configuration object elsewhere.
                     
-                    Configuration cfg = new Configuration();
-                    
-                    // Where do we load the templates from:
-                    // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
-                    cfg.setServletContextForTemplateLoading(req.getSession().getServletContext(), "/");
-                    // Some other recommended settings:
-                    cfg.setIncompatibleImprovements(new Version(2, 3, 20));
-                    cfg.setDefaultEncoding("UTF-8");
-                    cfg.setLocale(Locale.US);
-                    cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+//                    Configuration cfg = new Configuration();
+//                    
+//                    // Where do we load the templates from:
+//                    // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+//                    cfg.setServletContextForTemplateLoading(req.getSession().getServletContext(), "/");
+//                    // Some other recommended settings:
+//                    cfg.setIncompatibleImprovements(new Version(2, 3, 20));
+//                    cfg.setDefaultEncoding("UTF-8");
+//                    cfg.setLocale(Locale.US);
+//                    cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+                    Configuration cfg = TemplateLoader.getConfiguration();
                     utilMap.put("FORM_LOGIN", FORM_LOGIN);
                     utilMap.put("baseURL", baseURL);
                     utilMap.put("target", target);

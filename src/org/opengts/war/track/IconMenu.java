@@ -35,6 +35,8 @@ import org.opengts.util.*;
 import org.opengts.db.tables.*;
 import org.opengts.war.tools.*;
 
+import com.jaysan.opengts.track.TemplateLoader;
+
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -317,16 +319,17 @@ public class IconMenu
         // You should do this ONLY ONCE, when your application starts,
         // then reuse the same Configuration object elsewhere.
         
-        Configuration cfg = new Configuration();
-        
-        // Where do we load the templates from:
-        // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
-        cfg.setServletContextForTemplateLoading(reqState.getHttpServletRequest().getSession().getServletContext(), "/");
-        // Some other recommended settings:
-        cfg.setIncompatibleImprovements(new Version(2, 3, 20));
-        cfg.setDefaultEncoding("UTF-8");
-        cfg.setLocale(Locale.US);
-        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+//        Configuration cfg = new Configuration();
+//        
+//        // Where do we load the templates from:
+//        // cfg.setClassForTemplateLoading(HTMLOutput.class, "/");
+//        cfg.setServletContextForTemplateLoading(reqState.getHttpServletRequest().getSession().getServletContext(), "/");
+//        // Some other recommended settings:
+//        cfg.setIncompatibleImprovements(new Version(2, 3, 20));
+//        cfg.setDefaultEncoding("UTF-8");
+//        cfg.setLocale(Locale.US);
+//        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        Configuration cfg = TemplateLoader.getConfiguration();
         Map<String, Object> utilMap = new HashMap<String, Object>();
         Map<String,MenuGroup> menuGrpMap = privLabel.getMenuGroupMap();
         out.write("<ul class='nav nav-justified'>");

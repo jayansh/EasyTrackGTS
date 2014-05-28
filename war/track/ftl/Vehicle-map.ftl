@@ -62,9 +62,10 @@
     $('#basicExample').datepair();
   </script>      
 
-    <label>${timeZoneTitle}</label>
-
-<select  class="form-control input-sm">
+<!-- Timezone select -->
+<form id='${FORM_SELECT_TIMEZONE}' name='${FORM_SELECT_TIMEZONE}' method='get' action="${noopAction}" target='_self'>
+<label>${timeZoneTitle}</label>
+<select name="${SELECT_TIMEZONE_NAME}" onchange="${SELECT_TIMEZONE_ONCHANGE}" class="form-control input-sm">
     <#list timeZoneList as tmz>
         <#assign sel>
             <#if tmz = timeZone>
@@ -76,6 +77,7 @@
         <option value="${sel}">${tmz}</option>
     </#list>
 </select>
+</form>
 
 <button class="btn btn-xs btn-warning" style="margin-top: 5px;">Update</button>
 <button class="btn btn-xs btn-warning" style="margin-top: 5px;">Auto</button>
