@@ -443,7 +443,8 @@ public abstract class MapProviderAdapter
         /* Legend Title output */
         if (!StringTools.isBlank(legendTitle)) {
             if (outputHtml) {
-                sb.append("<span class=\""+CSS_legend+"\">" + legendTitle + "</span>\n");
+//                sb.append("<span class=\""+CSS_legend+"\">" + legendTitle + "</span>\n");
+                sb.append("<label>" + legendTitle + "</label>\n");
             } else {
                 sb.append("<"+TAG_Title+"><![CDATA[" + legendTitle + "]]></"+TAG_Title+">\n");
             }
@@ -451,7 +452,7 @@ public abstract class MapProviderAdapter
         
         /* begin icon table */
         if (outputHtml) {
-            sb.append("<table class=\""+CSS_legend+"\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n");
+//            sb.append("<table class=\""+CSS_legend+"\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n");
         } else {
             //
         }
@@ -508,8 +509,8 @@ public abstract class MapProviderAdapter
 
             /* output */
             if (outputHtml) {
-                sb.append("<tr class=\""+CSS_legend+"\">");
-                sb.append("<td class=\""+CSS_legend+"\">");
+//                sb.append("<tr class=\""+CSS_legend+"\">");
+//                sb.append("<td class=\""+CSS_legend+"\">");
                 if (pp != null) {
                     double S = (scale > 0.0)? scale : 1.0;
                     int    W = (int)Math.round(S * pp.getIconWidth()) ;
@@ -518,11 +519,12 @@ public abstract class MapProviderAdapter
                 } else {
                     sb.append("<img class=\""+CSS_legend+"\" src=\""+imgUrl+"\">");
                 }
-                sb.append("</td>");
-                sb.append("<td class=\""+CSS_legend+"\">");
+//                sb.append("</td>");
+//                sb.append("<td class=\""+CSS_legend+"\">");
                 sb.append(desc);
-                sb.append("</td>");
-                sb.append("</tr>\n");
+//                sb.append("</td>");
+//                sb.append("</tr>\n");
+                sb.append("<br>");
             } else {
                 sb.append("<"+TAG_Icon+" "+ATTR_name+"=\""+name+"\"");
                 if (scale > 0.0) {
@@ -541,7 +543,7 @@ public abstract class MapProviderAdapter
 
         /* end output */
         if (outputHtml) {
-            sb.append("</table>\n");
+//            sb.append("</table>\n");
         } else {
             sb.append("</"+TAG_Legend+">");
         }
