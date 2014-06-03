@@ -953,11 +953,11 @@ public abstract class MapProviderAdapter
         String cellStyle  = "" + ((mapH < 0)? " height:100%;" : "");
         String divStyle   = this.getMapCellStyle(reqState, mapDim);
         String mapID      = this.getMapID();
-        out.println("<table valign='center' align='center' cellspacing='0' cellpadding='0' border='0' style='" + tableStyle + "'>");
-        out.println("<tr><td class='"+cellClass+"' align='center' style='" + cellStyle + "'>");
+//        out.println("<table valign='center' align='center' cellspacing='0' cellpadding='0' border='0' style='" + tableStyle + "'>");
+//        out.println("<tr><td class='"+cellClass+"' align='center' style='" + cellStyle + "'>");
         out.println("<div id='" + mapID + "' style='" + divStyle + "'></div>");
-        out.println("</td></tr>");
-        out.println("</table>");
+//        out.println("</td></tr>");
+//        out.println("</table>");
     }
 
     // ------------------------------------------------------------------------
