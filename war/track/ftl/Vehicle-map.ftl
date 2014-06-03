@@ -81,43 +81,55 @@ jQuery('#datetimepicker').datetimepicker();
 </select>
 </form>
 </#if>
-<!--form id='UpdateMap' name='UpdateMap' method='get' target='_self'>
+<form id='UpdateMap' name='UpdateMap' method='get' target='_self'>
   <#if showUpdateAll>
     <!-- 'Update All' -->
-    <!--button class='btn btn-xs btn-warning' id='${ID_MAP_UPDATE_BTN}' style="margin-top: 5px;"
-      name='update' title="${i18nUpdateTip}" onclick="javascript:trackMapClickedUpdateAll();">${i18nUpdateBtn}</button>
+    <input type="button" class='btn btn-xs btn-warning' id='${ID_MAP_UPDATE_BTN}' style="margin-top: 5px;"
+      name='update' title="${i18nUpdateTip}" value='${i18nUpdateBtn}' onclick="javascript:trackMapClickedUpdateAll();"></input>
   </#if>
   <#if showUpdateLast>
      <!-- 'Update Last' -->
-     <!--button class='btn btn-xs btn-warning' id='${ID_MAP_LAST_BTN}' style="margin-top: 5px;" name='update'
-       title="${i18nLastTip}" onclick="javascript:trackMapClickedUpdateLast();">${i18nLastBtn}</button>
+     <input type="button" class='btn btn-xs btn-warning' id='${ID_MAP_LAST_BTN}' style="margin-top: 5px;" name='update'
+       title="${i18nLastTip}" value='${i18nLastBtn}' onclick="javascript:trackMapClickedUpdateLast();"></input>
   </#if>
   <#if autoUpdateEnabled>
   <!-- 'Auto Update' -->
-    <!--button class='btn btn-xs btn-warning' id='${ID_MAP_AUTOUPDATE_BTN}' style="margin-top: 5px;" name='autoUpdate'
-     title="${i18nAutoTip}" onclick="javascript:trackMapClickedAutoUpdate();">${i18nAutoBtn}</button>
+    <input type="button" class='btn btn-xs btn-warning' id='${ID_MAP_AUTOUPDATE_BTN}' style="margin-top: 5px;" name='autoUpdate'
+     title="${i18nAutoTip}" value='${i18nAutoBtn}' onclick="javascript:trackMapClickedAutoUpdate();"></input>
   </#if>
-</form-->
-
-<br><label>Replay</label>
-<button  class="glyphicon glyphicon-play-circle"></button>
-<label>InfoBox</label>
-<input type="checkbox"></input>
-<br><label>Cursor Location:</label>
-<br>value1,value2
-<br><label>Distance(ctrl-drag):</label>
-<br>0.00 Miles
-<br><label>Puspin Legend</label>
+</form>
+<#if replayEnable && showPushpinReplay>
+  <form id='ReplayMap' name='ReplayMap' method='get' 
+        action="javascript:trackMapClickedReplay(document.getElementById('ReplayMap').${ID_MAP_SHOW_INFO}.checked);" target='_self'>
+    <br><label for="${ID_MAP_REPLAY_BTN}">${i18nReplayBtn}</label>
+    <input type="button" id="${ID_MAP_REPLAY_BTN}" name='replayMap' class="glyphicon glyphicon-play-circle" title="${i18nReplayTip}"></input>
+    <span title="${i18nInfoTip}">
+      <label for="${ID_MAP_SHOW_INFO}>${i18nInfoText}</label>
+      <input type="checkbox" id='${ID_MAP_SHOW_INFO}' name='${ID_MAP_SHOW_INFO}'></input>
+    </span>
+  </form>
+</#if>
+<#if mapSupportsCursorLocation>
+ <br><label>${CursonLocationLbl}:</label>
+ <br><div id='${ID_LAT_LON_DISPLAY}' style='margin-left:10px;'></div>
+</#if>
+<#if mapSupportsDistanceRuler>
+ <br><label>${DistanceLbl}:</label>
+ <br><div id='${ID_DISTANCE_DISPLAY}' style='margin-left:10px;'>${VALUE_DISTANCE_DISPLAY}</div>
+</#if>
+<!--<br><label>Puspin Legend</label>
 <br><img src="../images/20mph.png" alt="20mph" width="32" height="32"/>More Than 20 mph
 <br><img src="../images/mph5.png" alt="5mph" width="32" height="32"/>More Than 5 mph
-<br><img src="../images/lessmph5.png" alt="less5mph" width="32" height="32"/>Less Than 5 mph
+<br><img src="../images/lessmph5.png" alt="less5mph" width="32" height="32"/>Less Than 5 mph-->
+${legendHtml}
 </form>
-
-<!-- Main component for a primary marketing message or call to action -->
+<#if isFeatureDetailReportAndLocatuinDetailsSupported>
+  <a class='trackMapDetailLocationControl' id='${ID_DETAIL_CONTROL}' href="javascript:mapProviderToggleDetails()">
+  ${showLocationDetails}
+  </a>
+  <div id='${ID_DETAIL_TABLE}' style='width:100%;'></div>
+</#if>
  </div>
-     <iframe width="600"height="400"frameborder="0" style="border:0"
-  src="https://www.google.com/maps/embed/v1/search?key=AIzaSyAXiYvo3JTOOaaJ3Dv-sQRqJOuHGwB1cT4&q=Mahakaleshwar+Temple+ujjain+madhyapradesh+India">
-</iframe>
     </div> <!-- /container -->
    <#include "footer.ftl">
   </body>
