@@ -41,6 +41,9 @@
 // ----------------------------------------------------------------------------
 package org.opengts.war.track.page;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Iterator;
 import java.util.Map;
@@ -55,10 +58,15 @@ import org.opengts.util.*;
 import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.report.*;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class ReportMenu
     extends WebPageAdaptor
@@ -485,6 +493,9 @@ public class ReportMenu
         final boolean isGroup = this.isReportTypeDeviceGroup();
         reqState.setFleet(isGroup);
 
+        final Map<String, Object> reportMap = new HashMap<String, Object>();
+        reportMap.put("isGroup", isGroup);
+        
         /* error */
         String m = pageMsg;
         boolean error = !StringTools.isBlank(m);
@@ -676,23 +687,28 @@ public class ReportMenu
                 out.write("\n");
 
                 // frame header
-                out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+i18n.getString("ReportMenu.gpsReports","GPS Tracking Reports")+"</span><br/>\n");
-                out.write("<span class='"+CommonServlet.CSS_MENU_INSTRUCTIONS+"'>"+i18n.getString("ReportMenu.selectReport","Please select a report from the following menu:")+"</span><br/>\n");
-                out.write("<hr/>\n");
+//                out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+i18n.getString("ReportMenu.gpsReports","GPS Tracking Reports")+"</span><br/>\n");
+//                out.write("<span class='"+CommonServlet.CSS_MENU_INSTRUCTIONS+"'>"+i18n.getString("ReportMenu.selectReport","Please select a report from the following menu:")+"</span><br/>\n");
+//                out.write("<hr/>\n");
+                reportMap.put("reportPageTitle", i18n.getString("ReportMenu.gpsReports","GPS Tracking Reports"));
+                reportMap.put("reportPageDesc", i18n.getString("ReportMenu.selectReport","Please select a report from the following menu:"));
 
                 /* begin calendar/report-selection table */
-                out.write("<table height='90%' border='0' cellspacing='0' cellpadding='0'>\n"); // {
-                out.write("<tr>\n");
-                out.write("<td valign='top' height='100%' style='padding-right:3px; border-right: 3px double black;'>\n");
+//                out.write("<table height='90%' border='0' cellspacing='0' cellpadding='0'>\n"); // {
+//                out.write("<tr>\n");
+//                out.write("<td valign='top' height='100%' style='padding-right:3px; border-right: 3px double black;'>\n");
 
                 /* device[group] list */
-                out.write("<form id='"+FORM_DEVICE_GROUP+"' name='"+FORM_DEVICE_GROUP+"' method='post' action=\"javascript:rptmSubmitReport();\" target='_self''>\n"); // target='_top'
+//                out.write("<form id='"+FORM_DEVICE_GROUP+"' name='"+FORM_DEVICE_GROUP+"' method='post' action=\"javascript:rptmSubmitReport();\" target='_self''>\n"); // target='_top'
+                reportMap.put("FORM_DEVICE_GROUP", FORM_DEVICE_GROUP);
                 IDDescription.SortBy sortBy = DeviceChooser.getSortBy(privLabel);
+                List<Map<String,String>> deviceMapList = new ArrayList<Map<String,String>>();
                 if (isGroup) {
                     // fleet group selection
                     String grpAllDesc  = DeviceGroup.GetDeviceGroupAllTitle(reqState.getCurrentAccount(), locale);
                     String grpTitles[] = reqState.getDeviceGroupTitles();
-                    out.write("<b>"+i18n.getString("ReportMenu.deviceGroup","{0}:",grpTitles)+"</b><br>\n");
+//                    out.write("<b>"+i18n.getString("ReportMenu.deviceGroup","{0}:",grpTitles)+"</b><br>\n");
+                    reportMap.put("deviceGroupTitle",i18n.getString("ReportMenu.deviceGroup","{0}:",grpTitles));
                     if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Fleet
                         out.write("<table cellspacing='0' cellpadding='0' border='0'><tr>");
                         out.write("<td>");
@@ -744,21 +760,30 @@ public class ReportMenu
                                 sortList.add(new IDDescription(id,desc));
                             }
                             IDDescription.SortList(sortList, rtnDispName? IDDescription.SortBy.DESCRIPTION : sortBy);
-                            out.write("<select id='"+ID_DEVICE_ID+"' name='"+PARM_GROUP_ID+"'>\n");
+//                            out.write("<select id='"+ID_DEVICE_ID+"' name='"+PARM_GROUP_ID+"'>\n");
+                            reportMap.put("ID_DEVICE_ID",ID_DEVICE_ID);
+                            reportMap.put("PARM_DEVICE_ID", PARM_DEVICE_ID);
                             for (IDDescription dd : sortList) {
                                 String id   = dd.getID();
                                 String desc = dd.getDescription();
                                 String sel  = id.equals(_groupID)? "selected" : "";
                                 String disp = FilterValue((sortBy.equals(IDDescription.SortBy.ID)?id:desc));
-                                out.write("<option value='"+id+"' "+sel+">"+disp+"</option>\n");
+//                                out.write("<option value='"+id+"' "+sel+">"+disp+"</option>\n");
+                                Map<String,String> deviceMap = new HashMap<String,String>();
+                                deviceMap.put("id", id);
+                                deviceMap.put("sel", sel);
+                                deviceMap.put("disp", disp);
+                                deviceMapList.add(deviceMap);
                             }
-                            out.write("</select>\n");
+//                            out.write("</select>\n");
+                            reportMap.put("deviceMapList", deviceMapList);
                         }
                     }
                 } else {
                     // device selection
                     String devTitles[] = reqState.getDeviceTitles();
-                    out.write("<b>"+i18n.getString("ReportMenu.device","{0}:",devTitles)+"</b><br>\n");
+//                    out.write("<b>"+i18n.getString("ReportMenu.device","{0}:",devTitles)+"</b><br>\n");
+                    reportMap.put("deviceGroupTitle",i18n.getString("ReportMenu.device","{0}:",devTitles));
                     if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Device
                         out.write("<table cellspacing='0' cellpadding='0' border='0'><tr>");
                         out.write("<td>");
@@ -809,19 +834,27 @@ public class ReportMenu
                                 sortList.add(new IDDescription(id,desc));
                             }
                             IDDescription.SortList(sortList, rtnDispName? IDDescription.SortBy.DESCRIPTION : sortBy);
-                            out.write("<select id='"+ID_DEVICE_ID+"' name='"+PARM_DEVICE_ID+"'>\n");
+//                            out.write("<select id='"+ID_DEVICE_ID+"' name='"+PARM_DEVICE_ID+"'>\n");
+                            reportMap.put("ID_DEVICE_ID",ID_DEVICE_ID);
+                            reportMap.put("PARM_DEVICE_ID", PARM_DEVICE_ID);
                             for (IDDescription dd : sortList) {
                                 String id   = dd.getID();
                                 String desc = dd.getDescription();
                                 String sel  = id.equals(_deviceID)? "selected" : "";
                                 String disp = FilterValue((sortBy.equals(IDDescription.SortBy.ID)?id:desc));
-                                out.write("<option value='"+id+"' "+sel+">"+disp+"</option>\n");
+//                                out.write("<option value='"+id+"' "+sel+">"+disp+"</option>\n");
+                                Map<String,String> deviceMap = new HashMap<String,String>();
+                                deviceMap.put("id", id);
+                                deviceMap.put("sel", sel);
+                                deviceMap.put("disp", disp);
+                                deviceMapList.add(deviceMap);
                             }
-                            out.write("</select>\n");
+//                            out.write("</select>\n");
+                            reportMap.put("deviceMapList", deviceMapList);
                         }
                     }
                 }
-                out.write("</form>\n");
+//                out.write("</form>\n");
 
                 /* From/To Calendars */
                 DateTime fr = reqState.getEventDateFrom();
@@ -829,30 +862,40 @@ public class ReportMenu
                 DateTime to = reqState.getEventDateTo();
                 if (to == null) { to = new DateTime(tz); }
                 boolean sameMonth = (fr.getYear() == to.getYear()) && (fr.getMonth1() == to.getMonth1());
-                out.write("\n");
-                out.println("<!-- Calendars -->");
-                out.write("<div style='height: 100%; margin-top: 8px;'>\n");
-                out.write(  "<b>"+i18n.getString("ReportMenu.selectDate","Select Date Range:")+"</b>\n");
-                out.write(  "<div class='"+Calendar.CLASS_CAL_DIV+"' id='"+Calendar.ID_CAL_DIV+"' style='text-align: center; padding: 4px 5px 0px 5px;'>\n");
-                out.write(    "<div id='"+CALENDAR_FROM+"'></div>\n");
-                out.write(    "<div id='"+CALENDAR_TO+  "' style='padding-top: 8px;'></div>\n");
+//                out.write("\n");
+//                out.println("<!-- Calendars -->");
+//                out.write("<div style='height: 100%; margin-top: 8px;'>\n");
+//                out.write(  "<b>"+i18n.getString("ReportMenu.selectDate","Select Date Range:")+"</b>\n");
+                reportMap.put("selectDateTitle", i18n.getString("ReportMenu.selectDate","Select Date Range:"));
+//                out.write(  "<div class='"+Calendar.CLASS_CAL_DIV+"' id='"+Calendar.ID_CAL_DIV+"' style='text-align: center; padding: 4px 5px 0px 5px;'>\n");
+//                out.write(    "<div id='"+CALENDAR_FROM+"'></div>\n");
+//                out.write(    "<div id='"+CALENDAR_TO+  "' style='padding-top: 8px;'></div>\n");
+                reportMap.put("CALENDAR_FROM", CALENDAR_FROM);
+                reportMap.put("CALENDAR_TO",CALENDAR_TO);
                 if (showTimezoneSelect) {
-                    out.println("<!-- Timezone select -->");
-                    out.println("<div style='padding-top: 5px; text-align: left;'>");
-                    out.println(  "<form id='TimeZoneSelect' name='TimeZoneSelect' method='get' action=\"javascript:true;\" target='_self'>"); // target='_top'
-                    out.println(  "<span style='font-size:8pt;'><b>"+i18n.getString("ReportMenu.timeZone","TimeZone:")+"</b></span><br>");
-                    out.println(  "<select name='"+parm_TIMEZONE[0]+"' onchange=\"javascript:calSelectTimeZone(document.TimeZoneSelect."+parm_TIMEZONE[0]+".value)\">");
+//                    out.println("<!-- Timezone select -->");
+//                    out.println("<div style='padding-top: 5px; text-align: left;'>");
+//                    out.println(  "<form id='TimeZoneSelect' name='TimeZoneSelect' method='get' action=\"javascript:true;\" target='_self'>"); // target='_top'
+//                    out.println(  "<span style='font-size:8pt;'><b>"+i18n.getString("ReportMenu.timeZone","TimeZone:")+"</b></span><br>");
+//                    out.println(  "<select name='"+parm_TIMEZONE[0]+"' onchange=\"javascript:calSelectTimeZone(document.TimeZoneSelect."+parm_TIMEZONE[0]+".value)\">");
+                    reportMap.put("timeZoneTitle", i18n.getString("ReportMenu.timeZone","TimeZone:"));
+                    reportMap.put("parm_TIMEZONE", parm_TIMEZONE[0]);
+                    
                     String timeZone = reqState.getTimeZoneString(null);
                     java.util.List _tzList = reqState.getTimeZonesList();
-                    for (Iterator i = _tzList.iterator(); i.hasNext();) {
-                        String tmz = (String)i.next();
-                        String sel = tmz.equals(timeZone)? "selected" : "";
-                        out.println("  <option value='"+tmz+"' "+sel+">"+tmz+"</option>");
-                    }
-                    out.println(  "</select>");
-                    out.println(  "</form>");
-                    out.println("</div>");
-                    out.println("");
+                    
+                    reportMap.put("timeZoneList", _tzList);
+                    reportMap.put("timeZone", timeZone);
+//                    
+//                    for (Iterator i = _tzList.iterator(); i.hasNext();) {
+//                        String tmz = (String)i.next();
+//                        String sel = tmz.equals(timeZone)? "selected" : "";
+//                        out.println("  <option value='"+tmz+"' "+sel+">"+tmz+"</option>");
+//                    }
+//                    out.println(  "</select>");
+//                    out.println(  "</form>");
+//                    out.println("</div>");
+//                    out.println("");
                 }
                 
                 // the following pushes the calendars to the top
@@ -860,23 +903,27 @@ public class ReportMenu
                 // a bunch of space below the footer)
                 //out.write("<div style='height:100%'>&nbsp;</div>\n"); 
                 
-                out.write(  "</div>\n");                
-                out.write("</div>\n");
-                out.write("\n");
+//                out.write(  "</div>\n");                
+//                out.write("</div>\n");
+//                out.write("\n");
 
-                out.write("</td>\n");
+//                out.write("</td>\n");
 
-                out.write("<td nowrap width='100%' height='100%' valign='top' style='margin-left:10px;'>\n");
+//                out.write("<td nowrap width='100%' height='100%' valign='top' style='margin-left:10px;'>\n");
 
                 /* reports */
-                out.write("<!-- Begin Reports -->\n");
-                out.write("<table width='100%'>\n"); // {
-                out.write("<tr>\n");
-                out.write("<td valign='top' style='margin-top: 8px; padding-left: 5px;'>\n");
-                out.write("<form id='"+FORM_SELECT_REPORT+"' name='"+FORM_SELECT_REPORT+"' method='post' action=\"javascript:rptmSubmitReport();\" target='_self'>\n"); // target='_top'
+//                out.write("<!-- Begin Reports -->\n");
+//                out.write("<table width='100%'>\n"); // {
+//                out.write("<tr>\n");
+//                out.write("<td valign='top' style='margin-top: 8px; padding-left: 5px;'>\n");
+//                out.write("<form id='"+FORM_SELECT_REPORT+"' name='"+FORM_SELECT_REPORT+"' method='post' action=\"javascript:rptmSubmitReport();\" target='_self'>\n"); // target='_top'
+                reportMap.put("FORM_SELECT_REPORT", FORM_SELECT_REPORT);
                 boolean checked = false;
                 int rptSel = 0;
+
+                List<Map> reportSelectList = new ArrayList<Map>();
                 for (int t = 0; t < ReportFactory.REPORT_TYPES.length; t++) {
+                    Map<String, Object> reportSelectMap = new HashMap<String,Object>();
                     // check report type
                     String type = ReportFactory.REPORT_TYPES[t];
                     if (!ReportMenu.this.isReportTypeAll() && !ReportMenu.this.getReportType().equalsIgnoreCase(type)) {
@@ -888,24 +935,37 @@ public class ReportMenu
                     java.util.List<ReportEntry> reportItems = ReportMenu.this.getReportItems(reqState, type);
                     if (reportItems.size() > 0) {
                         // at least one report with this type
-                        out.write("  <b>"+desc+"</b><br/>\n");
+//                        out.write("  <b>"+desc+"</b><br/>\n");
+                        reportSelectMap.put("desc", desc);
+                        List<Map> reportEntryList = new ArrayList<Map>();
                         for (Iterator<ReportEntry> i = reportItems.iterator(); i.hasNext();) {
+                            Map<String, Object> reportEntryMap = new HashMap<String,Object>();
                             ReportEntry   re = i.next();
                             ReportFactory rf = re.getReportFactory();
                             String        rn = rf.getReportName();
-                            out.write("<span class='"+CSS_REPORT_RADIO_BUTTON+"' id='" + rn + "'>");
-                            out.write("<input class='"+CSS_REPORT_RADIO_BUTTON+"' type='radio' name='"+PARM_REPORT[0]+"' id='" + rn + "_btn' value='" + FilterValue(rn) + "' onchange=\"javascript:rptmReportRadioChanged();\"");
+//                            out.write("<span class='"+CSS_REPORT_RADIO_BUTTON+"' id='" + rn + "'>");
+//                            out.write("<input class='"+CSS_REPORT_RADIO_BUTTON+"' type='radio' name='"+PARM_REPORT[0]+"' id='" + rn + "_btn' value='" + FilterValue(rn) + "' onchange=\"javascript:rptmReportRadioChanged();\"");
+                            reportEntryMap.put("PARM_REPORT", PARM_REPORT[0]);
+                            reportEntryMap.put("id", rn + "_btn");
+                            reportEntryMap.put("value", FilterValue(rn));
+                            reportEntryMap.put("checked", "");
                             if (!checked && (StringTools.isBlank(_reportID) || _reportID.equals(rn))) {
-                                out.write(" checked");
+//                                out.write(" checked");
                                 checked = true;
+                                reportEntryMap.put("checked", "checked");
                             }
-                            out.write(">");
+//                            out.write(">");
                             String rmd = StringTools.replaceKeys(rf.getMenuDescription(locale),reqState,null);
-                            out.write("<label for='"+rn+"_btn'>" + rmd + "</label>");
-                            out.write("</span>\n");
+//                            out.write("<label for='"+rn+"_btn'>" + rmd + "</label>");
+                            reportEntryMap.put("label", rmd);
+//                            out.write("</span>\n");
+                            reportEntryMap.put("hasReportOptions", rf.hasReportOptions(reqState));
+                            reportEntryMap.put("hasReportTextInput", rf.hasReportTextInput());
                             if (rf.hasReportOptions(reqState)) {
                                 OrderedMap<String,String> optMap = rf.getReportOptionDescriptionMap(reqState);
                                 String optId = PARM_REPORT_OPT_ + rn;
+                                reportEntryMap.put("optId", optId);
+                                reportEntryMap.put("optMap", optMap);
                                 /*
                                 if (optMap.size() == 1) {
                                     String k = optMap.getFirstKey();
@@ -916,74 +976,102 @@ public class ReportMenu
                                 */
                                 {
                                     ComboMap comboOptMap = new ComboMap(optMap);
-                                    out.write(Form_ComboBox(optId, optId, true, comboOptMap, (String)null/*selected*/, null/*onchange*/));
+//                                    out.write(Form_ComboBox(optId, optId, true, comboOptMap, (String)null/*selected*/, null/*onchange*/));
                                 }
                             } else
                             if (rf.hasReportTextInput()) {
                                 String textId = PARM_REPORT_TEXT_ + rn;
-                                out.write(Form_TextField(textId, textId, true, "", 40, 60));
+                                reportEntryMap.put("textId", textId);
+//                                out.write(Form_TextField(textId, textId, true, "", 40, 60));
                             }
-                            out.write("<br/>\n");
+//                            out.write("<br/>\n");
                             rptSel++;
+                            reportEntryList.add(reportEntryMap);
                         }
+                        reportSelectMap.put("reportEntryList", reportEntryList);
                     }
+                    reportSelectList.add(reportSelectMap);
                 }
-                out.write("</form>\n");
-                out.write("</td>\n");
-                out.write("</tr>\n");
+                reportMap.put("reportSelectList", reportSelectList);
+//                out.write("</form>\n");
+//                out.write("</td>\n");
+//                out.write("</tr>\n");
                 
-                out.write(" <!-- Begin Report Submit -->\n");
-                out.write(" <tr>\n");
-                out.write("  <td valign='bottom' style='text-align: left;'>\n");
-                out.write("    <hr>\n");
-                out.write("    <form id='"+FORM_GET_REPORT+"' name='"+FORM_GET_REPORT+"' method='post' action=\"javascript:rptmSubmitReport();\" target='_self'>\n"); // target='_top'
-                out.write("    <span style='padding-left: 5px;'><b>"+i18n.getString("ReportMenu.format","Format:")+"</b></span>\n");
-                out.write("    <select id='"+PARM_FORMAT[0]+"' name='"+PARM_FORMAT[0]+"' onchange=\"javascript:rptmFormatChanged();\">\n");
-                out.write("      <option value='"+ReportURL.FORMAT_HTML +"' selected>HTML</option>\n");
-                out.write("      <option value='"+ReportURL.FORMAT_CSV  +"'>CSV</option>\n");
+//                out.write(" <!-- Begin Report Submit -->\n");
+//                out.write(" <tr>\n");
+//                out.write("  <td valign='bottom' style='text-align: left;'>\n");
+//                out.write("    <hr>\n");
+//                out.write("    <form id='"+FORM_GET_REPORT+"' name='"+FORM_GET_REPORT+"' method='post' action=\"javascript:rptmSubmitReport();\" target='_self'>\n"); // target='_top'
+                reportMap.put("FORM_GET_REPORT", FORM_GET_REPORT);
+                reportMap.put("reportFormatTitle", i18n.getString("ReportMenu.format","Format:"));
+                reportMap.put("PARM_FORMAT", PARM_FORMAT[0]);
+                Map<String,String> reportFormatTypeMap = new HashMap<String,String>();
+                reportFormatTypeMap.put("HTML", ReportURL.FORMAT_HTML);
+                reportFormatTypeMap.put("CSV", ReportURL.FORMAT_CSV);
+                reportFormatTypeMap.put("XML", ReportURL.FORMAT_XML);
+//                out.write("    <span style='padding-left: 5px;'><b>"+i18n.getString("ReportMenu.format","Format:")+"</b></span>\n");
+//                out.write("    <select id='"+PARM_FORMAT[0]+"' name='"+PARM_FORMAT[0]+"' onchange=\"javascript:rptmFormatChanged();\">\n");
+//                out.write("      <option value='"+ReportURL.FORMAT_HTML +"' selected>HTML</option>\n");
+//                out.write("      <option value='"+ReportURL.FORMAT_CSV  +"'>CSV</option>\n");
               //out.write("      <option value='"+ReportURL.FORMAT_TXT  +"'>TXT</option>\n");
-                out.write("      <option value='"+ReportURL.FORMAT_XML  +"'>XML</option>\n");
+//                out.write("      <option value='"+ReportURL.FORMAT_XML  +"'>XML</option>\n");
                 if (hasPDFSupport) {
-                    out.write("      <option value='"+ReportURL.FORMAT_PDF  +"'>PDF</option>\n");
+//                    out.write("      <option value='"+ReportURL.FORMAT_PDF  +"'>PDF</option>\n");
+                    reportFormatTypeMap.put("PDF", ReportURL.FORMAT_PDF);
                 }
                 if (hasXLSSupport) {
-                    out.write("      <option value='"+ReportURL.FORMAT_XLS +"'>XLS</option>\n");
+//                    out.write("      <option value='"+ReportURL.FORMAT_XLS +"'>XLS</option>\n");
+                    reportFormatTypeMap.put("XLS", ReportURL.FORMAT_XLS);
                 }
                 if (hasToEmail) {
-                    out.write("      <option value='"+ReportURL.FORMAT_EHTML+"'>EMail</option>\n");
+//                    out.write("      <option value='"+ReportURL.FORMAT_EHTML+"'>EMail</option>\n");
+                    reportFormatTypeMap.put("EMail", ReportURL.FORMAT_EHTML);
                 }
                 if (hasSchedule) { // EXPERIMENTAL
-                    out.write("      <option value='"+ReportURL.FORMAT_SCHEDULE+"'>Schedule</option>\n");
+//                    out.write("      <option value='"+ReportURL.FORMAT_SCHEDULE+"'>Schedule</option>\n");
+                    reportFormatTypeMap.put("Schedule", ReportURL.FORMAT_SCHEDULE);
                 }
                 if (hasCustomURL) {
-                    out.write("      <option value='"+ReportURL.FORMAT_CUSTOM+"'>Custom</option>\n");
+//                    out.write("      <option value='"+ReportURL.FORMAT_CUSTOM+"'>Custom</option>\n");
+                    reportFormatTypeMap.put("Custom", ReportURL.FORMAT_CUSTOM);
                 }
-                out.write("    </select>\n");
-                out.write("    <span style='margin-left:40px;'><input type='submit' name='"+PARM_REPORT_SUBMIT+"' value='"+i18n.getString("ReportMenu.getReport","Get Report")+"'></span>\n");
-                out.write("    <br>\n");
-                out.write("    <br>\n");
-                out.write("    <span id='formatMsgElem' style='margin-top:10px; margin-left:5px;'></span>\n");
-                out.write("    <br>\n");
+//                out.write("    </select>\n");
+//                out.write("    <span style='margin-left:40px;'><input type='submit' name='"+PARM_REPORT_SUBMIT+"' value='"+i18n.getString("ReportMenu.getReport","Get Report")+"'></span>\n");
+                reportMap.put("PARM_REPORT_SUBMIT", PARM_REPORT_SUBMIT);
+                reportMap.put("getReportBtnValue", i18n.getString("ReportMenu.getReport","Get Report"));
+//                out.write("    <br>\n");
+//                out.write("    <br>\n");
+//                out.write("    <span id='formatMsgElem' style='margin-top:10px; margin-left:5px;'></span>\n");
+//                out.write("    <br>\n");
+                reportMap.put("reportFormatTypeMap", reportFormatTypeMap);
                 if (hasToEmail) {
                     boolean emailEditable = !reqState.isDemoAccount();
                     String emailRO = emailEditable? "" : "readonly";
                     String emailClass = emailEditable? CommonServlet.CSS_TEXT_INPUT : CommonServlet.CSS_TEXT_READONLY;
                     out.write("    <input class='"+emailClass+"' id='"+PARM_EMAIL_ADDR[0]+"' name='"+PARM_EMAIL_ADDR[0]+"' style='margin-top:5px; margin-left:10px;; visibility:hidden' type='text' "+emailRO+" value='"+toEmailAddress+"' size='76'>");
+                    reportMap.put("PARM_EMAIL_ADDR", PARM_EMAIL_ADDR[0]);
+                    reportMap.put("emailRO", emailRO);
+                    reportMap.put("emailInputType", "text");
+                    reportMap.put("emailInputValue", "toEmailAddress");
                 } else {
                     out.write("    <input id='"+PARM_EMAIL_ADDR[0]+"' name='"+PARM_EMAIL_ADDR[0]+"' type='hidden' value=''/>\n");
+                    reportMap.put("PARM_EMAIL_ADDR", PARM_EMAIL_ADDR[0]);
+                    reportMap.put("emailRO", "");
+                    reportMap.put("emailInputType", "hidden");
+                    reportMap.put("emailInputValue", "");
                 }
-                out.write("    </form>\n");
-                out.write("  </td>\n");
-                out.write(" </tr>\n");
-                out.write(" <!-- End Report Submit -->\n");
+//                out.write("    </form>\n");
+//                out.write("  </td>\n");
+//                out.write(" </tr>\n");
+//                out.write(" <!-- End Report Submit -->\n");
                 
-                out.write("</table>\n"); // }
-                out.write("<!-- End Reports -->\n");
+//                out.write("</table>\n"); // }
+//                out.write("<!-- End Reports -->\n");
                 
                 /* end table */
-                out.write("</td>\n");
-                out.write("</tr>\n");
-                out.write("</table>\n");  // }
+//                out.write("</td>\n");
+//                out.write("</tr>\n");
+//                out.write("</table>\n");  // }
 
                 /* write DeviceChooser DIV */
                 if (DeviceChooser.isDeviceChooserUseTable(privLabel)) {
@@ -993,7 +1081,16 @@ public class ReportMenu
                     IDDescription list[] = idList.toArray(new IDDescription[idList.size()]);
                     DeviceChooser.writeChooserDIV(out, reqState, list, null);
                 }
+                
+                Configuration cfg = TemplateLoader.getConfiguration();
+                Template template = cfg.getTemplate("track/ftl/Vehicle-detail.ftl");
 
+                try {
+                  template.process(reportMap, out);
+                } catch (TemplateException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         };
 

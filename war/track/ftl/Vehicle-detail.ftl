@@ -6,138 +6,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-   
     <title>Vehicle Detail Report|Easy Track GTS</title>
-
-     <#include "header.ftl">
-      
+    <#include "header.ftl">
   </head>
-
   <body>
-      
-      
-      
-     
- <!-- Main component for a primary marketing message or call to action -->
-              
-      <div class="sidebar " style="margin-left: 250px;">
-<div class="col-md-8 ">
- <div class="panel panel-primary">
-    <div class="panel-heading">Easy Track GTS</div>
-    <div class="panel-body">
-        
-   
-       <form class="form-horizontal">
-           <label>Vehicle</label>
-          <select class="form-control input-lg">
-              <option> Device Name</option>
-              <option>Device Name </option>
-          </select>
-  <div class="input-group date">
-  <input class="form-control" type="text" placeholder="From Date" id="datetimepicker">
-                                    
-  </div>
- <div class="input-group date" >
- <input  class="form-control" type="text" placeholder="To Date" id="datetimepicker1">
-                                    
-  </div>
-                            
-<script type="text/javascript">
-jQuery('#datetimepicker').datetimepicker();
-    jQuery('#datetimepicker1').datetimepicker();
-</script>
-
-<label>Time Zone:</label>
-<select  class="form-control input-lg">
-<option value="" selected> --Time Zone--</option>
-   <option value="US/Hawaii">US/Hawaii</option>
-  <option value="US/Alaska">US/Alaska</option>
-  <option value="US/Pacific">US/Pacific</option>
-  <option value="US/Arizona">US/Arizona</option>
-  <option value="US/Mountain">US/Mountain</option>
-  <option value="US/Central">US/Central</option>
-  <option value="US/Eastern">US/Eastern</option>
-  <option value="Canada/Pacific">Canada/Pacific</option>
-  <option value="Canada/Mountain">Canada/Mountain</option>
-  <option value="Canada/Central">Canada/Central</option>
-  <option value="Canada/Eastern">Canada/Eastern</option>
-  <option value="Canada/Atlantic">Canada/Atlantic</option>
-  <option value="Mexico/BajaNorte">Mexico/BajaNorte</option>
-  <option value="Mexico/BajaSur">Mexico/BajaSur</option>
-  <option value="Mexico/General">Mexico/General</option>
-  <option value="Europe/Athens">Europe/Athens</option>
-  <option value="Europe/Berlin">Europe/Berlin</option>
-  <option value="Europe/Dublin">Europe/Dublin</option>
-  <option value="Europe/Helsinki">Europe/Helsinki</option>
-  <option value="Europe/Kiev">Europe/Kiev</option>
-  <option value="Europe/Lisbon">Europe/Lisbon</option>
-  <option value="Europe/London">Europe/London</option>
-  <option value="Europe/Madrid">Europe/Madrid</option>
-  <option value="Europe/Moscow">Europe/Moscow</option>
-  <option value="Europe/Oslo">Europe/Oslo</option>
-  <option value="Europe/Paris">Europe/Paris</option>
-  <option value="Europe/Rome">Europe/Rome</option>
-  <option value="Europe/Stockholm">Europe/Stockholm</option>
-  <option value="Europe/Zurich">Europe/Zurich</option>
-  <option value="GMT" selected="selected">GMT</option>
-  <option value="GMT+00:00">GMT+00:00</option>
-  <option value="GMT+01:00">GMT+01:00</option>
-  <option value="GMT+02:00">GMT+02:00</option>
-  <option value="GMT+03:00">GMT+03:00</option>
-  <option value="GMT+04:00">GMT+04:00</option>
-  <option value="GMT+05:00">GMT+05:00</option>
-  <option value="GMT+05:30">GMT+05:30</option>
-  <option value="GMT+06:00">GMT+06:00</option>
-  <option value="GMT+07:00">GMT+07:00</option>
-  <option value="GMT+08:00">GMT+08:00</option>
-  <option value="GMT+09:00">GMT+09:00</option>
-  <option value="GMT+10:00">GMT+10:00</option>
-  <option value="GMT+11:00">GMT+11:00</option>
-  <option value="GMT+12:00">GMT+12:00</option>
-  <option value="GMT+13:00">GMT+13:00</option>
-  <option value="GMT+14:00">GMT+14:00</option>
-  <option value="GMT-01:00">GMT-01:00</option>
-  <option value="GMT-02:00">GMT-02:00</option>
-  <option value="GMT-03:00">GMT-03:00</option>
-  <option value="GMT-04:00">GMT-04:00</option>
-  <option value="GMT-05:00">GMT-05:00</option>
-  <option value="GMT-06:00">GMT-06:00</option>
-  <option value="GMT-07:00">GMT-07:00</option>
-  <option value="GMT-08:00">GMT-08:00</option>
-  <option value="GMT-09:00">GMT-09:00</option>
-  <option value="GMT-10:00">GMT-10:00</option>
-  <option value="GMT-11:00">GMT-11:00</option>
-  <option value="GMT-12:00">GMT-12:00</option>
-</select>
-  
-<h5>Vehicle Detail</h5>
-<label>Event Detail</label>
-<input  onclick="document.getElementById('countday').disabled = true; document.getElementById('timesummary').disabled = true; " type="radio" id="eventdetail" name="vehicledetail"/>
-<br><label>Received Event Counts by Day</label>
-<input  onclick="document.getElementById('countday').disabled = false; document.getElementById('timesummary').disabled = true;   "type="radio" id="recievedevent" name="vehicledetail" value="Received Event"/>
- <select class="form-control input-lg" id="countday" style="margin-top: 5px;">
-     <option> All</option>
-     <option> Initialization</option>
-     <option>In Motion</option>
- </select>
-<label>Driving/Stopped Time Summary</label>
- <input  onclick="document.getElementById('countday').disabled = true; document.getElementById('timesummary').disabled = false; " id="drivetime" type="radio" value="Driving/Stopped" name="vehicledetail"/>
-  <select class="form-control input-lg" id="timesummary"style=" margin-top: 5px;">
-     <option> Default</option>
-    
- </select>
- <label> Format </label>
- <select class="form-control input-lg">
-     <option>HTML</option>
-     <option>CSV</option>
-     <option>XML</option>
- </select>
- <button class="btn btn-info btn-sm" style="margin-top: 5px;">Get Report</button>
-       </form>
-    </div>
- </div>
-</div>
+    <div class="sidebar " style="margin-left: 250px;">
+      <div class="col-md-8 ">
+        <div class="panel panel-primary">
+          <div class="panel-heading">${reportPageTitle}</div>
+          <!--div class="panel-title">${reportPageDesc}</div-->
+          <div class="panel-body">
+              <form id='${FORM_DEVICE_GROUP}' name='${FORM_DEVICE_GROUP}' method='post' action="javascript:rptmSubmitReport();" target='_self''>
+                <label>${deviceGroupTitle}</label>
+                <select class="form-control input-lg" id='${ID_DEVICE_ID}' name='${PARM_DEVICE_ID}' onchange="javascript:trackMapSelectDevice()">
+                  <#list deviceMapList as deviceMap>
+                    <option value="${deviceMap['id']}" ${deviceMap['sel']}>  ${deviceMap['disp']}</option>
+                  </#list>
+                </select>
+              </form>
+              <label>${selectDateTitle}</label>
+                <div class="input-group date" id='${CALENDAR_FROM}'>
+                  <input class="form-control" type="text" placeholder="From Date" id="datetimepicker">
+                </div>
+                <div class="input-group date" id='${CALENDAR_TO}'>
+                  <input  class="form-control" type="text" placeholder="To Date" id="datetimepicker1">
+                </div>
+                <script type="text/javascript">jQuery('#datetimepicker').datetimepicker();
+                  jQuery('#datetimepicker1').datetimepicker();
+                </script>
+              <form id='TimeZoneSelect' name='TimeZoneSelect' method='get' action=\"javascript:true;\" target='_self'>
+                <label>Time Zone:</label>
+                <select name='${parm_TIMEZONE}' onchange="javascript:calSelectTimeZone(document.TimeZoneSelect.${parm_TIMEZONE}.value)" class="form-control input-lg">
+                  <#list timeZoneList as tmz>
+                    <#assign sel>
+                      <#if tmz = timeZone>
+                        string('selected')
+                      <#else>
+                        string('')
+                      </#if>
+                    </#assign>
+                    <option value="${sel}">${tmz}</option>
+                  </#list>
+                </select>
+              </form>
+              <form id='${FORM_SELECT_REPORT}' name='${FORM_SELECT_REPORT}' method='post' action="javascript:rptmSubmitReport()" target='_self'>
+                 <#list reportSelectList as reportSelectMap>
+                    <label> ${reportSelectMap['desc']}</label>
+                    <#list reportSelectMap['reportEntryList'] as reportEntryMap>
+                      <input type='radio' name="${reportEntryMap['PARM_REPORT']}" id="${reportEntryMap['id']}" 
+                        value="${reportEntryMap['value']}" onchange='javascript:rptmReportRadioChanged();' ${reportEntryMap['checked']}/>
+                      <label for="${reportEntryMap['id']}">${reportEntryMap['label']}</label>
+                      <#if reportEntryMap['hasReportOptions']>
+                        <select class="form-control input-lg" id="${reportEntryMap['optId']}" name="${reportEntryMap['optId']}" style="margin-top: 5px;">
+                          <#assign optMap = reportEntryMap['optMap']/>
+                          <#list optMap?keys as key>
+                            <option value="${key}">${optMap[key]}</option>
+                          </#list>
+                         </select>
+                      <#elseif reportEntryMap['hasReportTextInput']>
+                        <input type="text" class="form-control" id='${reportEntryMap[text]}'/>
+                      </#if>
+                    </#list>
+                 </#list>
+              </form>
+              <form id='${FORM_GET_REPORT}' name='${FORM_GET_REPORT}' method='post' action="javascript:rptmSubmitReport();" target='_self'>
+                <label>${reportFormatTitle}<label>
+                <select id="${PARM_FORMAT}" name="${PARM_FORMAT}" class="form-control input-lg">
+                  <#list reportFormatTypeMap?keys as key >
+                    <option value="${reportFormatTypeMap[key]}">${key}</option>
+                  </#list>
+                </select>
+                <input type='submit' name='${PARM_REPORT_SUBMIT}' value='${getReportBtnValue}' class="btn btn-info btn-sm" style="margin-top: 5px;"/>
+                <input id='${PARM_EMAIL_ADDR}' name='${PARM_EMAIL_ADDR}' style='margin-top:5px; margin-left:10px;; visibility:hidden' type='${emailInputType}' ${emailRO} value='${emailInputValue}' size='76'>
+              </form>
+          </div>
+        </div>
       </div>
+    </div>
 
     <#include "footer.ftl">
   </body>
