@@ -20,7 +20,7 @@
     <#include "menubar.ftl">
      
  <!-- Main component for a primary marketing message or call to action -->
- <div class="sidebar " style="margin-left: 250px;">
+ <div class="sidebar"
 <div class="col-md-8 ">
  <div class="panel panel-primary">
     <div class="panel-heading">Easy Track GTS</div>

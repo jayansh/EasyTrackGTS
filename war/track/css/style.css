@@ -198,4 +198,89 @@ position: absolute;
   border-right: 4px solid transparent;
   border-left: 4px solid transparent;
 }
+/* Collapsible Sidebar */
 
+/* Floats */
+
+.left {float: left;}
+.right {float: right;}
+
+.clearer {
+    clear: both;
+    display: block;
+    font-size: 0;
+    height: 0;
+    line-height: 0;
+}
+
+
+/*
+    Misc
+------------------------------------------------------------------- */
+
+.hidden {display: none;}
+
+
+/*
+    Example specifics
+------------------------------------------------------------------- */
+
+/* Layout */
+
+#center-wrapper {
+    margin: 0 auto;
+    width: 920px;
+}
+
+
+/* Content & sidebar */
+
+#content,#sidebar {
+    // line-height: 300px;
+    text-align: center;
+    //border: 1px solid;
+}
+
+#sidebar {
+    /*background-color: #DEF;
+    border-color: #BCD;*/
+    display: none;
+}
+#content {
+    /*background-color: #EFE;
+    border-color: #CDC;*/
+    width: 97%;
+}
+
+.use-sidebar #content {width: 64%;}
+.use-sidebar #sidebar {
+    display: block;
+    width: 32%;
+}
+
+.sidebar-at-left #sidebar {margin-right: 1%;}
+.sidebar-at-right #sidebar {margin-left: 1%;}
+
+.sidebar-at-left #content, .use-sidebar.sidebar-at-right #sidebar, .sidebar-at-right #separator {float: right;}
+.sidebar-at-right #content, .use-sidebar.sidebar-at-left #sidebar, .sidebar-at-left #separator {float: left;}
+
+#separator {
+    /*background-color: #EEE;
+    border: 1px solid #CCC;*/
+        background: url('../images/arrow_right.png') ;
+        width: 32px;
+        height: 32px;
+    
+    
+}
+.use-sidebar #separator {
+    background: url('../images/arrow_left.png') ;
+        width: 32px;
+        height: 32px;
+        
+       
+}
+#separator:hover {
+cursor: pointer;
+    
+}

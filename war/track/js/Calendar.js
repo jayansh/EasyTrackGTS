@@ -43,8 +43,8 @@ var calImageBaseDir = ".";
 
 // ----------------------------------------------------------------------------
 
-var CLASS_CAL_DIV               = "calDiv";                     
-var CLASS_CAL_TABLE             = "calTable";                   
+var CLASS_CAL_DIV               = "xdsoft_calendar";                     
+var CLASS_CAL_TABLE             = "table";                   
 var CLASS_CAL_EXPAND_BAR        = "calExpandBar";               
 var CLASS_CAL_COLLAPSE_BAR      = "calCollapseBar";             
 var CLASS_CAL_TITLE_DATE_CELL   = "calTitleDateCell";           
@@ -58,15 +58,15 @@ var CLASS_CAL_TITLE_FIELD_COLL  = "calTitleFieldCollapsed";
 var CLASS_CAL_DATE_TIME_COLL    = "calDateTimeFieldCollapsed";  
 var CLASS_CAL_TIME_COLL         = "calTimeFieldCollapsed";      
 var CLASS_CAL_TIME_DISABLED     = "calTimeFieldDisabled";
-var CLASS_CAL_MONTH_ADVANCE     = "calMonthAdvance";
+var CLASS_CAL_MONTH_ADVANCE     = "success";
 var CLASS_CAL_MONTH_ADV_CLICK   = "calMonthAdvanceClick";
 var CLASS_CAL_MONTH_HEADER_TBL  = "calMonthHeaderTable";
-var CLASS_CAL_MONTH_NAME        = "calMonthName";
+var CLASS_CAL_MONTH_NAME        = "success";
 var CLASS_CAL_MONTH_DAYS_CELL   = "calMonthDaysCell";
-var CLASS_CAL_MONTH_DAYS_TBL    = "calMonthDaysTable";
-var CLASS_CAL_MONTH_DOW         = "calMonthDOW";
-var CLASS_CAL_PREV_MONTH_DAYS   = "calPrevMonthDays";
-var CLASS_CAL_NEXT_MONTH_DAYS   = "calNextMonthDays";
+var CLASS_CAL_MONTH_DAYS_TBL    = "table table-responsive";
+var CLASS_CAL_MONTH_DOW         = "danger";
+var CLASS_CAL_PREV_MONTH_DAYS   = "warning";
+var CLASS_CAL_NEXT_MONTH_DAYS   = "warning";
 var CLASS_CAL_MONTH_DAYS_ENABLE = "calThisMonthDaysEnabled";
 var CLASS_CAL_MONTH_DAYS_DISABL = "calThisMonthDaysDisabled";
 var CLASS_CAL_SELECTED_DAY      = "calSelectedDay";

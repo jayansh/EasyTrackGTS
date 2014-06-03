@@ -10,7 +10,7 @@
     <#include "header.ftl">
   </head>
   <body>
-    <div class="sidebar " style="margin-left: 250px;">
+    <div class="sidebar">
       <div class="col-md-8 ">
         <div class="panel panel-primary">
           <div class="panel-heading">${reportPageTitle}</div>
@@ -26,7 +26,7 @@
               </form>
               <label>${selectDateTitle}</label>
                 <div class="input-group date" id='${CALENDAR_FROM}'>
-                  <input class="form-control" type="text" placeholder="From Date" id="datetimepicker">
+                  <input class="form-control" type="text" placeholder="From Date" id="datetimepicker" >
                 </div>
                 <div class="input-group date" id='${CALENDAR_TO}'>
                   <input  class="form-control" type="text" placeholder="To Date" id="datetimepicker1">

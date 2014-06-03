@@ -19,7 +19,7 @@
       
   <#include "menubar.ftl">
                
-      <div class="sidebar " style="margin-left: 250px;">
+      <div class="sidebar ">
           
  <!-- Main component for a primary marketing message or call to action -->
    

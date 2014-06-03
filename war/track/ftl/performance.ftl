@@ -19,7 +19,7 @@
       
    <#include "menubar.ftl">
     
-            <div class="sidebar " style="margin-left: 250px;">
+            <div class="sidebar">
 <div class="col-md-8 ">
  <div class="panel panel-primary">
     <div class="panel-heading">GPS Tracking Reports</div>
