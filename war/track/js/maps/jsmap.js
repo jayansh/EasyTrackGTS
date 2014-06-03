@@ -70,18 +70,18 @@ var DATA_RESPONSE_PING_OK       = "PING:OK";
 var DATA_RESPONSE_PING_ERROR    = "PING:ERROR";
 
 /* these must match the class definitions in "Controls.css" */
-var CLASS_DETAILS_DIV           = "trackMapDetailLocation";
-var CLASS_DETAILS_TABLE_N       = "mapDetailsTable";                // TABLE
+var CLASS_DETAILS_DIV           = "table-responsive";
+var CLASS_DETAILS_TABLE_N       = "table table-striped table-responsive";                // TABLE
 var CLASS_DETAILS_TABLE_S       = "mapDetailsTable_sortable";       // TABLE
-var CLASS_DETAILS_HEADER_ROW    = "mapDetailsHeaderRow";            // TR
-var CLASS_DETAILS_HEADER_COL_N  = "mapDetailsHeaderColumn_nosort";  // TH
+var CLASS_DETAILS_HEADER_ROW    = "";            // TR
+var CLASS_DETAILS_HEADER_COL_N  = "success";  // TH
 var CLASS_DETAILS_HEADER_COL_S  = "mapDetailsHeaderColumn_sort";    // TH
 var CLASS_DETAILS_ROW_HILITE    = "mapDetailsDataRowHiLite";    
-var CLASS_DETAILS_ROW_ODD       = "mapDetailsDataRowOdd";
-var CLASS_DETAILS_ROW_EVEN      = "mapDetailsDataRowEven";
-var CLASS_DETAILS_INDEX_COL     = "mapDetailsIndexColumn";
+var CLASS_DETAILS_ROW_ODD       = "danger";
+var CLASS_DETAILS_ROW_EVEN      = "warning";
+var CLASS_DETAILS_INDEX_COL     = "active";
 var CLASS_DETAILS_DATA_COL_NEW  = "mapDetailsDataColumn_new";
-var CLASS_DETAILS_DATA_COL      = "mapDetailsDataColumn";
+var CLASS_DETAILS_DATA_COL      = "success";
 
 var ID_DETAIL_ROW_              = "detailRow_";
 
