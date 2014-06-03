@@ -513,15 +513,6 @@ public class AccountLogin
                    
                     utilMap.put("username", userID);
                     
-                    // Write output to the console
-                    Writer consoleWriter = new OutputStreamWriter(System.out);
-                    try {
-						template.process(utilMap, consoleWriter);
-					} catch (TemplateException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
                     try {
                       template.process(utilMap, out);
                     } catch (TemplateException e) {
