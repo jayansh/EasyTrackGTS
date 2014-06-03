@@ -39,7 +39,7 @@ public class HeaderColumnTemplate
 
     // ------------------------------------------------------------------------
 
-    public static final String  STYLE_CLASS_SORT    = "rptHdrCol_sort";
+    public static final String  STYLE_CLASS_SORT    = "success";
     public static final String  STYLE_CLASS_NOSORT  = "rptHdrCol_nosort";
 
     // ------------------------------------------------------------------------

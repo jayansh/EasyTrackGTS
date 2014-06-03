@@ -63,10 +63,10 @@ public abstract class ReportLayout
     // ------------------------------------------------------------------------
     
     public static final  String CSS_CLASS_TABLE         = "rptTbl";
-    public static final  String CSS_CLASS_TABLE_SORT    = "rptTbl_sortable"; // ReportPresentation.SORTTABLE_CSS_CLASS;
+    public static final  String CSS_CLASS_TABLE_SORT    = "table table-responsive"; // ReportPresentation.SORTTABLE_CSS_CLASS;
 
-    public static final  String CSS_CLASS_ODD           = "rptBodyRowOdd";
-    public static final  String CSS_CLASS_EVEN          = "rptBodyRowEven";
+    public static final  String CSS_CLASS_ODD           = "danger";
+    public static final  String CSS_CLASS_EVEN          = "info";
     public static final  String CSS_CLASS_BODY_TOTAL    = "rptBodyRowTotal";
 
     public static final  String CSS_CLASS_TOTAL         = "rptTotalRow";

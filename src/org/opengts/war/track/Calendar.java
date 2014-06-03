@@ -53,9 +53,9 @@ public class Calendar
 
     // ------------------------------------------------------------------------
 
-    public  static final String  CLASS_CAL_DIV              = "calDiv";
+    public  static final String  CLASS_CAL_DIV              = "CalDiv";
 
-    public  static final String  ID_CAL_DIV                 = "calDiv";
+    public  static final String  ID_CAL_DIV                 = "CalDiv";
     public  static final String  ID_CAL_BOTTOM              = "calBottom";
 
     public  static final String  PARM_DATE                  = "date";
