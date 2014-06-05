@@ -136,18 +136,10 @@
   <div id="content">
     <div id="map_canvas"></div>
   </div>
-</div>
+
 <div id="separator"></div>
 <div class="clearer">&nbsp;</div>
-<#if isFeatureDetailReportAndLocatuinDetailsSupported>
-  <a class='trackMapDetailLocationControl' id='${ID_DETAIL_CONTROL}' href="javascript:mapProviderToggleDetails()">
-  ${showLocationDetails}
-  </a>
-  <div id='${ID_DETAIL_TABLE}' style='width:100%;'></div>
-</#if>
-
-<#include "footer.ftl">
-
+</div>
 <script type="text/javascript">
     $(document).ready(function(){
     // Variables
@@ -180,6 +172,16 @@
 });
 
 </script>
+
+<#if isFeatureDetailReportAndLocatuinDetailsSupported>
+  <a class='trackMapDetailLocationControl' id='${ID_DETAIL_CONTROL}' href="javascript:mapProviderToggleDetails()">
+  ${showLocationDetails}
+  </a>
+  <div id='${ID_DETAIL_TABLE}' style='width:100%;'></div>
+</#if>
+
+<#include "footer.ftl">
+
 
 </body>
 </html>
