@@ -953,13 +953,24 @@ public abstract class MapProviderAdapter
         String cellStyle  = "" + ((mapH < 0)? " height:100%;" : "");
         String divStyle   = this.getMapCellStyle(reqState, mapDim);
         String mapID      = this.getMapID();
-//        out.println("<table valign='center' align='center' cellspacing='0' cellpadding='0' border='0' style='" + tableStyle + "'>");
-//        out.println("<tr><td class='"+cellClass+"' align='center' style='" + cellStyle + "'>");
+        out.println("<table valign='center' align='center' cellspacing='0' cellpadding='0' border='0' style='" + tableStyle + "'>");
+        out.println("<tr><td class='"+cellClass+"' align='center' style='" + cellStyle + "'>");
         out.println("<div id='" + mapID + "' style='" + divStyle + "'></div>");
-//        out.println("</td></tr>");
-//        out.println("</table>");
+        out.println("</td></tr>");
+        out.println("</table>");
     }
 
+    public void writeMapCell(PrintWriter out, RequestProperties reqState, MapDimension mapDim, Map<String,Object> utilMap)
+        throws IOException
+    {
+        MapDimension md = (mapDim != null)? mapDim : this.getDimension();
+        int mapW = (md != null)? md.getWidth()  : -1;
+        int mapH = (md != null)? md.getHeight() : -1;
+        String divStyle   = this.getMapCellStyle(reqState, mapDim);
+        String mapID      = this.getMapID();
+        utilMap.put("mapID", mapID);
+        utilMap.put("divStyle", divStyle);
+    }
     // ------------------------------------------------------------------------
     
     /**

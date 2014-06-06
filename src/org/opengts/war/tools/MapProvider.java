@@ -395,6 +395,8 @@ public interface MapProvider
     public void writeMapCell(PrintWriter out, RequestProperties reqState, MapDimension mapDim)
         throws IOException;
 
+    public void writeMapCell(PrintWriter out, RequestProperties reqState, MapDimension mapDim, Map<String, Object> utilMap)
+            throws IOException;
     // ------------------------------------------------------------------------
 
     /**

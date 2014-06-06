@@ -1216,7 +1216,7 @@ public abstract class TrackMap
 //                    String mapCellStyle = /* padding-right:5px; */ "width:100%;" + (mapAutoSize?" height:100%;":"");
 //                    out.println("<td valign='top' style='"+mapCellStyle+"'>");
                     MapDimension mapDim = new MapDimension(-1,mapProvider.getHeight());
-                    mapProvider.writeMapCell(out, reqState, mapDim);
+                    mapProvider.writeMapCell(out, reqState, mapDim,utilMap);
 //                    out.println("</td>\n");
                     if (collapsibleControls) {
 //                        out.println("\n<!-- Vertical control collapse bar -->");
