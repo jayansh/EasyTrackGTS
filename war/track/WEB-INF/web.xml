@@ -95,6 +95,18 @@
     <listener>
         <listener-class>org.opengts.war.tools.RTConfigContextListener</listener-class>
     </listener>
+    
+    
+     <!-- ====================================================================== -->
+    <servlet>
+        <servlet-name>Data</servlet-name>
+        <servlet-class>org.opengts.war.gprmc.Data</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Data</servlet-name>
+        <url-pattern>/gprmc/*</url-pattern>
+    </servlet-mapping>
     <!-- ====================================================================== 
      === Servlet definitions
      -->
