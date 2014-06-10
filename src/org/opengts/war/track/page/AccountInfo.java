@@ -50,7 +50,9 @@
 // ----------------------------------------------------------------------------
 package org.opengts.war.track.page;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.io.*;
 
 import javax.servlet.*;
@@ -60,10 +62,14 @@ import org.opengts.util.*;
 import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
-
 import org.opengts.war.tools.*;
-import org.opengts.war.track.Calendar;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class AccountInfo
     extends WebPageAdaptor
@@ -330,6 +336,8 @@ public class AccountInfo
             public void write(PrintWriter out) throws IOException {
                 //Print.logStackTrace("here");
 
+                Map<String, Object> accountInfoMap = new HashMap<String,Object>();
+                
               //String menuURL = EncodeMakeURL(reqState,RequestProperties.TRACK_BASE_URI(),PAGE_MENU_TOP);
                 String menuURL = privLabel.getWebPageURL(reqState, PAGE_MENU_TOP);
               //String chgURL  = EncodeMakeURL(reqState,RequestProperties.TRACK_BASE_URI(),pageName,COMMAND_INFO_UPDATE);
@@ -337,7 +345,11 @@ public class AccountInfo
                 String frameTitle = _allowEdit? 
                     i18n.getString("AccountInfo.editAccount","Edit Account Information") : 
                     i18n.getString("AccountInfo.viewAccount","View Account Information");
-
+                
+                accountInfoMap.put("chgURL", chgURL);
+                accountInfoMap.put("frameTitle", frameTitle);
+                accountInfoMap.put("allowEdit", _allowEdit);
+                
                 // frame content
                 ComboOption speedUnits       = privLabel.getEnumComboOption(Account.getSpeedUnits(currAcct)      );
                 ComboOption distanceUnits    = privLabel.getEnumComboOption(Account.getDistanceUnits(currAcct)   );
@@ -350,95 +362,218 @@ public class AccountInfo
                 String      devTitles[]      = currAcct.getDeviceTitles(locale, new String[]{"",""});
                 String      grpTitles[]      = currAcct.getDeviceGroupTitles(locale, new String[]{"",""});
                 String      adrTitles[]      = currAcct.getAddressTitles(locale, new String[]{"",""});
-                out.println("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>");
-                out.println("<hr/>");
-                out.println("<form name='AccountInfo' method='post' action='"+chgURL+"' target='_self'>");
-                out.println("<table class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE+"' cellspacing='0' callpadding='0' border='0'>");
-                out.println(FormRow_TextField(PARM_ACCT_ID      , false     , i18n.getString("AccountInfo.accountID","Account ID:")                  , currAcct.getAccountID()       , 32, 32)); // read-only
-                out.println(FormRow_TextField(PARM_ACCT_DESC    , _allowEdit, i18n.getString("AccountInfo.accountName","Account Description:")       , currAcct.getDescription()     , 40, 40));
-                out.println(FormRow_TextField(PARM_CONTACT_NAME , _allowEdit, i18n.getString("AccountInfo.contactName","Contact Name:")              , currAcct.getContactName()     , 40, 40));
-                out.println(FormRow_TextField(PARM_CONTACT_PHONE, _allowEdit, i18n.getString("AccountInfo.contactPhone","Contact Phone:")            , currAcct.getContactPhone()    , 20, 20));
-                out.println(FormRow_TextField(PARM_CONTACT_EMAIL, _allowEdit, i18n.getString("AccountInfo.contactEMail","Contact Email:")            , currAcct.getContactEmail()    , 60, 100));
-                out.println(FormRow_TextField(PARM_NOTIFY_EMAIL , _allowEdit, i18n.getString("AccountInfo.notifyEMail","Notify Email:")              , currAcct.getNotifyEmail()     , 95, 125));
-                out.println(FormRow_ComboBox (PARM_TIMEZONE     , _allowEdit, i18n.getString("AccountInfo.timeZone","Time Zone:")                    , currAcct.getTimeZone()        , _tzList, null, 20));
-                out.println(FormRow_ComboBox (PARM_SPEED_UNITS  , _allowEdit, i18n.getString("AccountInfo.speedUnits","Speed Units:")                , speedUnits       , _suList, null, 10));
-                out.println(FormRow_ComboBox (PARM_DIST_UNITS   , _allowEdit, i18n.getString("AccountInfo.distanceUnits","Distance Units:")          , distanceUnits    , _duList, null, 10));
-                out.println(FormRow_ComboBox (PARM_VOLM_UNITS   , _allowEdit, i18n.getString("AccountInfo.volumeUnits","Volume Units:")              , volumeUnits      , _vuList, null, 10));
-                out.println(FormRow_ComboBox (PARM_ECON_UNITS   , _allowEdit, i18n.getString("AccountInfo.economyUnits","Economy Units:")            , economyUnits     , _ecList, null, 10));
-                out.println(FormRow_ComboBox (PARM_PRESS_UNITS  , _allowEdit, i18n.getString("AccountInfo.pressureUnits","Pressure Units:")          , pressureUnits    , _puList, null, 10));
-                out.println(FormRow_ComboBox (PARM_TEMP_UNITS   , _allowEdit, i18n.getString("AccountInfo.temperatureUnits","Temperature Units:")    , temperatureUnits , _tuList, null,  5));
-                out.println(FormRow_ComboBox (PARM_LATLON_FORMAT, _allowEdit, i18n.getString("AccountInfo.latLonFormat","Latitude/Longitude Format:"), latLonFormat     , _llList, null, 15));
-
+                
+//                out.println("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>");
+//                out.println("<hr/>");
+//                out.println("<form name='AccountInfo' method='post' action='"+chgURL+"' target='_self'>");
+//                out.println("<table class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE+"' cellspacing='0' callpadding='0' border='0'>");
+//                out.println(FormRow_TextField(PARM_ACCT_ID      , false     , i18n.getString("AccountInfo.accountID","Account ID:")                  , currAcct.getAccountID()       , 32, 32)); // read-only
+//                out.println(FormRow_TextField(PARM_ACCT_DESC    , _allowEdit, i18n.getString("AccountInfo.accountName","Account Description:")       , currAcct.getDescription()     , 40, 40));
+//                out.println(FormRow_TextField(PARM_CONTACT_NAME , _allowEdit, i18n.getString("AccountInfo.contactName","Contact Name:")              , currAcct.getContactName()     , 40, 40));
+//                out.println(FormRow_TextField(PARM_CONTACT_PHONE, _allowEdit, i18n.getString("AccountInfo.contactPhone","Contact Phone:")            , currAcct.getContactPhone()    , 20, 20));
+//                out.println(FormRow_TextField(PARM_CONTACT_EMAIL, _allowEdit, i18n.getString("AccountInfo.contactEMail","Contact Email:")            , currAcct.getContactEmail()    , 60, 100));
+//                out.println(FormRow_TextField(PARM_NOTIFY_EMAIL , _allowEdit, i18n.getString("AccountInfo.notifyEMail","Notify Email:")              , currAcct.getNotifyEmail()     , 95, 125));
+//                out.println(FormRow_ComboBox (PARM_TIMEZONE     , _allowEdit, i18n.getString("AccountInfo.timeZone","Time Zone:")                    , currAcct.getTimeZone()        , _tzList, null, 20));
+//                out.println(FormRow_ComboBox (PARM_SPEED_UNITS  , _allowEdit, i18n.getString("AccountInfo.speedUnits","Speed Units:")                , speedUnits       , _suList, null, 10));
+//                out.println(FormRow_ComboBox (PARM_DIST_UNITS   , _allowEdit, i18n.getString("AccountInfo.distanceUnits","Distance Units:")          , distanceUnits    , _duList, null, 10));
+//                out.println(FormRow_ComboBox (PARM_VOLM_UNITS   , _allowEdit, i18n.getString("AccountInfo.volumeUnits","Volume Units:")              , volumeUnits      , _vuList, null, 10));
+//                out.println(FormRow_ComboBox (PARM_ECON_UNITS   , _allowEdit, i18n.getString("AccountInfo.economyUnits","Economy Units:")            , economyUnits     , _ecList, null, 10));
+//                out.println(FormRow_ComboBox (PARM_PRESS_UNITS  , _allowEdit, i18n.getString("AccountInfo.pressureUnits","Pressure Units:")          , pressureUnits    , _puList, null, 10));
+//                out.println(FormRow_ComboBox (PARM_TEMP_UNITS   , _allowEdit, i18n.getString("AccountInfo.temperatureUnits","Temperature Units:")    , temperatureUnits , _tuList, null,  5));
+//                out.println(FormRow_ComboBox (PARM_LATLON_FORMAT, _allowEdit, i18n.getString("AccountInfo.latLonFormat","Latitude/Longitude Format:"), latLonFormat     , _llList, null, 15));
+                accountInfoMap.put("PARM_ACCT_ID", PARM_ACCT_ID);
+                accountInfoMap.put("PARM_ACCT_ID_LABEL", i18n.getString("AccountInfo.accountID","Account ID:"));
+                accountInfoMap.put("PARM_ACCT_ID_VALUE", currAcct.getAccountID() );
+                accountInfoMap.put("PARM_ACCT_DESC",PARM_ACCT_DESC);
+                accountInfoMap.put("PARM_ACCT_DESC_LABEL", i18n.getString("AccountInfo.accountName","Account Description:"));
+                accountInfoMap.put("PARM_ACCT_DESC_VALUE",currAcct.getDescription());
+                
+                accountInfoMap.put("PARM_CONTACT_NAME",PARM_CONTACT_NAME); 
+                accountInfoMap.put("PARM_CONTACT_NAME_LABEL",i18n.getString("AccountInfo.contactName","Contact Name:"));
+                accountInfoMap.put("PARM_CONTACT_NAME_VALUE", currAcct.getContactName());
+                
+                accountInfoMap.put("PARM_CONTACT_PHONE",PARM_CONTACT_PHONE);
+                accountInfoMap.put("PARM_CONTACT_PHONE_LABEL",i18n.getString("AccountInfo.contactPhone","Contact Phone:"));
+                accountInfoMap.put("PARM_CONTACT_PHONE_VALUE", currAcct.getContactPhone());
+                
+                accountInfoMap.put("PARM_CONTACT_EMAIL",PARM_CONTACT_EMAIL);
+                accountInfoMap.put("PARM_CONTACT_EMAIL_LABEL", i18n.getString("AccountInfo.contactEMail","Contact Email:"));
+                accountInfoMap.put("PARM_CONTACT_EMAIL_VALUE", currAcct.getContactEmail());
+                
+                accountInfoMap.put("PARM_NOTIFY_EMAIL",PARM_NOTIFY_EMAIL );
+                accountInfoMap.put("PARM_NOTIFY_EMAIL_LABEL", i18n.getString("AccountInfo.notifyEMail","Notify Email:"));
+                accountInfoMap.put("PARM_NOTIFY_EMAIL_VALUE", currAcct.getNotifyEmail());
+                
+                accountInfoMap.put("PARM_TIMEZONE",PARM_TIMEZONE);
+                accountInfoMap.put("PARM_TIMEZONE_LABEL", i18n.getString("AccountInfo.timeZone","Time Zone:"));
+                accountInfoMap.put("PARM_TIMEZONE_SEL", currAcct.getTimeZone());
+                accountInfoMap.put("PARM_TIMEZONE_LIST",privLabel.getTimeZonesList());
+                
+                accountInfoMap.put("PARM_SPEED_UNITS",PARM_SPEED_UNITS);
+                accountInfoMap.put("PARM_SPEED_UNITS_LABEL",i18n.getString("AccountInfo.speedUnits","Speed Units:"));
+                accountInfoMap.put("PARM_SPEED_UNITS_SEL", Account.getSpeedUnits(currAcct));
+                accountInfoMap.put("PARM_SPEED_UNITS_LIST", EnumTools.getValueMap(Account.SpeedUnits.class, privLabel.getLocale()));
+                
+                accountInfoMap.put("PARM_DIST_UNITS",PARM_DIST_UNITS);
+                accountInfoMap.put("PARM_DIST_UNITS_LABEL", i18n.getString("AccountInfo.distanceUnits","Distance Units:"));
+                accountInfoMap.put("PARM_DIST_UNITS_SEL", Account.getDistanceUnits(currAcct));
+                accountInfoMap.put("PARM_DIST_UNITS_LIST", EnumTools.getValueMap(Account.DistanceUnits.class, privLabel.getLocale()));
+                
+                accountInfoMap.put("PARM_VOLM_UNITS", PARM_VOLM_UNITS);
+                accountInfoMap.put("PARM_VOLM_UNITS_LABEL", i18n.getString("AccountInfo.volumeUnits","Volume Units:"));
+                accountInfoMap.put("PARM_VOLM_UNITS_SEL", Account.getVolumeUnits(currAcct));
+                accountInfoMap.put("PARM_VOLM_UNITS_LIST", EnumTools.getValueMap(Account.VolumeUnits.class, privLabel.getLocale()));
+                
+                accountInfoMap.put("PARM_ECON_UNITS", PARM_ECON_UNITS);
+                accountInfoMap.put("PARM_ECON_UNITS_LABEL", i18n.getString("AccountInfo.economyUnits","Economy Units:"));
+                accountInfoMap.put("PARM_ECON_UNITS_SEL", Account.getEconomyUnits(currAcct));
+                accountInfoMap.put("PARM_ECON_UNITS_LIST",EnumTools.getValueMap(Account.EconomyUnits.class, privLabel.getLocale()));
+                
+                accountInfoMap.put("PARM_PRESS_UNITS", PARM_PRESS_UNITS);
+                accountInfoMap.put("PARM_PRESS_UNITS_LABEL", i18n.getString("AccountInfo.pressureUnits","Pressure Units:"));
+                accountInfoMap.put("PARM_PRESS_UNITS_SEL", Account.getPressureUnits(currAcct));
+                accountInfoMap.put("PARM_PRESS_UNITS_LIST", EnumTools.getValueMap(Account.PressureUnits.class, privLabel.getLocale()));
+                
+                accountInfoMap.put("PARM_TEMP_UNITS", PARM_TEMP_UNITS);
+                accountInfoMap.put("PARM_TEMP_UNITS_LABEL", i18n.getString("AccountInfo.temperatureUnits","Temperature Units:"));
+                accountInfoMap.put("PARM_TEMP_UNITS_SEL", Account.getTemperatureUnits(currAcct));
+                accountInfoMap.put("PARM_TEMP_UNITS_LIST", EnumTools.getValueMap(Account.TemperatureUnits.class, privLabel.getLocale()));
+                
+                accountInfoMap.put("PARM_LATLON_FORMAT", PARM_LATLON_FORMAT);
+                accountInfoMap.put("PARM_LATLON_FORMAT_LABEL",i18n.getString("AccountInfo.latLonFormat","Latitude/Longitude Format:"));
+                accountInfoMap.put("PARM_LATLON_FORMAT_SEL", Account.getLatLonFormat(currAcct));
+                accountInfoMap.put("PARM_LATLON_FORMAT_LIST", EnumTools.getValueMap(Account.LatLonFormat.class, privLabel.getLocale()));
+                
                 /* "Device" title */
-                out.print  ("<tr>");
-                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.deviceTitle","'Device' Title:")+"</td>");
-                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
-                out.print  (Form_TextField(PARM_DEVICE_TITLE , _allowEdit, devTitles[0], 20, 40));
-                out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.plural","Plural:")+"</span>");
-                out.print  (Form_TextField(PARM_DEVICES_TITLE, _allowEdit, devTitles[1], 20, 40));
-                out.print  ("</td>");
-                out.println("</tr>");
+//                out.print  ("<tr>");
+//                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.deviceTitle","'Device' Title:")+"</td>");
+//                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
+//                out.print  (Form_TextField(PARM_DEVICE_TITLE , _allowEdit, devTitles[0], 20, 40));
+//                out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.plural","Plural:")+"</span>");
+//                out.print  (Form_TextField(PARM_DEVICES_TITLE, _allowEdit, devTitles[1], 20, 40));
+//                out.print  ("</td>");
+//                out.println("</tr>");
+                accountInfoMap.put("PARM_DEVICE_TITLE",PARM_DEVICE_TITLE);
+                accountInfoMap.put("PARM_DEVICE_TITLE_LABEL",i18n.getString("AccountInfo.deviceTitle","'Device' Title:"));
+                accountInfoMap.put("PARM_DEVICE_TITLE_VALUE",devTitles[0]);
+                
+                accountInfoMap.put("PARM_DEVICES_TITLE",PARM_DEVICES_TITLE);
+                accountInfoMap.put("PARM_DEVICES_TITLE_LABEL",i18n.getString("AccountInfo.plural","Plural:"));
+                accountInfoMap.put("PARM_DEVICES_TITLE_VALUE",devTitles[1]);
  
                 /* "Fleet" title */
-                out.print  ("<tr>");
-                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.groupTitle","'DeviceGroup' Title:")+"</td>");
-                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
-                out.print  (Form_TextField(PARM_GROUP_TITLE , _allowEdit, grpTitles[0], 20, 40));
-                out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.plural","Plural:")+"</span>");
-                out.print  (Form_TextField(PARM_GROUPS_TITLE, _allowEdit, grpTitles[1], 20, 40));
-                out.print  ("</td>");
-                out.println("</tr>");
+//                out.print  ("<tr>");
+//                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.groupTitle","'DeviceGroup' Title:")+"</td>");
+//                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
+//                out.print  (Form_TextField(PARM_GROUP_TITLE , _allowEdit, grpTitles[0], 20, 40));
+//                out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.plural","Plural:")+"</span>");
+//                out.print  (Form_TextField(PARM_GROUPS_TITLE, _allowEdit, grpTitles[1], 20, 40));
+//                out.print  ("</td>");
+//                out.println("</tr>");
+                accountInfoMap.put("PARM_GROUP_TITLE",PARM_GROUP_TITLE);
+                accountInfoMap.put("PARM_GROUP_TITLE_LABEL",i18n.getString("AccountInfo.groupTitle","'DeviceGroup' Title:"));
+                accountInfoMap.put("PARM_GROUP_TITLE_VALUE",grpTitles[0]);
+                accountInfoMap.put("PARM_GROUPS_TITLE",PARM_DEVICES_TITLE);
+                accountInfoMap.put("PARM_GROUPS_TITLE_LABEL",i18n.getString("AccountInfo.plural","Plural:"));
+                accountInfoMap.put("PARM_GROUPS_TITLE_VALUE",grpTitles[1]);
+ 
  
                 /* "Address" title */
-                out.print  ("<tr>");
-                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.addressTitle","'Address' Title:")+"</td>");
-                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
-                out.print  (Form_TextField(PARM_ADDRESS_TITLE  , _allowEdit, adrTitles[0], 20, 40));
-                out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.plural","Plural:")+"</span>");
-                out.print  (Form_TextField(PARM_ADDRESSES_TITLE, _allowEdit, adrTitles[1], 20, 40));
-                out.print  ("</td>");
-                out.println("</tr>");
+//                out.print  ("<tr>");
+//                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.addressTitle","'Address' Title:")+"</td>");
+//                out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
+//                out.print  (Form_TextField(PARM_ADDRESS_TITLE  , _allowEdit, adrTitles[0], 20, 40));
+//                out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.plural","Plural:")+"</span>");
+//                out.print  (Form_TextField(PARM_ADDRESSES_TITLE, _allowEdit, adrTitles[1], 20, 40));
+//                out.print  ("</td>");
+//                out.println("</tr>");
+                accountInfoMap.put("PARM_ADDRESS_TITLE",PARM_ADDRESS_TITLE);
+                accountInfoMap.put("PARM_ADDRESS_TITLE_LABEL",i18n.getString("AccountInfo.addressTitle","'Address' Title:"));
+                accountInfoMap.put("PARM_ADDRESS_TITLE_VALUE",adrTitles[0]);
+                
+                accountInfoMap.put("PARM_ADDRESSES_TITLE",PARM_DEVICES_TITLE);
+                accountInfoMap.put("PARM_ADDRESSES_TITLE_LABEL",i18n.getString("AccountInfo.plural","Plural:"));
+                accountInfoMap.put("PARM_ADDRESSES_TITLE_VALUE",adrTitles[1]);
 
                 /* default user */
-                out.println(FormRow_TextField(PARM_DEFAULT_USER , _allowEdit, i18n.getString("AccountInfo.defaultUser","Default Login UserID:")      , currAcct.getDefaultUser()     , 20, 32));
+//                out.println(FormRow_TextField(PARM_DEFAULT_USER , _allowEdit, i18n.getString("AccountInfo.defaultUser","Default Login UserID:")      , currAcct.getDefaultUser()     , 20, 32));
 
+                accountInfoMap.put("PARM_DEFAULT_USER", PARM_DEFAULT_USER);
+                accountInfoMap.put("PARM_DEFAULT_USER_LABEL", i18n.getString("AccountInfo.defaultUser","Default Login UserID:"));
+                accountInfoMap.put("PARM_DEFAULT_USER_VALUE", currAcct.getDefaultUser()); 
+               
+                accountInfoMap.put("isExpireTime", false);
                 /* expiration */
                 long expireTime = currAcct.getExpirationTime();
                 if (expireTime > 0L) {
                     String  expireTimeStr = reqState.formatDateTime(expireTime);
                     if (StringTools.isBlank(expireTimeStr)) { expireTimeStr = "n/a"; }
-                    out.println(FormRow_TextField(PARM_ACCT_EXPIRE  , false     , i18n.getString("AccountInfo.expiration","Expiration:")                 , expireTimeStr                 , 30, 30)); // read-only
+                    accountInfoMap.put("isExpireTime", true);
+//                    out.println(FormRow_TextField(PARM_ACCT_EXPIRE  , false     , i18n.getString("AccountInfo.expiration","Expiration:")                 , expireTimeStr                 , 30, 30)); // read-only
+                    accountInfoMap.put("isExpireTime", true);
+                    accountInfoMap.put("PARM_ACCT_EXPIRE", PARM_ACCT_EXPIRE);
+                    accountInfoMap.put("PARM_ACCT_EXPIRE_LABEL", i18n.getString("AccountInfo.expiration","Expiration:"));
+                    accountInfoMap.put("PARM_ACCT_EXPIRE_VALUE", expireTimeStr);
                 }
 
+                accountInfoMap.put("maxPingCntMoreThanZero", false);
                 /* max pings / total pings */
                 int maxPingCnt = currAcct.getMaxPingCount();
                 if (maxPingCnt > 0) {
                     int totPingCnt = currAcct.getTotalPingCount();
                     int remaining  = (maxPingCnt > totPingCnt)? (maxPingCnt - totPingCnt) : 0;
-                    out.print  ("<tr>");
-                    out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.maxCommandCount","Max Allowed Commands")+":</td>");
-                    out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
-                    out.print  (Form_TextField(PARM_MAX_PINGS, false, String.valueOf(maxPingCnt), 5, 5));
-                        out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.remainingCommands","Remaining Commands")+":</span>");
-                    out.print  (Form_TextField(PARM_TOT_PINGS, false, String.valueOf(remaining) , 5, 5));
-                    out.print  ("</td>");
-                    out.println("</tr>");
+//                    out.print  ("<tr>");
+//                    out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_HEADER+"'>"+i18n.getString("AccountInfo.maxCommandCount","Max Allowed Commands")+":</td>");
+//                    out.print  ("<td class='"+CommonServlet.CSS_ADMIN_VIEW_TABLE_DATA+"'>");
+//                    out.print  (Form_TextField(PARM_MAX_PINGS, false, String.valueOf(maxPingCnt), 5, 5));
+//                        out.print  ("<span style='margin-left: 10px;margin-right:5px;'>"+i18n.getString("AccountInfo.remainingCommands","Remaining Commands")+":</span>");
+//                    out.print  (Form_TextField(PARM_TOT_PINGS, false, String.valueOf(remaining) , 5, 5));
+//                    out.print  ("</td>");
+//                    out.println("</tr>");
+                    
+                    accountInfoMap.put("maxPingCntMoreThanZero", true);
+                    accountInfoMap.put("PARM_MAX_PINGS", PARM_MAX_PINGS);
+                    accountInfoMap.put("PARM_MAX_PINGS_LABEL", i18n.getString("AccountInfo.maxCommandCount","Max Allowed Commands")+":");
+                    accountInfoMap.put("PARM_MAX_PINGS_VALUE", String.valueOf(maxPingCnt));
+                    
+                    accountInfoMap.put("PARM_TOT_PINGS", PARM_TOT_PINGS);
+                    accountInfoMap.put("PARM_TOT_PINGS_LABEL", i18n.getString("AccountInfo.remainingCommands","Remaining Commands")+":");
+                    accountInfoMap.put("PARM_TOT_PINGS_VALUE", String.valueOf(remaining) );
                 }
 
-                out.println("</table>");
+//                out.println("</table>");
 
                 /* end of form */
-                out.write("<hr style='margin-bottom:5px;'>\n");
-                out.write("<span style='padding-left:10px'>&nbsp;</span>\n");
-                if (_allowEdit) {
-                    out.write("<input type='submit' name='"+PARM_SUBMIT_CHANGE+"' value='"+i18n.getString("AccountInfo.change","Change")+"'>\n");
-                    out.write("<span style='padding-left:10px'>&nbsp;</span>\n");
-                    out.write("<input type='button' name='"+PARM_BUTTON_CANCEL+"' value='"+i18n.getString("AccountInfo.cancel","Cancel")+"' onclick=\"javascript:openURL('"+menuURL+"','_self');\">\n"); // target='_top'
-                } else {
-                    out.write("<input type='button' name='"+PARM_BUTTON_BACK+"' value='"+i18n.getString("AccountInfo.back","Back")+"' onclick=\"javascript:openURL('"+menuURL+"','_self');\">\n"); // target='_top'
-                }
-                out.write("</form>\n");
+//                out.write("<hr style='margin-bottom:5px;'>\n");
+//                out.write("<span style='padding-left:10px'>&nbsp;</span>\n");
+//                if (_allowEdit) {
+//                    out.write("<input type='submit' name='"+PARM_SUBMIT_CHANGE+"' value='"+i18n.getString("AccountInfo.change","Change")+"'>\n");
+//                    out.write("<span style='padding-left:10px'>&nbsp;</span>\n");
+//                    out.write("<input type='button' name='"+PARM_BUTTON_CANCEL+"' value='"+i18n.getString("AccountInfo.cancel","Cancel")+"' onclick=\"javascript:openURL('"+menuURL+"','_self');\">\n"); // target='_top'
+//                } else {
+//                    out.write("<input type='button' name='"+PARM_BUTTON_BACK+"' value='"+i18n.getString("AccountInfo.back","Back")+"' onclick=\"javascript:openURL('"+menuURL+"','_self');\">\n"); // target='_top'
+//                }
+//                out.write("</form>\n");
+                accountInfoMap.put("PARM_SUBMIT_CHANGE", PARM_SUBMIT_CHANGE);
+                accountInfoMap.put("PARM_SUBMIT_CHANGE_LABEL", i18n.getString("AccountInfo.change","Change"));
+                accountInfoMap.put("PARM_BUTTON_CANCEL",PARM_BUTTON_CANCEL);
+                accountInfoMap.put("PARM_BUTTON_CANCEL_LABEL",i18n.getString("AccountInfo.cancel","Cancel"));
+                
+                accountInfoMap.put("PARM_BUTTON_BACK",PARM_BUTTON_BACK);
+                accountInfoMap.put("PARM_BUTTON_BACK_LABEL",i18n.getString("AccountInfo.back","Back"));
+                accountInfoMap.put("menuURL", menuURL);
+                
+                
+                Configuration cfg = TemplateLoader.getConfiguration();
 
+                Template template = cfg.getTemplate("track/ftl/Account-admin.ftl");
+
+                try {
+                  template.process(accountInfoMap, out);
+                } catch (TemplateException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         };
 

@@ -66,12 +66,11 @@
               <#list timeZoneList as tmz>
               <#assign sel>
                 <#if tmz = timeZone>
-                  string('selected')
+                  selected
                 <#else>
-                  string('')
                 </#if>
               </#assign>
-              <option value="${sel}">${tmz}</option>
+              <option value="${tmz}" ${sel}>${tmz}</option>
               </#list>
             </select>
           </form>
