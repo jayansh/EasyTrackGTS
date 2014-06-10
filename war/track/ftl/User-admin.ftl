@@ -16,7 +16,7 @@
     <div class="sidebar ">
 <!--<div class="col-md-8 ">-->
     <div class="panel panel-primary">
-      <div class="panel-heading">View/Edit User Information</div>
+      <div class="panel-heading">${frameTitle}</div>
       <div class="panel-body">
         <div class="table-responsive">
           <form name='${FORM_USER_SELECT}' method='post' action='${selectURL}' target='_self'>
