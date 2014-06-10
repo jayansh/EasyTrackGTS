@@ -65,9 +65,14 @@ import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.AclEntry.AccessLevel;
 import org.opengts.db.tables.*;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class UserInfo
     extends WebPageAdaptor
@@ -836,6 +841,8 @@ public class UserInfo
             public void write(PrintWriter out) throws IOException {
                 String pageName = UserInfo.this.getPageName();
 
+                Map<String, Object> userInfoMap = new HashMap<String, Object>();
+                
                 /* custom attributes */
                 Collection<String> customKeys = new OrderedSet<String>();
                 Collection<String> ppKeys = privLabel.getPropertyKeys(PrivateLabel.PROP_UserInfo_custom_);
@@ -856,6 +863,12 @@ public class UserInfo
                     i18n.getString("UserInfo.viewEditUser","View/Edit User Information") : 
                     i18n.getString("UserInfo.viewUser","View User Information");
               //String selectUserJS = "javascript:dinfoSelectUser()";
+                userInfoMap.put("menuURL", menuURL);
+                userInfoMap.put("editURL", editURL);
+                userInfoMap.put("selectURL", selectURL);
+                userInfoMap.put("newURL", newURL);
+                userInfoMap.put("frameTitle", frameTitle);
+                
                 out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
                 out.write("<hr>\n");
 
@@ -863,36 +876,57 @@ public class UserInfo
                 if (_listUsers) {
                     
                     // user selection table (Select, User ID, User Desc)
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("UserInfo.selectUser","Select a User")+":</h1>\n");
-                    out.write("<div style='margin-left:25px;'>\n");
-                    out.write("<form name='"+FORM_USER_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
-                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SELECT+"'/>");
-                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing=0 cellpadding=0 border=0>\n");
-                    out.write(" <thead>\n");
-                    out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"' nowrap>"+FilterText(i18n.getString("UserInfo.select","Select"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.userID","User ID"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.userName","User Desc"))+"</th>\n");
-                    if (_showRole && _viewRole) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.role","Role"))+"</th>\n");
-                    }
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.contactName","Contact Name"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.contactEmail","Contact Email"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.timeZone","Time Zone"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.active","Active"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.lastLogin","Last Login\n{0}",currAcct.getTimeZone()))+"</th>\n");
-                    out.write("  </tr>\n");
-                    out.write(" </thead>\n");
-                    out.write(" <tbody>\n");
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("UserInfo.selectUser","Select a User")+":</h1>\n");
+//                    out.write("<div style='margin-left:25px;'>\n");
+//                    out.write("<form name='"+FORM_USER_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
+//                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SELECT+"'/>");
+//                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing=0 cellpadding=0 border=0>\n");
+//                    out.write(" <thead>\n");
+//                    out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"' nowrap>"+FilterText(i18n.getString("UserInfo.select","Select"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.userID","User ID"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.userName","User Desc"))+"</th>\n");
+//                    if (_showRole && _viewRole) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.role","Role"))+"</th>\n");
+//                    }
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.contactName","Contact Name"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.contactEmail","Contact Email"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.timeZone","Time Zone"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.active","Active"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("UserInfo.lastLogin","Last Login\n{0}",currAcct.getTimeZone()))+"</th>\n");
+//                    out.write("  </tr>\n");
+//                    out.write(" </thead>\n");
+//                    out.write(" <tbody>\n");
+                    userInfoMap.put("PARM_COMMAND", PARM_COMMAND);
+                    userInfoMap.put("COMMAND_INFO_SELECT", COMMAND_INFO_SELECT);
+                    userInfoMap.put("selectUser", i18n.getString("UserInfo.selectUser","Select a User"));
+                    userInfoMap.put("FORM_USER_SELECT",FORM_USER_SELECT);
+                    userInfoMap.put("selectURL",selectURL);
+                    userInfoMap.put("select", FilterText(i18n.getString("UserInfo.select","Select")));
+                    userInfoMap.put("userID", FilterText(i18n.getString("UserInfo.userID","User ID")));
+                    userInfoMap.put("userDesc", FilterText(i18n.getString("UserInfo.userName","User Desc")));
+                    userInfoMap.put("role", FilterText(i18n.getString("UserInfo.role","Role")));
+                    userInfoMap.put("contactName", FilterText(i18n.getString("UserInfo.contactName","Contact Name")));
+                    userInfoMap.put("contactEmail", FilterText(i18n.getString("UserInfo.contactEmail","Contact Email")));
+                    userInfoMap.put("timeZone", FilterText(i18n.getString("UserInfo.timeZone","Time Zone")));
+                    userInfoMap.put("active", FilterText(i18n.getString("UserInfo.active","Active")));
+                    userInfoMap.put("lastLogin", FilterText(i18n.getString("UserInfo.lastLogin","Last Login\n{0}",currAcct.getTimeZone())));
+                    userInfoMap.put("PARM_USER_SELECT",PARM_USER_SELECT);
+                    userInfoMap.put("selUserID", _selUserID);
+                    userInfoMap.put("showRole", _showRole);
+                    userInfoMap.put("viewRole", _viewRole);
+                    
+                    List<Map<String,Object>> userList = new ArrayList<Map<String,Object>>();
                     for (int u = 0; u < _userList.length; u++) {
-                        if ((u & 1) == 0) {
-                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD+"'>\n");
-                        } else {
-                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN+"'>\n");
-                        }
+//                        if ((u & 1) == 0) {
+//                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD+"'>\n");
+//                        } else {
+//                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN+"'>\n");
+//                        }
                         try {
                             User usr = User.getUser(currAcct, _userList[u]);
                             if (usr != null) {
+                                Map<String,Object> userMap = new HashMap<String,Object>();
                                 String uid          = usr.getUserID();
                                 String userID       = FilterText(uid);
                                 String userDesc     = FilterText(usr.getDescription());
@@ -903,65 +937,111 @@ public class UserInfo
                                 long  lastLoginTime = usr.getLastLoginTime();
                                 String lastLogin    = FilterText(currAcct.formatDateTime(lastLoginTime));
                                 String checked      = _selUserID.equals(uid)? " checked" : "";
+                                
+                                userMap.put("userID", userID);
+                                userMap.put("userDesc", userDesc);
+                                userMap.put("contactName", contactName);
+                                userMap.put("contactEmail", contactEmail);
+                                userMap.put("timeZone", timeZone);
+                                userMap.put("active", active);
+                                userMap.put("lastLoginTime", lastLoginTime);
+                                userMap.put("lastLogin", lastLogin);
+                                userMap.put("checked", checked);
+                                
+                                
                                 String viewStyle    = (_allowEdit && !_allowEditAll)? ((currUserID.equals(uid))?"background-color:#FFFFFF;":"background-color:#E5E5E5;") : ""; 
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+u+"' style='"+viewStyle+"'><input type='radio' name='"+PARM_USER_SELECT+"' id='"+userID+"' value='"+userID+"' "+checked+"></td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+userID+"'>"+userID+"</label></td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+userDesc+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+u+"' style='"+viewStyle+"'><input type='radio' name='"+PARM_USER_SELECT+"' id='"+userID+"' value='"+userID+"' "+checked+"></td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+userID+"'>"+userID+"</label></td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+userDesc+"</td>\n");
                                 if (_showRole && _viewRole) {
                                 String userRoleID   = FilterText(Role.getDisplayRoleID(usr.getRoleID()));
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+userRoleID+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+userRoleID+"</td>\n");
+                                userMap.put("userRoleID", userRoleID);
                                 }
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+contactName+"</td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+contactEmail+"</td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+timeZone+"</td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+active+"</td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' "+SORTTABLE_SORTKEY+"='"+lastLoginTime+"' nowrap>"+lastLogin+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+contactName+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+contactEmail+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+timeZone+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+active+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' "+SORTTABLE_SORTKEY+"='"+lastLoginTime+"' nowrap>"+lastLogin+"</td>\n");
+                                userList.add(userMap);
                             }
                         } catch (DBException dbe) {
                             // 
                         }
-                        out.write("  </tr>\n");
+//                        out.write("  </tr>\n");
                     }
-                    out.write(" </tbody>\n");
-                    out.write("</table>\n");
-                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<tr>\n");
+                    userInfoMap.put("userList", userList);
+                    userInfoMap.put("allowView", _allowView);
+                    userInfoMap.put("allowEdit", _allowEdit);
+                    userInfoMap.put("allowDelete", _allowDelete);
+                    userInfoMap.put("allowNew", _allowNew);
+                    
+//                    out.write(" </tbody>\n");
+//                    out.write("</table>\n");
+//                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<tr>\n");
                     if (_allowView  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("UserInfo.view","View")+"'>");
-                        out.write("</td>\n"); 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("UserInfo.view","View")+"'>");
+//                        out.write("</td>\n"); 
+                        userInfoMap.put("PARM_SUBMIT_VIEW", PARM_SUBMIT_VIEW);
+                        userInfoMap.put("viewBtnText", i18n.getString("UserInfo.view","View"));
                     }
                     if (_allowEdit  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("UserInfo.edit","Edit")+"'>");
-                        out.write("</td>\n"); 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("UserInfo.edit","Edit")+"'>");
+//                        out.write("</td>\n"); 
+                        userInfoMap.put("PARM_SUBMIT_EDIT", PARM_SUBMIT_EDIT);
+                        userInfoMap.put("editBtnText", i18n.getString("UserInfo.edit","Edit"));
                     }
-                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
+//                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
                     if (_allowDelete) {
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL+"' value='"+i18n.getString("UserInfo.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL+"' value='"+i18n.getString("UserInfo.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
+                        userInfoMap.put("PARM_SUBMIT_DEL", PARM_SUBMIT_DEL);
+                        userInfoMap.put("deleteBtnText", i18n.getString("UserInfo.delete","Delete"));
+                        userInfoMap.put("onclickConfirmDelete", Onclick_ConfirmDelete(locale));
                     } else {
                         out.write("&nbsp;"); 
                     }
-                    out.write("</td>\n"); 
-                    out.write("</tr>\n");
-                    out.write("</table>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
+//                    out.write("</td>\n"); 
+//                    out.write("</tr>\n");
+//                    out.write("</table>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
                     
                     /* new user */
                     if (_allowNew) {
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("UserInfo.createNewUser","Create a new user")+":</h1>\n");
-                    out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<form name='"+FORM_USER_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
-                    out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
-                    out.write(i18n.getString("UserInfo.userID","User ID")+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_NAME+"' value='' size='32' maxlength='32'><br>\n");
-                    out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("UserInfo.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("UserInfo.createNewUser","Create a new user")+":</h1>\n");
+//                    out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<form name='"+FORM_USER_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
+//                    out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
+//                    out.write(i18n.getString("UserInfo.userID","User ID")+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_NAME+"' value='' size='32' maxlength='32'><br>\n");
+//                    out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("UserInfo.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
+                    userInfoMap.put("createNewUserTitle", i18n.getString("UserInfo.createNewUser","Create a new user"));
+                    userInfoMap.put("FORM_USER_NEW", FORM_USER_NEW);
+                    userInfoMap.put("newURL", newURL);
+                    //userInfoMap.put("PARM_COMMAND", PARM_COMMAND);
+                    userInfoMap.put("COMMAND_INFO_NEW", COMMAND_INFO_NEW);
+                    userInfoMap.put("userIdLabel", i18n.getString("UserInfo.userID","User ID"));
+                    userInfoMap.put("PARM_NEW_NAME", PARM_NEW_NAME);
+                    userInfoMap.put("PARM_SUBMIT_NEW", PARM_SUBMIT_NEW);
+                    userInfoMap.put("newButtonValue", i18n.getString("UserInfo.new","New"));
                     }
+                    
+                    Configuration cfg = TemplateLoader.getConfiguration();
+                    Template template = cfg.getTemplate("track/ftl/User-admin.ftl");
 
+                    try {
+                      template.process(userInfoMap, out);
+                    } catch (TemplateException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    //list user ends.
                 } else {
                     // user view/edit form
 
