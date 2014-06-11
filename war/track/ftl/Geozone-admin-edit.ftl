@@ -47,7 +47,7 @@
 <input class="form-control" type="text"/>
 <button class="btn btn-primary btn-sm">Reset Map</button>
 
-<label>cursor </label>
+<label>cursor</label>
 Value1,Value2
 <label>Distance</label>
 0 meters
