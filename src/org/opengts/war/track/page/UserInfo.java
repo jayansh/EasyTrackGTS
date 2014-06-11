@@ -869,8 +869,8 @@ public class UserInfo
                 userInfoMap.put("newURL", newURL);
                 userInfoMap.put("frameTitle", frameTitle);
                 
-                out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
-                out.write("<hr>\n");
+//                out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
+//                out.write("<hr>\n");
 
                 // user selection table (Select, User ID, User Desc)
                 if (_listUsers) {
@@ -1001,7 +1001,7 @@ public class UserInfo
                         userInfoMap.put("deleteBtnText", i18n.getString("UserInfo.delete","Delete"));
                         userInfoMap.put("onclickConfirmDelete", Onclick_ConfirmDelete(locale));
                     } else {
-                        out.write("&nbsp;"); 
+//                        out.write("&nbsp;"); 
                     }
 //                    out.write("</td>\n"); 
 //                    out.write("</tr>\n");
