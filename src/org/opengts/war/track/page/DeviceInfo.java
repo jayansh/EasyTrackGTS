@@ -99,6 +99,8 @@
 // ----------------------------------------------------------------------------
 package org.opengts.war.track.page;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Iterator;
@@ -117,12 +119,16 @@ import org.opengts.dbtypes.*;
 import org.opengts.db.*;
 import org.opengts.db.AclEntry.AccessLevel;
 import org.opengts.db.tables.*;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
 import org.opengts.war.maps.JSMap;
-
 import org.opengts.war.track.page.devcmd.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class DeviceInfo
     extends WebPageAdaptor
@@ -1899,6 +1905,7 @@ public class DeviceInfo
                   //String editURL    = DeviceInfo.this.encodePageURL(reqState);//,RequestProperties.TRACK_BASE_URI());
                     String newURL     = DeviceInfo.this.encodePageURL(reqState);//,RequestProperties.TRACK_BASE_URI());
 
+                    Map<String, Object> deviceInfoMap = new HashMap<String, Object>();
                     /* digital input state */
                     Vector<StateMaskBit> inpStateList = null;
                     for (int i = 0; i < 16; i++) {
@@ -1968,65 +1975,105 @@ public class DeviceInfo
                     String frameTitle = _allowEdit? 
                         i18n.getString("DeviceInfo.viewEditDevice","View/Edit {0} Information", devTitles) : 
                         i18n.getString("DeviceInfo.viewDevice","View {0} Information", devTitles);
-                    out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span>&nbsp;\n");
-                    out.write("<a href='"+refreshURL+"'><span class=''>"+i18n.getString("DeviceInfo.refresh","Refresh")+"</a>\n");
-                    out.write("<br/>\n");
-                    out.write("<hr>\n");
 
+                    deviceInfoMap.put("frameTitle", frameTitle);
+                    deviceInfoMap.put("refreshURL", refreshURL);
+                    deviceInfoMap.put("refreshURLTitle", i18n.getString("DeviceInfo.refresh","Refresh"));
+                    
+//                    out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span>&nbsp;\n");
+//                    out.write("<a href='"+refreshURL+"'><span class=''>"+i18n.getString("DeviceInfo.refresh","Refresh")+"</a>\n");
+//                    out.write("<br/>\n");
+//                    out.write("<hr>\n");
+
+                    deviceInfoMap.put("selectDevice", i18n.getString("DeviceInfo.selectDevice","Select a {0}",devTitles));
+                    deviceInfoMap.put("FORM_DEVICE_SELECT", FORM_DEVICE_SELECT);
+                    deviceInfoMap.put("selectURL", selectURL);
+                    deviceInfoMap.put("PARM_COMMAND", PARM_COMMAND);
+                    deviceInfoMap.put("COMMAND_INFO_SEL_DEVICE", COMMAND_INFO_SEL_DEVICE);
+                    deviceInfoMap.put("select", FilterText(i18n.getString("DeviceInfo.select","Select")));
+                    deviceInfoMap.put("deviceID", FilterText(i18n.getString("DeviceInfo.deviceID","{0} ID",devTitles)));
+                    deviceInfoMap.put("uniqueID", FilterText(i18n.getString("DeviceInfo.uniqueID","Unique ID")));
+                    deviceInfoMap.put("decription", FilterText(i18n.getString("DeviceInfo.decription","Description",devTitles)));
+                    deviceInfoMap.put("devEquipType", FilterText(i18n.getString("DeviceInfo.devEquipType","Equipment\nType")));
+                    deviceInfoMap.put("simPhoneNumber", FilterText(i18n.getString("DeviceInfo.simPhoneNumber","SIM Phone#")));
+                    deviceInfoMap.put("devServerID", FilterText(i18n.getString("DeviceInfo.devServerID","Server ID")));
+                    deviceInfoMap.put("ignitionState", FilterText(i18n.getString("DeviceInfo.ignitionState","Ignition\nState")));
+                    
+                    deviceInfoMap.put("viewUniqID", _viewUniqID);
+                    deviceInfoMap.put("viewSIM", _viewSIM);
+                    deviceInfoMap.put("viewServID", _viewServID);
+                    
                     // device selection table (Select, Device ID, Description, ...)
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("DeviceInfo.selectDevice","Select a {0}",devTitles)+":</h1>\n");
-                    out.write("<div style='margin-left:25px;'>\n");
-                    out.write("<form name='"+FORM_DEVICE_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
-                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SEL_DEVICE+"'/>");
-                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing='0' cellpadding='0' border='0'>\n");
-                    out.write(" <thead>\n");
-                    out.write("  <tr class='" +CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"' nowrap>"+FilterText(i18n.getString("DeviceInfo.select","Select"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.deviceID","{0} ID",devTitles))+"</th>\n");
-                    if (_viewUniqID) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.uniqueID","Unique ID"))+"</th>\n");
-                    }
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.decription","Description",devTitles))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.devEquipType","Equipment\nType"))+"</th>\n");
-                    if (_viewSIM) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.simPhoneNumber","SIM Phone#"))+"</th>\n");
-                    }
-                    if (_viewServID) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.devServerID","Server ID"))+"</th>\n");
-                    }
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.ignitionState","Ignition\nState"))+"</th>\n");
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("DeviceInfo.selectDevice","Select a {0}",devTitles)+":</h1>\n");
+//                    out.write("<div style='margin-left:25px;'>\n");
+//                    out.write("<form name='"+FORM_DEVICE_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
+//                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SEL_DEVICE+"'/>");
+//                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing='0' cellpadding='0' border='0'>\n");
+//                    out.write(" <thead>\n");
+//                    out.write("  <tr class='" +CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"' nowrap>"+FilterText(i18n.getString("DeviceInfo.select","Select"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.deviceID","{0} ID",devTitles))+"</th>\n");
+//                    if (_viewUniqID) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.uniqueID","Unique ID"))+"</th>\n");
+//                    }
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.decription","Description",devTitles))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.devEquipType","Equipment\nType"))+"</th>\n");
+//                    if (_viewSIM) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.simPhoneNumber","SIM Phone#"))+"</th>\n");
+//                    }
+//                    if (_viewServID) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.devServerID","Server ID"))+"</th>\n");
+//                    }
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.ignitionState","Ignition\nState"))+"</th>\n");
+                    
+                    List<String> smbTitleList = new ArrayList<String>(); 
+                    
                     if (!ListTools.isEmpty(inpStateList)) {
                         for (StateMaskBit smb : inpStateList) {
-                            out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL +"' nowrap>"+FilterText(smb.getTitle())+"</th>\n");
+                            smbTitleList.add(FilterText(smb.getTitle()));
+//                            out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL +"' nowrap>"+FilterText(smb.getTitle())+"</th>\n");
                         }
                     }
                     if (!ListTools.isEmpty(outStateList)) {
                         for (StateMaskBit smb : outStateList) {
-                            out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL +"' nowrap>"+FilterText(smb.getTitle())+"</th>\n");
+                            smbTitleList.add(FilterText(smb.getTitle()));
+//                            out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL +"' nowrap>"+FilterText(smb.getTitle())+"</th>\n");
                         }
                     }
                     if (!ListTools.isEmpty(cmdStateList)) {
                     for (StateMaskBit smb : cmdStateList) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(smb.getTitle())+"</th>\n");
+                        smbTitleList.add(FilterText(smb.getTitle()));
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(smb.getTitle())+"</th>\n");
                     }
                     }
-                    if (showAcks) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.ackExpected","Expecting\nACK"))+"</th>\n");
-                    }
-                    if (_viewActive) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.active","Active"))+"</th>\n");
-                    }
-                    out.write("  </tr>\n");
-                    out.write(" </thead>\n");
-                    out.write(" <tbody>\n");
+                    
+                    deviceInfoMap.put("smbTitleList", smbTitleList);
+                    deviceInfoMap.put("showAcks", showAcks);
+                    deviceInfoMap.put("ackExpected", FilterText(i18n.getString("DeviceInfo.ackExpected","Expecting\nACK")));
+                    deviceInfoMap.put("viewActive", _viewActive);
+                    deviceInfoMap.put("active", FilterText(i18n.getString("DeviceInfo.active","Active")));
+                    deviceInfoMap.put("PARM_DEVICE", PARM_DEVICE);
+                    
+//                    if (showAcks) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.ackExpected","Expecting\nACK"))+"</th>\n");
+//                    }
+//                    if (_viewActive) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+FilterText(i18n.getString("DeviceInfo.active","Active"))+"</th>\n");
+//                    }
+//                    out.write("  </tr>\n");
+//                    out.write(" </thead>\n");
+//                    out.write(" <tbody>\n");
                     Device deviceRcd[] = new Device[_deviceList.size()];
                     int hasCommandHandlers = 0;
                     boolean okUpdateDevice = privLabel.getBooleanProperty(PrivateLabel.PROP_DeviceInfo_optimizeUpdateDevice,OPTIMIZE_IGNITION_STATE);
+                    List<Map<String,Object>> deviceMapList = new ArrayList<Map<String,Object>>();
+                    
                     for (int d = 0; d < _deviceList.size(); d++) {
-                        String rowClass = ((d & 1) == 0)? 
-                            CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD : 
-                            CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN;
-                        out.write("  <tr class='"+rowClass+"'>\n");
+//                        String rowClass = ((d & 1) == 0)? 
+//                            CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD : 
+//                            CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN;
+//                        out.write("  <tr class='"+rowClass+"'>\n");
+                        Map<String, Object> deviceMap = new HashMap<String,Object>();
                         try {
                             Device dev = Device.getDevice(currAcct, _deviceList.get(d));
                             if (dev != null) {
@@ -2040,61 +2087,87 @@ public class DeviceInfo
                                 int     ignState    = dev.getCurrentIgnitionState(); // may update ignition state times
                                 String  ignDesc     = "";
                                 String  ignColor    = "black";
+                                
+                                deviceMap.put("deviceID",deviceID);
+                                deviceMap.put("uniqueID",uniqueID);
+                                deviceMap.put("deviceDesc",deviceDesc);
+                                deviceMap.put("equipType",equipType);
+                                deviceMap.put("imeiNum",imeiNum);
+                                deviceMap.put("simPhone",simPhone);
+                                deviceMap.put("devCode",devCode);
+                                
                                 switch (ignState) {
                                     case  0: 
                                         ignDesc  = FilterText(i18n.getString("DeviceInfo.ignitionOff"    , "Off"));
                                         ignColor = ColorTools.BLACK.toString(true);
+                                        deviceMap.put("ignDesc",ignDesc);
+                                        deviceMap.put("ignColor",ignColor);
                                         break;
                                     case  1: 
                                         ignDesc  = FilterText(i18n.getString("DeviceInfo.ignitionOn"     , "On"));
                                         ignColor = ColorTools.GREEN.toString(true);
+                                        deviceMap.put("ignDesc",ignDesc);
+                                        deviceMap.put("ignColor",ignColor);
                                         break;
                                     default: 
                                         ignDesc  = FilterText(i18n.getString("DeviceInfo.ignitionUnknown", "Unknown"));
                                         ignColor = ColorTools.DARK_YELLOW.toString(true);
+                                        deviceMap.put("ignDesc",ignDesc);
+                                        deviceMap.put("ignColor",ignColor);
                                         break;
                                 }
                                 String pendingACK = FilterText(dev.isExpectingCommandAck()?ComboOption.getYesNoText(locale,true):"");
                                 String active     = FilterText(ComboOption.getYesNoText(locale,dev.isActive()));
                                 String checked    = _selDevID.equals(dev.getDeviceID())? "checked" : "";
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+d+"'><input type='radio' name='"+PARM_DEVICE+"' id='"+deviceID+"' value='"+deviceID+"' "+checked+"></td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+deviceID+"'>"+deviceID+"</label></td>\n");
-                                if (_viewUniqID) {
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+uniqueID+"</td>\n");
-                                }
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+deviceDesc+"</td>\n");
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+equipType+"</td>\n");
-                                if (_viewSIM) {
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+simPhone+"</td>\n");
-                                }
-                                if (_viewServID) {
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+devCode+"</td>\n");
-                                }
-                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap style='color:"+ignColor+"'>"+ignDesc+"</td>\n");
+                                
+                                deviceMap.put("pendingACK",pendingACK);
+                                deviceMap.put("active",active);
+                                deviceMap.put("checked",checked);
+                                
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+d+"'><input type='radio' name='"+PARM_DEVICE+"' id='"+deviceID+"' value='"+deviceID+"' "+checked+"></td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+deviceID+"'>"+deviceID+"</label></td>\n");
+//                                if (_viewUniqID) {
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+uniqueID+"</td>\n");
+//                                }
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+deviceDesc+"</td>\n");
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+equipType+"</td>\n");
+//                                if (_viewSIM) {
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+simPhone+"</td>\n");
+//                                }
+//                                if (_viewServID) {
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+devCode+"</td>\n");
+//                                }
+//                                out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap style='color:"+ignColor+"'>"+ignDesc+"</td>\n");
+                                
+                                List<String> stateValList = new ArrayList<String>();
                                 if (!ListTools.isEmpty(inpStateList)) {
                                     for (StateMaskBit smb : inpStateList) {
                                         String state_val = smb.getStateDescription(dev.getLastInputState(smb.getBitIndex()));
-                                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+state_val+"</td>\n");
+                                        stateValList.add(state_val);
+//                                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+state_val+"</td>\n");
                                     }
                                 }
                                 if (!ListTools.isEmpty(outStateList)) {
                                     for (StateMaskBit smb : outStateList) {
                                         String state_val = smb.getStateDescription(dev.getLastOutputState(smb.getBitIndex()));
-                                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+state_val+"</td>\n");
+                                        stateValList.add(state_val);
+//                                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+state_val+"</td>\n");
                                     }
                                 }
                                 if (!ListTools.isEmpty(cmdStateList)) {
                                     for (StateMaskBit smb : cmdStateList) {
                                         String state_val = smb.getStateDescription(dev.getCommandStateMaskBit(smb.getBitIndex()));
-                                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+state_val+"</td>\n");
+                                        stateValList.add(state_val);
+//                                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+state_val+"</td>\n");
                                     }
                                 }
-                                if (showAcks) {
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap style='color:red'>"+pendingACK+"</td>\n");
-                                }
-                                if (_viewActive) {
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+active+"</td>\n");
-                                }
+                                deviceMap.put("stateValList", stateValList);
+//                                if (showAcks) {
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap style='color:red'>"+pendingACK+"</td>\n");
+//                                }
+//                                if (_viewActive) {
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+active+"</td>\n");
+//                                }
                                 // count command handlers
                                 String serverID = dev.getDeviceCode();
                                 if (StringTools.isBlank(serverID)) {
@@ -2111,52 +2184,74 @@ public class DeviceInfo
                                     dev.updateOtherChangedEventFields();
                                 }
                             }
+                            deviceMapList.add(deviceMap);
                         } catch (DBException dbe) {
                             deviceRcd[d] = null;
                         }
-                        out.write("  </tr>\n");
+//                        out.write("  </tr>\n");
+                        deviceInfoMap.put("deviceMapList", deviceMapList);
                     }
-                    out.write(" </tbody>\n");
-                    out.write("</table>\n");
-                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<tr>\n");
-                    if (_allowView) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("DeviceInfo.view","View")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    if (_allowEdit) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("DeviceInfo.edit","Edit")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    if (_allowCommand) { 
-                        if (hasCommandHandlers > 0) {
-                            out.write("<td style='padding-left:5px;'>");
-                            out.write("<input type='submit' name='"+PARM_SUBMIT_PROP+"' value='"+i18n.getString("DeviceInfo.properties","Commands")+"'>");
-                            out.write("</td>\n"); 
-                        } else {
-                            //Print.logWarn("No matching DeviceCommandHandlers found"); 
-                        }
-                    }
-                    if (_allowSmsCmd) {  // SMS commands
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_SMS +"' value='"+i18n.getString("DeviceInfo.sms","SMS")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
-                    if (_allowDelete) {
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL +"' value='"+i18n.getString("DeviceInfo.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
-                    } else {
-                        out.write("&nbsp;");
-                    }
-                    out.write("</td>\n"); 
-                    out.write("</tr>\n");
-                    out.write("</table>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
+//                    out.write(" </tbody>\n");
+//                    out.write("</table>\n");
+//                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<tr>\n");
 
+//                    if (_allowView) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("DeviceInfo.view","View")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    if (_allowEdit) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("DeviceInfo.edit","Edit")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    if (_allowCommand) { 
+//                        if (hasCommandHandlers > 0) {
+//                            out.write("<td style='padding-left:5px;'>");
+//                            out.write("<input type='submit' name='"+PARM_SUBMIT_PROP+"' value='"+i18n.getString("DeviceInfo.properties","Commands")+"'>");
+//                            out.write("</td>\n"); 
+//                        } else {
+//                            //Print.logWarn("No matching DeviceCommandHandlers found"); 
+//                        }
+//                    }
+//                    if (_allowSmsCmd) {  // SMS commands
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_SMS +"' value='"+i18n.getString("DeviceInfo.sms","SMS")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
+//                    if (_allowDelete) {
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL +"' value='"+i18n.getString("DeviceInfo.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
+//                    } else {
+//                        out.write("&nbsp;");
+//                    }
+//                    out.write("</td>\n"); 
+//                    out.write("</tr>\n");
+//                    out.write("</table>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
+
+                    deviceInfoMap.put("allowView", _allowView);
+                    deviceInfoMap.put("allowEdit", _allowEdit);
+                    deviceInfoMap.put("allowCommand", _allowCommand);
+                    deviceInfoMap.put("allowSmsCmd", _allowSmsCmd);
+                    deviceInfoMap.put("allowDelete", _allowDelete);
+                    
+                    deviceInfoMap.put("PARM_SUBMIT_VIEW", PARM_SUBMIT_VIEW);
+                    deviceInfoMap.put("PARM_SUBMIT_EDIT", PARM_SUBMIT_EDIT);
+                    deviceInfoMap.put("PARM_SUBMIT_PROP", PARM_SUBMIT_PROP);
+                    deviceInfoMap.put("PARM_SUBMIT_SMS", PARM_SUBMIT_SMS);
+                    deviceInfoMap.put("PARM_SUBMIT_DEL", PARM_SUBMIT_DEL);
+                    
+                    deviceInfoMap.put("viewBtnVal", i18n.getString("DeviceInfo.view","View"));
+                    deviceInfoMap.put("editBtnVal", i18n.getString("DeviceInfo.edit","Edit"));
+                    deviceInfoMap.put("commandsBtnVal", i18n.getString("DeviceInfo.properties","Commands"));
+                    deviceInfoMap.put("smsBtnVal", i18n.getString("DeviceInfo.sms","SMS"));
+                    deviceInfoMap.put("deleteBtnVal", i18n.getString("DeviceInfo.delete","Delete"));
+                    deviceInfoMap.put("onclickConfirmDelete", Onclick_ConfirmDelete(locale));
+                    
                     /* new device */
                     if (_allowNew) {
                     String createText = i18n.getString("DeviceInfo.createNewDevice","Create a new device");
@@ -2166,15 +2261,39 @@ public class DeviceInfo
                     if (allowNewDevMode == NEWDEV_MANAGER) {
                         createText += " " + i18n.getString("DeviceInfo.managerOnly","(AccountManager only)");
                     }
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+createText+":</h1>\n");
-                    out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<form name='"+FORM_DEVICE_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
-                    out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW_DEVICE+"'/>");
-                    out.write(i18n.getString("DeviceInfo.deviceID","{0} ID",devTitles)+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_NAME+"' value='' size='32' maxlength='32'><br>\n");
-                    out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("DeviceInfo.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+createText+":</h1>\n");
+//                    out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<form name='"+FORM_DEVICE_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
+//                    out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW_DEVICE+"'/>");
+//                    out.write(i18n.getString("DeviceInfo.deviceID","{0} ID",devTitles)+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_NAME+"' value='' size='32' maxlength='32'><br>\n");
+//                    out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("DeviceInfo.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
+
+                    deviceInfoMap.put("allowNew", _allowNew);
+                    deviceInfoMap.put("createText", createText);
+                    deviceInfoMap.put("FORM_DEVICE_NEW", FORM_DEVICE_NEW);
+                    deviceInfoMap.put("newURL", newURL);
+                    // deviceInfoMap.put("PARM_COMMAND", PARM_COMMAND);
+                    deviceInfoMap.put("COMMAND_INFO_NEW_DEVICE", COMMAND_INFO_NEW_DEVICE);
+                    deviceInfoMap.put("createNewDeviceLabel", i18n.getString("DeviceInfo.deviceID","{0} ID",devTitles));
+                    deviceInfoMap.put("PARM_NEW_NAME", PARM_NEW_NAME);
+                    deviceInfoMap.put("PARM_SUBMIT_NEW", PARM_SUBMIT_NEW);
+                    deviceInfoMap.put("newBtnValue", i18n.getString("DeviceInfo.new","New"));
+                    
+                    }
+                    
+                    
+                    
+                    Configuration cfg = TemplateLoader.getConfiguration();
+                    Template template = cfg.getTemplate("track/ftl/Vehicle-admin.ftl");
+
+                    try {
+                      template.process(deviceInfoMap, out);
+                    } catch (TemplateException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
                     }
 
                 }
