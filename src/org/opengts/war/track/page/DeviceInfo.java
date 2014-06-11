@@ -2283,9 +2283,7 @@ public class DeviceInfo
                     deviceInfoMap.put("newBtnValue", i18n.getString("DeviceInfo.new","New"));
                     
                     }
-                    
-                    
-                    
+
                     Configuration cfg = TemplateLoader.getConfiguration();
                     Template template = cfg.getTemplate("track/ftl/Vehicle-admin.ftl");
 

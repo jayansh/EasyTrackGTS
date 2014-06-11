@@ -40,9 +40,14 @@ import org.opengts.util.*;
 import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class ChangePassword
     extends WebPageAdaptor
@@ -209,20 +214,50 @@ public class ChangePassword
                 String menuURL = privLabel.getWebPageURL(reqState, PAGE_MENU_TOP);
               //String pwdURL  = EncodeMakeURL(reqState,RequestProperties.TRACK_BASE_URI(),pageName,COMMAND_PWD_CHANGE);
                 String pwdURL  = privLabel.getWebPageURL(reqState, pageName, COMMAND_PWD_CHANGE);
-                out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+i18n.getString("ChangePassword.menuDesc","Change your password")+"</span><br/>\n");
-                out.write("<span class='"+CommonServlet.CSS_MENU_INSTRUCTIONS+"'>"+i18n.getString("ChangePassword.enterCurrent","Enter your Current and New Passwords:")+"</span>\n");
-                out.write("<hr/>\n");
-                out.write("<form name='Passwd' method='post' action='"+pwdURL+"' target='_self'>\n"); // target='_top'
-                out.write("  <table>\n");
-                out.write("  <tr><td>"+i18n.getString("ChangePassword.oldPass","Old Password:")+"</td><td><input class='"+CommonServlet.CSS_TEXT_INPUT+"' type='password' name='"+PARM_OLD_PASSWD+"' value='' maxlength='20' size='20'></td></tr>\n");
-                out.write("  <tr><td>"+i18n.getString("ChangePassword.newPass","New Password:")+"</td><td><input class='"+CommonServlet.CSS_TEXT_INPUT+"' type='password' name='"+PARM_NEW1_PASSWD+"' value='' maxlength='20' size='20'></td></tr>\n");
-                out.write("  <tr><td>"+i18n.getString("ChangePassword.confirmNew","Confirm New:")+"</td><td><input class='"+CommonServlet.CSS_TEXT_INPUT+"' type='password' name='"+PARM_NEW2_PASSWD+"' value='' maxlength='20' size='20'></td></tr>\n");
-                out.write("  </table>\n");
-                out.write("  <input type='submit' name='"+PARM_PWD_SUBMIT+"' value='"+i18n.getString("ChangePassword.change","Change")+"'>\n");
-                out.write("  <hr style='margin: 5px 0px 5px 0px;'>\n");
-              //out.write("  <a href='"+menuURL+"'>"+i18n.getString("ChangePassword.cancel","Cancel")+"</a>\n");
-                out.write("  <input type='button' name='"+PARM_BUTTON_CANCEL+"' value='"+i18n.getString("ChangePassword.cancel","Cancel")+"' onclick=\"javascript:openURL('"+menuURL+"','_self');\">\n"); // target='_top'
-                out.write("</form>\n");
+
+                Map<String, Object> chngPwdMap = new HashMap<String, Object>();
+
+//                out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+i18n.getString("ChangePassword.menuDesc","Change your password")+"</span><br/>\n");
+//                out.write("<span class='"+CommonServlet.CSS_MENU_INSTRUCTIONS+"'>"+i18n.getString("ChangePassword.enterCurrent","Enter your Current and New Passwords:")+"</span>\n");
+//                out.write("<hr/>\n");
+//                out.write("<form name='Passwd' method='post' action='"+pwdURL+"' target='_self'>\n"); // target='_top'
+//                out.write("  <table>\n");
+//                out.write("  <tr><td>"+i18n.getString("ChangePassword.oldPass","Old Password:")+"</td><td><input class='"+CommonServlet.CSS_TEXT_INPUT+"' type='password' name='"+PARM_OLD_PASSWD+"' value='' maxlength='20' size='20'></td></tr>\n");
+//                out.write("  <tr><td>"+i18n.getString("ChangePassword.newPass","New Password:")+"</td><td><input class='"+CommonServlet.CSS_TEXT_INPUT+"' type='password' name='"+PARM_NEW1_PASSWD+"' value='' maxlength='20' size='20'></td></tr>\n");
+//                out.write("  <tr><td>"+i18n.getString("ChangePassword.confirmNew","Confirm New:")+"</td><td><input class='"+CommonServlet.CSS_TEXT_INPUT+"' type='password' name='"+PARM_NEW2_PASSWD+"' value='' maxlength='20' size='20'></td></tr>\n");
+//                out.write("  </table>\n");
+//                out.write("  <input type='submit' name='"+PARM_PWD_SUBMIT+"' value='"+i18n.getString("ChangePassword.change","Change")+"'>\n");
+//                out.write("  <hr style='margin: 5px 0px 5px 0px;'>\n");
+//              //out.write("  <a href='"+menuURL+"'>"+i18n.getString("ChangePassword.cancel","Cancel")+"</a>\n");
+//                out.write("  <input type='button' name='"+PARM_BUTTON_CANCEL+"' value='"+i18n.getString("ChangePassword.cancel","Cancel")+"' onclick=\"javascript:openURL('"+menuURL+"','_self');\">\n"); // target='_top'
+//                out.write("</form>\n");
+
+                chngPwdMap.put("chngPwdMenuTitle", i18n.getString("ChangePassword.menuDesc","Change your password"));
+                chngPwdMap.put("enterCurrentLabel", i18n.getString("ChangePassword.enterCurrent","Enter your Current and New Passwords:"));
+                chngPwdMap.put("pwdURL", pwdURL);
+                chngPwdMap.put("oldPwdLabel", i18n.getString("ChangePassword.oldPass","Old Password:"));
+                chngPwdMap.put("PARM_OLD_PASSWD", PARM_OLD_PASSWD);
+                chngPwdMap.put("newPwdLabel", i18n.getString("ChangePassword.newPass","New Password:"));chngPwdMap.put("pwdURL", pwdURL);
+                chngPwdMap.put("PARM_NEW1_PASSWD", PARM_NEW1_PASSWD);
+                chngPwdMap.put("confirmPwdLabel", i18n.getString("ChangePassword.confirmNew","Confirm New:"));
+                chngPwdMap.put("PARM_NEW2_PASSWD", PARM_NEW2_PASSWD);
+                chngPwdMap.put("PARM_PWD_SUBMIT", PARM_PWD_SUBMIT);
+                chngPwdMap.put("changebtnValue", i18n.getString("ChangePassword.change","Change"));
+                chngPwdMap.put("PARM_BUTTON_CANCEL", PARM_BUTTON_CANCEL);
+                chngPwdMap.put("cancelbtnValue", i18n.getString("ChangePassword.cancel","Cancel"));
+                chngPwdMap.put("menuURL", menuURL);
+                
+                
+                Configuration cfg = TemplateLoader.getConfiguration();
+                Template template = cfg.getTemplate("track/ftl/Change-password.ftl");
+
+                
+                try {
+                  template.process(chngPwdMap, out);
+                } catch (TemplateException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         };
 
