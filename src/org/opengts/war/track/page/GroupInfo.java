@@ -45,9 +45,14 @@ import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
 import org.opengts.db.dmtp.*;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class GroupInfo
     extends WebPageAdaptor
@@ -586,6 +591,8 @@ public class GroupInfo
                     String grpTitles[] = reqState.getDeviceGroupTitles();
                     String devTitles[] = reqState.getDeviceTitles();
     
+                    Map<String, Object> groupInfoMap = new HashMap<String, Object>();
+                    
                     // frame header
                   //String menuURL    = EncodeMakeURL(reqState,RequestProperties.TRACK_BASE_URI(),PAGE_MENU_TOP);
                     String menuURL    = privLabel.getWebPageURL(reqState, PAGE_MENU_TOP);
@@ -595,40 +602,63 @@ public class GroupInfo
                     String frameTitle = _allowEdit? 
                         i18n.getString("GroupInfo.viewEditGroup","View/Edit {0} Information", grpTitles) : 
                         i18n.getString("GroupInfo.viewGroup","View {0} Information", grpTitles);
-                    out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
-                    out.write("<hr>\n");
+//                    out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
+//                    out.write("<hr>\n");
+                    
+                    groupInfoMap.put("frameTitle", frameTitle);
                         
                     // group selection table (Select, Group ID, Group Description)
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("GroupInfo.selectGroup","Select a {0}",grpTitles)+":</h1>\n");
-                    out.write("<div style='margin-left:25px;'>\n");
-                    out.write("<form name='"+FORM_GROUP_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
-                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SELECT+"'/>");
-                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing=0 cellpadding=0 border=0>\n");
-                    out.write(" <thead>\n");
-                    out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"' nowrap>"+i18n.getString("GroupInfo.select","Select")+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+i18n.getString("GroupInfo.groupID","{0} ID",grpTitles)+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+i18n.getString("GroupInfo.groupName","{0} Name",grpTitles)+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+i18n.getString("GroupInfo.deviceCount","{0} Count",devTitles)+"</th>\n");
-                    out.write("  </tr>\n");
-                    out.write(" </thead>\n");
-                    out.write(" <tbody>\n");
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("GroupInfo.selectGroup","Select a {0}",grpTitles)+":</h1>\n");
+//                    out.write("<div style='margin-left:25px;'>\n");
+//                    out.write("<form name='"+FORM_GROUP_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
+//                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SELECT+"'/>");
+//                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing=0 cellpadding=0 border=0>\n");
+//                    out.write(" <thead>\n");
+//                    out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"' nowrap>"+i18n.getString("GroupInfo.select","Select")+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+i18n.getString("GroupInfo.groupID","{0} ID",grpTitles)+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+i18n.getString("GroupInfo.groupName","{0} Name",grpTitles)+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"' nowrap>"+i18n.getString("GroupInfo.deviceCount","{0} Count",devTitles)+"</th>\n");
+//                    out.write("  </tr>\n");
+//                    out.write(" </thead>\n");
+//                    out.write(" <tbody>\n");
+                    groupInfoMap.put("selectTitle", i18n.getString("GroupInfo.selectGroup","Select a {0}",grpTitles));
+                    groupInfoMap.put("FORM_GROUP_SELECT",FORM_GROUP_SELECT);
+                    groupInfoMap.put("selectURL",selectURL);
+                    groupInfoMap.put("PARM_COMMAND",PARM_COMMAND);
+                    groupInfoMap.put("COMMAND_INFO_SELECT",COMMAND_INFO_SELECT);
+                    groupInfoMap.put("thSelect",i18n.getString("GroupInfo.select","Select"));
+                    groupInfoMap.put("thGroupId",i18n.getString("GroupInfo.groupID","{0} ID",grpTitles));
+                    groupInfoMap.put("thGroupName",i18n.getString("GroupInfo.groupName","{0} Name",grpTitles));
+                    groupInfoMap.put("thDeviceCount",i18n.getString("GroupInfo.deviceCount","{0} Count",devTitles));
+                    
+                    List<Map<String, Object>> groupMapList = new ArrayList<Map<String, Object>>();
+                    
                     for (int u = 0; u < _groupList.size(); u++) {
                         String grid = _groupList.get(u);
                         //Print.logInfo("Group ID: " + grid);
-                        if ((u & 1) == 0) {
-                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD+"'>\n");
-                        } else {
-                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN+"'>\n");
-                        }
+//                        if ((u & 1) == 0) {
+//                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_ODD+"'>\n");
+//                        } else {
+//                            out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_ROW_EVEN+"'>\n");
+//                        }
+                        Map<String, Object> groupMap = new HashMap<String, Object>();
+                        
                         if (grid.equalsIgnoreCase(DeviceGroup.DEVICE_GROUP_ALL)) {
                             String groupID   = FilterText(DeviceGroup.DEVICE_GROUP_ALL);
                             String groupDesc = FilterText(reqState.getDeviceGroupDescription(DeviceGroup.DEVICE_GROUP_ALL,false/*!rtnDispName*/));
                             String devCount  = (currAcct != null)? String.valueOf(currAcct.getDeviceCount()) : "n/a";
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+u+"'>--</td>\n");
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+groupID+"</td>\n");
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+groupDesc+"</td>\n");
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+devCount+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+u+"'>--</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+groupID+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+groupDesc+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+devCount+"</td>\n");
+                            groupMap.put("SORTTABLE_SORTKEY", SORTTABLE_SORTKEY);
+                            groupMap.put("tdSelect", "--");
+                            groupMap.put("index", u);
+                            groupMap.put("groupID", groupID);
+                            groupMap.put("groupDesc", groupDesc);
+                            groupMap.put("devCount", devCount);
+                            
                         } else {
                             try {
                                 DeviceGroup grp = DeviceGroup.getDeviceGroup(currAcct, grid);
@@ -637,62 +667,104 @@ public class GroupInfo
                                     String groupDesc = FilterText(grp.getDescription());
                                     String devCount  = String.valueOf(grp.getDeviceCount());
                                     String checked   = _selGroupID.equals(grp.getGroupID())? "checked" : "";
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+u+"'><input type='radio' name='"+PARM_GROUP_SELECT+"' id='"+groupID+"' value='"+groupID+"' "+checked+"></td>\n");
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+groupID+"'>"+groupID+"</label></td>\n");
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+groupDesc+"</td>\n");
-                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+devCount+"</td>\n");
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+u+"'><input type='radio' name='"+PARM_GROUP_SELECT+"' id='"+groupID+"' value='"+groupID+"' "+checked+"></td>\n");
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+groupID+"'>"+groupID+"</label></td>\n");
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+groupDesc+"</td>\n");
+//                                    out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+devCount+"</td>\n");
+                                    groupMap.put("SORTTABLE_SORTKEY", SORTTABLE_SORTKEY);
+                                    groupMap.put("tdSelect", "<input type='radio' name='"+PARM_GROUP_SELECT+"' id='"+groupID+"' value='"+groupID+"' "+checked+">");
+                                    groupMap.put("index", u);
+                                    groupMap.put("groupID", groupID);
+                                    groupMap.put("groupDesc", groupDesc);
+                                    groupMap.put("devCount", devCount);
                                 }
                             } catch (DBException dbe) {
                                 // 
                             }
                         }
-                        out.write("  </tr>\n");
+//                        out.write("  </tr>\n");
+                        groupMapList.add(groupMap);
                     }
-                    out.write(" </tbody>\n");
-                    out.write("</table>\n");
-                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<tr>\n");
-                    if (_allowView  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("GroupInfo.view","View")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    if (_allowEdit  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("GroupInfo.edit","Edit")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    if (_allowProp  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_PROP+"' value='"+i18n.getString("GroupInfo.properties","Properties")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
-                    if (_allowDelete) { 
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL+"' value='"+i18n.getString("GroupInfo.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
-                    } else {
-                        out.write("&nbsp;"); 
-                    }
-                    out.write("</td>\n");
-                    out.write("</tr>\n");
-                    out.write("</table>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
+                    groupInfoMap.put("groupMapList",groupMapList);
+//                    out.write(" </tbody>\n");
+//                    out.write("</table>\n");
+//                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<tr>\n");
+//                    if (_allowView  ) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("GroupInfo.view","View")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    if (_allowEdit  ) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("GroupInfo.edit","Edit")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    if (_allowProp  ) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_PROP+"' value='"+i18n.getString("GroupInfo.properties","Properties")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
+//                    if (_allowDelete) { 
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL+"' value='"+i18n.getString("GroupInfo.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
+//                    } else {
+//                        out.write("&nbsp;"); 
+//                    }
+//                    out.write("</td>\n");
+//                    out.write("</tr>\n");
+//                    out.write("</table>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
+                    
+                    groupInfoMap.put("allowView",_allowView);
+                    groupInfoMap.put("PARM_SUBMIT_VIEW",PARM_SUBMIT_VIEW);
+                    groupInfoMap.put("viewBtnValue",i18n.getString("GroupInfo.view","View"));
+                    groupInfoMap.put("allowEdit",_allowEdit);
+                    groupInfoMap.put("PARM_SUBMIT_EDIT",PARM_SUBMIT_EDIT);
+                    groupInfoMap.put("editBtnValue",i18n.getString("GroupInfo.edit","Edit"));
+                    groupInfoMap.put("allowProp",_allowProp);
+                    groupInfoMap.put("PARM_SUBMIT_PROP",PARM_SUBMIT_PROP);
+                    groupInfoMap.put("propBtnValue",i18n.getString("GroupInfo.properties","Properties"));
+                    groupInfoMap.put("allowDelete",_allowDelete);
+                    groupInfoMap.put("PARM_SUBMIT_DEL",PARM_SUBMIT_DEL);
+                    groupInfoMap.put("deleteBtnValue",i18n.getString("GroupInfo.delete","Delete"));
+                    groupInfoMap.put("onclickConfirmDelete",Onclick_ConfirmDelete(locale));
                     
                     /* new group */
-                    if (_allowNew) {
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("GroupInfo.createNewGroup","Create a new {0}",grpTitles)+":</h1>\n");
-                    out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<form name='"+FORM_GROUP_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
-                    out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
-                    out.write(i18n.getString("GroupInfo.groupID","{0} ID",grpTitles)+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_NAME+"' value='' size='32' maxlength='32'><br>\n");
-                    out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("GroupInfo.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
-                    }
+//                    if (_allowNew) {
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+i18n.getString("GroupInfo.createNewGroup","Create a new {0}",grpTitles)+":</h1>\n");
+//                    out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<form name='"+FORM_GROUP_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
+//                    out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
+//                    out.write(i18n.getString("GroupInfo.groupID","{0} ID",grpTitles)+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_NAME+"' value='' size='32' maxlength='32'><br>\n");
+//                    out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("GroupInfo.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
+//                    }
 
+                    groupInfoMap.put("allowNew",_allowNew);
+                    groupInfoMap.put("createNewGrpTitle",i18n.getString("GroupInfo.createNewGroup","Create a new {0}",grpTitles));
+                    groupInfoMap.put("FORM_GROUP_NEW",FORM_GROUP_NEW);
+                    groupInfoMap.put("newURL",newURL);
+                    groupInfoMap.put("PARM_COMMAND",PARM_COMMAND);
+                    groupInfoMap.put("COMMAND_INFO_NEW",COMMAND_INFO_NEW);
+                    groupInfoMap.put("grpIdLabel",i18n.getString("GroupInfo.groupID","{0} ID",grpTitles));
+                    groupInfoMap.put("PARM_NEW_NAME",PARM_NEW_NAME);
+                    groupInfoMap.put("PARM_SUBMIT_NEW",PARM_SUBMIT_NEW);
+                    groupInfoMap.put("newBtnValue",i18n.getString("GroupInfo.new","New"));
+                    
+                    Configuration cfg = TemplateLoader.getConfiguration();
+                    Template template = cfg.getTemplate("track/ftl/Group-admin.ftl");
+
+                    try {
+                      template.process(groupInfoMap, out);
+                    } catch (TemplateException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
             };
             
