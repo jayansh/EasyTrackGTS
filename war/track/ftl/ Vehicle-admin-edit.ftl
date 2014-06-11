@@ -100,8 +100,8 @@
          <input type="text" name="" class="form-control"/>Miles[offset 0.00]
          Group Membership:
          All Vehicles(All)<input type="checkbox" name=""/>
-        <button class="btn btn-primary btn-lg" >Change</button>
-        <button class="btn btn-primary btn-lg" >Cancel</button>
+        <button class="btn btn-primary btn-sm" >Change</button>
+        <button class="btn btn-primary btn-sm" >Cancel</button>
         
         </form>
         

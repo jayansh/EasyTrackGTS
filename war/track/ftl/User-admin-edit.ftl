@@ -80,8 +80,8 @@
         <select class="form-control input-lg" name="">
         <option> Write/Edit</option>
         </select>
-        <button class="btn btn-primary btn-lg" >Change</button>
-        <button class="btn btn-primary btn-lg" >Cancel</button>
+        <button class="btn btn-primary btn-sm" >Change</button>
+        <button class="btn btn-primary btn-sm" >Cancel</button>
         
         </form>
         
