@@ -54,9 +54,14 @@ import org.opengts.dbtools.*;
 import org.opengts.db.*;
 import org.opengts.db.tables.*;
 import org.opengts.geocoder.GeocodeProvider;
-
 import org.opengts.war.tools.*;
 import org.opengts.war.track.*;
+
+import com.jaysan.opengts.track.TemplateLoader;
+
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 public class ZoneInfo
     extends WebPageAdaptor
@@ -673,53 +678,81 @@ public class ZoneInfo
                 String selectURL  = ZoneInfo.this.encodePageURL(reqState);//,RequestProperties.TRACK_BASE_URI());
                 String newURL     = ZoneInfo.this.encodePageURL(reqState);//,RequestProperties.TRACK_BASE_URI());
 
+                Map<String, Object> zoneInfoMap = new HashMap<String, Object>();
                 if (_listZones) {
                     
                     // Geozone selection table (Select, Geozone ID, Zone Name)
                     String frameTitle = _allowEdit? 
                         i18n.getString("ZoneInfo.list.viewEditZone","View/Edit Geozone Information") : 
                         i18n.getString("ZoneInfo.list.viewZone","View Geozone Information");
-                    out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
-                    out.write("<hr>\n");
+
+                    zoneInfoMap.put("frameTitle", frameTitle);
+//                    out.write("<span class='"+CommonServlet.CSS_MENU_TITLE+"'>"+frameTitle+"</span><br/>\n");
+//                    out.write("<hr>\n");
 
                     // Geozone selection table (Select, Zone ID, Zone Name)
-                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+FilterText(i18n.getString("ZoneInfo.list.selectZone","Select a Geozone"))+":</h1>\n");
-                    out.write("<div style='margin-left:25px;'>\n");
-                    out.write("<form name='"+FORM_ZONE_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
-                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SELECT+"'/>");
-                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing=0 cellpadding=0 border=0>\n");
-                    out.write(" <thead>\n");
-                    out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"'>"+FilterText(i18n.getString("ZoneInfo.list.select","Select"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.description","Description\n(Address)"))+"</th>\n");
-                    if (showOverlapPriority) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.overlapPriority","Overlap\nPriority"))+"</th>\n");
-                    }
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.zoneType","Zone\nType"))+"</th>\n");
-                    if (showRevGeocodeZone) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.revGeocode","Reverse\nGeocode"))+"</th>\n");
-                    }
-                    if (showArriveDepartZone) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.arriveZone","Arrival\nZone"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.departZone","Departure\nZone"))+"</th>\n");
-                    }
-                    if (showClientUploadZone == 1) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.clientUpload","Client\nUpload"))+"</th>\n");
-                    } else
-                    if (showClientUploadZone == 2) {
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.clientUploadID","Client\nUpload ID"))+"</th>\n");
-                    }
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.radiusMeters","Radius\n(meters)"))+"</th>\n");
-                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.centerPoint","Center\nLatitude/Longitude"))+"</th>\n");
-                    out.write("  </tr>\n");
-                    out.write(" </thead>\n");
+//                    out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+FilterText(i18n.getString("ZoneInfo.list.selectZone","Select a Geozone"))+":</h1>\n");
+//                    out.write("<div style='margin-left:25px;'>\n");
+//                    out.write("<form name='"+FORM_ZONE_SELECT+"' method='post' action='"+selectURL+"' target='_self'>"); // target='_top'
+//                    out.write("<input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_SELECT+"'/>");
+//                    out.write("<table class='"+CommonServlet.CSS_ADMIN_SELECT_TABLE+"' cellspacing=0 cellpadding=0 border=0>\n");
+//                    out.write(" <thead>\n");
+//                    out.write("  <tr class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_ROW+"'>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL_SEL+"'>"+FilterText(i18n.getString("ZoneInfo.list.select","Select"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.description","Description\n(Address)"))+"</th>\n");
+//                    if (showOverlapPriority) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.overlapPriority","Overlap\nPriority"))+"</th>\n");
+//                    }
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.zoneType","Zone\nType"))+"</th>\n");
+//                    if (showRevGeocodeZone) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.revGeocode","Reverse\nGeocode"))+"</th>\n");
+//                    }
+//                    if (showArriveDepartZone) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.arriveZone","Arrival\nZone"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.departZone","Departure\nZone"))+"</th>\n");
+//                    }
+//                    if (showClientUploadZone == 1) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.clientUpload","Client\nUpload"))+"</th>\n");
+//                    } else
+//                    if (showClientUploadZone == 2) {
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.clientUploadID","Client\nUpload ID"))+"</th>\n");
+//                    }
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.radiusMeters","Radius\n(meters)"))+"</th>\n");
+//                    out.write("   <th class='"+CommonServlet.CSS_ADMIN_TABLE_HEADER_COL    +"'>"+FilterText(i18n.getString("ZoneInfo.list.centerPoint","Center\nLatitude/Longitude"))+"</th>\n");
+//                    out.write("  </tr>\n");
+//                    out.write(" </thead>\n");
+
+                    zoneInfoMap.put("selectZoneTitle", FilterText(i18n.getString("ZoneInfo.list.selectZone","Select a Geozone")));
+                    zoneInfoMap.put("FORM_ZONE_SELECT", FORM_ZONE_SELECT);
+                    zoneInfoMap.put("selectURL", selectURL);
+                    zoneInfoMap.put("PARM_COMMAND", PARM_COMMAND);
+                    zoneInfoMap.put("COMMAND_INFO_SELECT", COMMAND_INFO_SELECT);
+                    zoneInfoMap.put("thSelect", FilterText(i18n.getString("ZoneInfo.list.select","Select")));
+                    zoneInfoMap.put("thGeozoneId", FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID")));
+                    zoneInfoMap.put("thDescription", FilterText(i18n.getString("ZoneInfo.list.description","Description\n(Address)")));
+                    zoneInfoMap.put("showOverlapPriority",showOverlapPriority);
+                    zoneInfoMap.put("thOverlapPriority", FilterText(i18n.getString("ZoneInfo.list.overlapPriority","Overlap\nPriority")));
+                    zoneInfoMap.put("thZoneType", FilterText(i18n.getString("ZoneInfo.list.zoneType","Zone\nType")));
+                    zoneInfoMap.put("showRevGeocodeZone",showRevGeocodeZone);
+                    zoneInfoMap.put("thRevGeocode", FilterText(i18n.getString("ZoneInfo.list.revGeocode","Reverse\nGeocode")));
+                    zoneInfoMap.put("showArriveDepartZone",showArriveDepartZone);
+                    zoneInfoMap.put("thArriveZone", FilterText(i18n.getString("ZoneInfo.list.arriveZone","Arrival\nZone")));
+                    zoneInfoMap.put("thDepartZone", FilterText(i18n.getString("ZoneInfo.list.departZone","Departure\nZone")));
+                    zoneInfoMap.put("showClientUploadZone",showClientUploadZone);
+                    zoneInfoMap.put("thClientUpload", FilterText(i18n.getString("ZoneInfo.list.clientUpload","Client\nUpload")));
+                    zoneInfoMap.put("thClientUploadId", FilterText(i18n.getString("ZoneInfo.list.clientUploadID","Client\nUpload ID")));
+                    zoneInfoMap.put("thRadiusMeters", FilterText(i18n.getString("ZoneInfo.list.radiusMeters","Radius\n(meters)")));
+                    zoneInfoMap.put("thCenterPoint", FilterText(i18n.getString("ZoneInfo.list.centerPoint","Center\nLatitude/Longitude")));
                     
                     /* geozone list */
                     out.write(" <tbody>\n");
                     int pointRadiusType = Geozone.GeozoneType.POINT_RADIUS.getIntValue();
                     int polygonType     = Geozone.GeozoneType.POLYGON.getIntValue();
                     int corridorType    = Geozone.GeozoneType.SWEPT_POINT_RADIUS.getIntValue();
+
+                    List<Map<String,Object>> zoneMapList = new ArrayList<Map<String,Object>>();
+
                     for (int z = 0, r = 0; z < _zoneList.length; z++) {
                         
                         /* get Geozone */
@@ -733,6 +766,7 @@ public class ZoneInfo
                             continue; // skip 
                         }
 
+                        Map<String,Object> zoneMap = new HashMap<String,Object>();
                         /* geozone vars */
                         int    zoneTypeInt = zone.getZoneType();
                         String zoneID      = FilterText(zone.getGeozoneID());
@@ -749,85 +783,116 @@ public class ZoneInfo
                         int pointCount     = ZoneInfo.getGeozoneSupportedPointCount(reqState, zoneTypeInt);
                         String typeColor   = (pointCount > 0)? "black" : "red";
 
-                        out.write("  <tr class='" + styleClass + "'>\n");
-                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+z+"'>");
+                        zoneMap.put("showZoneSelectRadio", false);
+//                        out.write("  <tr class='" + styleClass + "'>\n");
+//                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL_SEL+"' "+SORTTABLE_SORTKEY+"='"+z+"'>");
                         if (pointCount <= 0) {
-                            out.write("&nbsp;"); // not supported
+//                            out.write("&nbsp;"); // not supported
                         } else
                         if ((zoneTypeInt == pointRadiusType) || (zoneTypeInt == polygonType) || (zoneTypeInt == corridorType)) {
-                            out.write("<input type='radio' name='"+PARM_ZONE_SELECT+"' id='"+zoneID+"' value='"+zoneID+"' "+checked+">");
+                            zoneMap.put("showZoneSelectRadio", true);
+//                            out.write("<input type='radio' name='"+PARM_ZONE_SELECT+"' id='"+zoneID+"' value='"+zoneID+"' "+checked+">");
                         } else {
-                            out.write("&nbsp;"); // unrecognized type
+//                            out.write("&nbsp;"); // unrecognized type
                         }
-                        out.write(      "</td>\n");
-                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+zoneID+"'>"+zoneID+"</label></td>\n");
-                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneDesc+"</td>\n");
+//                        out.write(      "</td>\n");
+//                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap><label for='"+zoneID+"'>"+zoneID+"</label></td>\n");
+//                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneDesc+"</td>\n");
                         if (showOverlapPriority) {
                             String zonePriority = FilterText(String.valueOf(zone.getPriority()));
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zonePriority+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zonePriority+"</td>\n");
+                            zoneMap.put("zonePriority",zonePriority);
                         }
-                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap style='color:"+typeColor+"'>"+zoneTypeStr+"</td>\n");
-                        if (showRevGeocodeZone) {
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneRevGeo+"</td>\n");
-                        }
+//                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap style='color:"+typeColor+"'>"+zoneTypeStr+"</td>\n");
+//                        if (showRevGeocodeZone) {
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneRevGeo+"</td>\n");
+//                        }
                         if (showArriveDepartZone) {
                             String zoneArrNtfy  = FilterText(ComboOption.getYesNoText(locale,zone.getArrivalZone()));
                             String zoneDepNtfy  = FilterText(ComboOption.getYesNoText(locale,zone.getDepartureZone()));
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneArrNtfy+"</td>\n");
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneDepNtfy+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneArrNtfy+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneDepNtfy+"</td>\n");
+                            zoneMap.put("zoneArrNtfy",zoneArrNtfy);
+                            zoneMap.put("zoneDepNtfy",zoneDepNtfy);
                         }
                         if (showClientUploadZone == 1) {
                             String zoneUpload   = FilterText(ComboOption.getYesNoText(locale,zone.getClientUpload()||(zone.getClientID() > 0)));
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneUpload+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneUpload+"</td>\n");
+                            zoneMap.put("zoneUpload",zoneUpload);
                         } else
                         if (showClientUploadZone == 2) {
                             String zoneUpldID   = (zone.getClientID() > 0)? String.valueOf(zone.getClientID()) : "--";
-                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneUpldID+"</td>\n");
+//                            out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneUpldID+"</td>\n");
+                            zoneMap.put("zoneUpldID",zoneUpldID);
                         }
-                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneRadius+"</td>\n");
-                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneCenter+"</td>\n");
-                        out.write("  </tr>\n");
+//                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneRadius+"</td>\n");
+//                        out.write("   <td class='"+CommonServlet.CSS_ADMIN_TABLE_BODY_COL    +"' nowrap>"+zoneCenter+"</td>\n");
+//                        out.write("  </tr>\n");
 
+                        zoneMap.put("sortbleSortKey",SORTTABLE_SORTKEY+"='"+z+"'");
+                        zoneMap.put("PARM_ZONE_SELECT",PARM_ZONE_SELECT);
+                        zoneMap.put("zoneID",zoneID);
+                        zoneMap.put("checked",checked);
+                        zoneMap.put("zoneDesc",zoneDesc);
+                        
+                        zoneMap.put("typeColor",typeColor);
+                        zoneMap.put("zoneTypeStr",zoneTypeStr);
+                        zoneMap.put("zoneRevGeo",zoneRevGeo);
+                        zoneMap.put("zoneRadius",zoneRadius);
+                        zoneMap.put("zoneCenter",zoneCenter);
+                        zoneMapList.add(zoneMap);
                     }
-                    out.write(" </tbody>\n");
-                    out.write("</table>\n");
-                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                    out.write("<tr>\n");
-                    if (_allowView  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("ZoneInfo.list.view","View")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    if (_allowEdit  ) { 
-                        out.write("<td style='padding-left:5px;'>");
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("ZoneInfo.list.edit","Edit")+"'>");
-                        out.write("</td>\n"); 
-                    }
-                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
-                    if (_allowDelete) { 
-                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL+"' value='"+i18n.getString("ZoneInfo.list.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
-                    } else {
-                        out.write("&nbsp;"); 
-                    }
-                    out.write("</td>\n"); 
-                    out.write("</tr>\n");
-                    out.write("</table>\n");
-                    out.write("</form>\n");
-                    out.write("</div>\n");
-                    out.write("<hr>\n");
+                    zoneInfoMap.put("zoneMapList", zoneMapList);
+//                    out.write(" </tbody>\n");
+//                    out.write("</table>\n");
+//                    out.write("<table cellpadding='0' cellspacing='0' border='0' style='width:95%; margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                    out.write("<tr>\n");
+//                    if (_allowView  ) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_VIEW+"' value='"+i18n.getString("ZoneInfo.list.view","View")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    if (_allowEdit  ) { 
+//                        out.write("<td style='padding-left:5px;'>");
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_EDIT+"' value='"+i18n.getString("ZoneInfo.list.edit","Edit")+"'>");
+//                        out.write("</td>\n"); 
+//                    }
+//                    out.write("<td style='width:100%; text-align:right; padding-right:10px;'>");
+//                    if (_allowDelete) { 
+//                        out.write("<input type='submit' name='"+PARM_SUBMIT_DEL+"' value='"+i18n.getString("ZoneInfo.list.delete","Delete")+"' "+Onclick_ConfirmDelete(locale)+">");
+//                    } else {
+//                        out.write("&nbsp;"); 
+//                    }
+//                    out.write("</td>\n"); 
+//                    out.write("</tr>\n");
+//                    out.write("</table>\n");
+//                    out.write("</form>\n");
+//                    out.write("</div>\n");
+//                    out.write("<hr>\n");
+
+                    zoneInfoMap.put("allowView", _allowView);
+                    zoneInfoMap.put("PARM_SUBMIT_VIEW", PARM_SUBMIT_VIEW);
+                    zoneInfoMap.put("viewBtnLabel", i18n.getString("ZoneInfo.list.view","View"));
+                    zoneInfoMap.put("allowEdit", _allowEdit);
+                    zoneInfoMap.put("PARM_SUBMIT_EDIT", PARM_SUBMIT_EDIT);
+                    zoneInfoMap.put("editBtnLabel", i18n.getString("ZoneInfo.list.edit","Edit"));
+                    zoneInfoMap.put("allowDelete", _allowDelete);
+                    zoneInfoMap.put("PARM_SUBMIT_DEL", PARM_SUBMIT_DEL);
+                    zoneInfoMap.put("deleteBtnLabel", i18n.getString("ZoneInfo.list.delete","Delete"));
+                    zoneInfoMap.put("onclickConfirmDelete", Onclick_ConfirmDelete(locale));
 
                     /* new Geozone */
                     if (_allowNew) {
-                        out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+FilterText(i18n.getString("ZoneInfo.list.createNewZone","Create a new Geozone"))+":</h1>\n");
-                        out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
-                        out.write("<form name='"+FORM_ZONE_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
-                        out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
-                        out.write(FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID"))+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_ID+"' value='' size='32' maxlength='32'>");
+//                        out.write("<h1 class='"+CommonServlet.CSS_ADMIN_SELECT_TITLE+"'>"+FilterText(i18n.getString("ZoneInfo.list.createNewZone","Create a new Geozone"))+":</h1>\n");
+//                        out.write("<div style='margin-top:5px; margin-left:5px; margin-bottom:5px;'>\n");
+//                        out.write("<form name='"+FORM_ZONE_NEW+"' method='post' action='"+newURL+"' target='_self'>"); // target='_top'
+//                        out.write(" <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_NEW+"'/>");
+//                        out.write(FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID"))+": <input type='text' class='"+CommonServlet.CSS_TEXT_INPUT+"' name='"+PARM_NEW_ID+"' value='' size='32' maxlength='32'>");
                         int polyPointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState,polygonType );
                         int corrPointCount = ZoneInfo.getGeozoneSupportedPointCount(reqState,corridorType);
                         if ((polyPointCount > 0) || (corrPointCount > 0)) {
                             ComboMap zoneTypeList = new ComboMap();
-                            out.write("&nbsp;");
+//                            out.write("&nbsp;");
                             zoneTypeList.add(String.valueOf(pointRadiusType) , Geozone.GeozoneType.POINT_RADIUS.toString(locale));
                             if (polyPointCount > 0) {
                                 zoneTypeList.add(String.valueOf(polygonType) , Geozone.GeozoneType.POLYGON.toString(locale));
@@ -835,15 +900,39 @@ public class ZoneInfo
                             if (corrPointCount > 0) {
                                 zoneTypeList.add(String.valueOf(corridorType), Geozone.GeozoneType.SWEPT_POINT_RADIUS.toString(locale));
                             }
-                            out.print(Form_ComboBox(PARM_NEW_TYPE,PARM_NEW_TYPE,true,zoneTypeList,"","", -1));
+//                            out.print(Form_ComboBox(PARM_NEW_TYPE,PARM_NEW_TYPE,true,zoneTypeList,"","", -1));
+                            zoneInfoMap.put("showZoneTypeCombo", true);
+                            zoneInfoMap.put("PARM_NEW_TYPE", PARM_NEW_TYPE);
+                            zoneInfoMap.put("zoneTypeList", zoneTypeList);
                         } else {
                             // only POINT_RADIUS supported
+                            zoneInfoMap.put("showZoneTypeCombo", false);
                         }
-                        out.write("<br>\n");
-                        out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("ZoneInfo.list.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
-                        out.write("</form>\n");
-                        out.write("</div>\n");
-                        out.write("<hr>\n");
+//                        out.write("<br>\n");
+//                        out.write(" <input type='submit' name='"+PARM_SUBMIT_NEW+"' value='"+i18n.getString("ZoneInfo.list.new","New")+"' style='margin-top:5px; margin-left:10px;'>\n");
+//                        out.write("</form>\n");
+//                        out.write("</div>\n");
+//                        out.write("<hr>\n");
+                    }
+
+                    zoneInfoMap.put("allowNew", _allowNew);
+                    zoneInfoMap.put("createNewGeozoneLabel", FilterText(i18n.getString("ZoneInfo.list.createNewZone","Create a new Geozone")));
+                    zoneInfoMap.put("FORM_ZONE_NEW", FORM_ZONE_NEW);
+                    zoneInfoMap.put("newURL", newURL);
+                    zoneInfoMap.put("COMMAND_INFO_NEW", COMMAND_INFO_NEW);
+                    zoneInfoMap.put("geozoneIdLabel", FilterText(i18n.getString("ZoneInfo.list.zoneID","Geozone ID")));
+                    zoneInfoMap.put("PARM_NEW_ID", PARM_NEW_ID);
+                    zoneInfoMap.put("PARM_SUBMIT_NEW", PARM_SUBMIT_NEW);
+                    zoneInfoMap.put("newBtnLabel", i18n.getString("ZoneInfo.list.new","New"));
+                    
+                    Configuration cfg = TemplateLoader.getConfiguration();
+                    Template template = cfg.getTemplate("track/ftl/Geozone-admin.ftl");
+
+                    try {
+                      template.process(zoneInfoMap, out);
+                    } catch (TemplateException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
                     }
 
                 } else {
