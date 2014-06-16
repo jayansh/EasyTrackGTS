@@ -267,14 +267,14 @@ position: absolute;
 #separator {
     /*background-color: #EEE;
     border: 1px solid #CCC;*/
-        background: url('../images/arrow_right.png') ;
+        background: url('../images/arrow_left.png') ;
         width: 32px;
         height: 32px;
     
     
 }
 .use-sidebar #separator {
-    background: url('../images/arrow_left.png') ;
+    background: url('../images/arrow_right.png') ;
         width: 32px;
         height: 32px;
         
