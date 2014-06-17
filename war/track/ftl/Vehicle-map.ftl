@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>Vehicle Map|Easy Track GTS</title>
+    <title>${mapTypeTitle}|Easy Track GTS</title>
 
      <#include "header.ftl">
   </head>
