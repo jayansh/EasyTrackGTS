@@ -13,7 +13,7 @@
 
 <body>
   <!-- Command form -->
-<div class="use-sidebar sidebar-at-left" id="main" style="margin-top:20px; ">
+<div class="use-sidebar sidebar-at-right" id="main" style="margin-top:20px; ">
   <div id="sidebar">
     <form id='${FORM_COMMAND}' name='${FORM_COMMAND}' method='post' action="${actionURL}" target='_self'>
       <input type='hidden' name='${PARM_PAGE}' value=''/>
