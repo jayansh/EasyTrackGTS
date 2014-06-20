@@ -1048,6 +1048,9 @@ public class UserInfo
                     /* start of form */
                     out.write("<form name='"+FORM_USER_EDIT+"' method='post' action='"+editURL+"' target='_self'>\n"); // target='_top'
                     out.write("  <input type='hidden' name='"+PARM_COMMAND+"' value='"+COMMAND_INFO_UPDATE+"'/>\n");
+                    userInfoMap.put("FORM_USER_EDIT",FORM_USER_EDIT);
+                    userInfoMap.put("PARM_COMMAND",PARM_COMMAND);
+                    userInfoMap.put("COMMAND_INFO_UPDATE",COMMAND_INFO_UPDATE);
 
                     /* password */
                     //AccessLevel aclPASS = privLabel.getAccessLevel(currUser, UserInfo.this.getAclName(_ACL_PASS));
@@ -1182,38 +1185,134 @@ public class UserInfo
                     out.println(FormRow_TextField(PARM_CONTACT_EMAIL , _editUser , i18n.getString("UserInfo.contactEmail","Contact Email")+":", (_selUser!=null)?_selUser.getContactEmail():"", 60, 100));
                     out.println(FormRow_TextField(PARM_NOTIFY_EMAIL  , _editUser , i18n.getString("UserInfo.notifyEMail","Notify Email:")     , (_selUser!=null)?_selUser.getNotifyEmail() :"", 95, 125));
                     out.println(FormRow_ComboBox (PARM_TIMEZONE      , _editUser , i18n.getString("UserInfo.timeZone","Time Zone")+":"        , (_selUser!=null)?_selUser.getTimeZone()    :"", _tzList, null, 24));
+                    
+                    userInfoMap.put("PARM_USER_SELECT", PARM_USER_SELECT);
+                    userInfoMap.put("userIdLabel", i18n.getString("UserInfo.userID","User ID"));
+                    userInfoMap.put("selUserId", _selUserID);
+                    
+                    userInfoMap.put("PARM_USER_ACTIVE", PARM_USER_ACTIVE);
+                    userInfoMap.put("userActiveEditable", _editUser && !isCurrentUserSelected);
+                    userInfoMap.put("userActiveLabel", i18n.getString("UserInfo.active","Active"));
+                    userInfoMap.put("selUserActive",  ((_selUser != null) && _selUser.isActive()));
+                    userInfoMap.put("yesNoMap",  ComboMap.getYesNoMap(locale));
+                    
+                    userInfoMap.put("PARM_USER_NAME", PARM_USER_NAME);
+                    userInfoMap.put("editUser", _editUser);
+                    userInfoMap.put("userNameLabel", i18n.getString("UserInfo.userDescription","User Description"));
+                    userInfoMap.put("userNameValue", (_selUser!=null)?_selUser.getDescription() :"");
+                    
+                    userInfoMap.put("viewPass", _viewPass);
+                    userInfoMap.put("PARM_USER_PASSWORD", PARM_USER_PASSWORD);
+                    userInfoMap.put("userPasswordLabel", i18n.getString("UserInfo.password","Password"));
+                    userInfoMap.put("password", password);
+                    
+                    userInfoMap.put("PARM_CONTACT_NAME", PARM_CONTACT_NAME);
+                    userInfoMap.put("contactNameLabel", i18n.getString("UserInfo.contactName","Contact Name"));
+                    userInfoMap.put("contactNameValue", (_selUser!=null)?_selUser.getContactName() :"");
+                    
+                    userInfoMap.put("PARM_CONTACT_PHONE", PARM_CONTACT_PHONE);
+                    userInfoMap.put("contactPhoneLabel", i18n.getString("UserInfo.contactPhone","Contact Phone"));
+                    userInfoMap.put("contactPhoneValue", (_selUser!=null)?_selUser.getContactPhone():"");
+                    
+                    userInfoMap.put("PARM_CONTACT_EMAIL", PARM_CONTACT_EMAIL);
+                    userInfoMap.put("contactEmailLabel", i18n.getString("UserInfo.contactEmail","Contact Email"));
+                    userInfoMap.put("contactEmailValue", (_selUser!=null)?_selUser.getContactEmail():"");
+                    
+                    userInfoMap.put("PARM_NOTIFY_EMAIL", PARM_NOTIFY_EMAIL);
+                    userInfoMap.put("notifyEmailLabel",  i18n.getString("UserInfo.notifyEMail","Notify Email:"));
+                    userInfoMap.put("notifyEmailValue", (_selUser!=null)?_selUser.getNotifyEmail() :"");
+                    
+                    userInfoMap.put("PARM_TIMEZONE", PARM_TIMEZONE);
+                    userInfoMap.put("timezoneLabel", i18n.getString("UserInfo.timeZone","Time Zone"));
+                    userInfoMap.put("selTimeZone", (_selUser!=null)?_selUser.getTimeZone()    :"");
+                    userInfoMap.put("timezoneMap", _tzList);
+                   
+                    userInfoMap.put("showAddress", _showAddress);
                     // address/office
                     if (_showAddress) {
                         out.println(FormRow_Separator());
                         out.println(FormRow_TextField(PARM_ADDRESS_LINE_1, _editUser , i18n.getString("UserInfo.addressLine1","Address Line")+":"  , (_selUser!=null)?_selUser.getAddressLine1() :"", 65, 69));
                         out.println(FormRow_TextField(PARM_ADDRESS_CITY  , _editUser , i18n.getString("UserInfo.addressCity" ,"Address City")+":"  , (_selUser!=null)?_selUser.getAddressCity()  :"", 49, 49));
                         out.println(FormRow_TextField(PARM_ADDRESS_STATE , _editUser , i18n.getString("UserInfo.addressState","Address State")+":" , (_selUser!=null)?_selUser.getAddressState() :"", 49, 49));
+                        
+                        userInfoMap.put("PARM_ADDRESS_LINE_1", PARM_ADDRESS_LINE_1);
+                        userInfoMap.put("addressLine1Label", i18n.getString("UserInfo.addressLine1","Address Line"));
+                        userInfoMap.put("addressLine1Value", (_selUser!=null)?_selUser.getAddressLine1() :"");
+                        
+                        userInfoMap.put("PARM_ADDRESS_CITY", PARM_ADDRESS_CITY);
+                        userInfoMap.put("addressCityLabel", i18n.getString("UserInfo.addressCity" ,"Address City"));
+                        userInfoMap.put("addressCityValue", (_selUser!=null)?_selUser.getAddressCity()  :"");
+                        
+                        userInfoMap.put("PARM_ADDRESS_STATE", PARM_ADDRESS_STATE);
+                        userInfoMap.put("addressStateLabel", i18n.getString("UserInfo.addressState","Address State"));
+                        userInfoMap.put("addressStateValue", (_selUser!=null)?_selUser.getAddressState() :"");
                     }
+                    
+                   
+                    userInfoMap.put("showOffice", _showOffice); 
                     if (_showOffice) {
                         if (!_showAddress) { out.println(FormRow_Separator()); }
                         out.println(FormRow_TextField(PARM_OFFICE_LOC, _editUser , i18n.getString("UserInfo.officeLocation" ,"Office Location")+":", (_selUser!=null)?_selUser.getOfficeLocation() :"", 50, 50));
+                        userInfoMap.put("PARM_OFFICE_LOC", PARM_OFFICE_LOC);
+                        userInfoMap.put("officeLocationLabel", i18n.getString("UserInfo.officeLocation" ,"Office Location"));
+                        userInfoMap.put("officeLocationValue", (_selUser!=null)?_selUser.getOfficeLocation() :"");
                     }
+                    
+                    userInfoMap.put("isSpeedUnits", User.getFactory().hasField(User.FLD_speedUnits));
                     // speed/distance units 
                     if (User.getFactory().hasField(User.FLD_speedUnits)) {
                         ComboOption speedUnits    = privLabel.getEnumComboOption(Account.getSpeedUnits(_selUser)      );
                         ComboOption distanceUnits = privLabel.getEnumComboOption(Account.getDistanceUnits(_selUser)   );
                         out.println(FormRow_ComboBox (PARM_SPEED_UNITS   , _editUser , i18n.getString("UserInfo.speedUnits","Speed Units:")       , speedUnits       , _suList, null, 10));
                         out.println(FormRow_ComboBox (PARM_DIST_UNITS    , _editUser , i18n.getString("UserInfo.distanceUnits","Distance Units:") , distanceUnits    , _duList, null, 10));
+                        userInfoMap.put("PARM_SPEED_UNITS", PARM_SPEED_UNITS);
+                        userInfoMap.put("speedUnitLabel", i18n.getString("UserInfo.speedUnits","Speed Units:"));
+                        userInfoMap.put("selSpeedUnit", speedUnits.getKey());
+                        userInfoMap.put("speedUnitsMap", _suList);
+                        
+                        userInfoMap.put("PARM_DIST_UNITS", PARM_DIST_UNITS);
+                        userInfoMap.put("distanceUnitLabel", i18n.getString("UserInfo.distanceUnits","Distance Units:"));
+                        userInfoMap.put("selDistanceUnit", distanceUnits.getKey());
+                        userInfoMap.put("distanceUnitsMap", _duList);
                     }
+                    
+                    userInfoMap.put("viewGroup", _viewGroup);
+                    userInfoMap.put("editGroup", _editGroup);
                     // authorized groups
                     if (_viewGroup) {
                         out.println(FormRow_Separator());
                         String s = i18n.getString("UserInfo.authDeviceGroup","Authorized {0}",grpTitles);
+                        userInfoMap.put("isGroupMapLengthOne", _grpMap.length == 1);
                         if (_grpMap.length == 1) {
                             out.println(FormRow_ComboBox(PARM_DEV_GROUP_+"0", _editGroup, s+":", _devGrp[0], _grpMap[0], "", 20));
+                            userInfoMap.put("PARM_DEV_GROUP", PARM_DEV_GROUP_+"0");
+                            userInfoMap.put("devGroupLabel", s);
+                            userInfoMap.put("selDevGroup", _devGrp[0]);
+                            userInfoMap.put("devGroupMap", _grpMap[0]);
                         } else {
+                            List<Map<String,Object>> groupMapList = new ArrayList<Map<String,Object>>();
                             for (int g = 0; g < _grpMap.length; g++) {
                                 out.println(FormRow_ComboBox(PARM_DEV_GROUP_+g, _editGroup, s+" #"+(g+1)+":", _devGrp[g], _grpMap[g], "", 20));
+                                Map<String, Object> groupMap = new HashMap<String,Object>();
+                                groupMap.put("PARM_DEV_GROUP", PARM_DEV_GROUP_+g);
+                                groupMap.put("devGroupLabel", s+" #"+(g+1));
+                                groupMap.put("selDevGroup", _devGrp[g]);
+                                groupMap.put("devGroupMap", _grpMap[g]);
+                                groupMapList.add(groupMap);
                             }
+                            userInfoMap.put("groupMapList", groupMapList);
                         }
                     }
+                   
+                    
                     out.println(FormRow_Separator());
                     out.println(FormRow_ComboBox (PARM_LOGIN_PAGE    , _editUser , i18n.getString("UserInfo.firstLoginPage","First Login Page")+":" , loginPage, loginList, "", 16));
+                    
+                    userInfoMap.put("PARM_LOGIN_PAGE", PARM_LOGIN_PAGE);
+                    userInfoMap.put("firstLoginPageLabel", i18n.getString("UserInfo.firstLoginPage","First Login Page"));
+                    userInfoMap.put("loginPage", loginPage);
+                    userInfoMap.put("loginComboMap", loginList);
+                    userInfoMap.put("showPrefDev", _showPrefDev);
                     if (_showPrefDev) {
                         String selDevID = (_selUser != null)? _selUser.getPreferredDeviceID() : "";
                         ComboMap devMap = new ComboMap(reqState.createDeviceDescriptionMap(true/*includeID*/)); 
@@ -1224,19 +1323,35 @@ public class UserInfo
                       //String devArry[] = (String[])devList.toArray(new String[devList.size()]);
                       //out.println(FormRow_TextField(PARM_PREF_DEVICE , _editUser, i18n.getString("UserInfo.preferredDevice","Preferred {0} ID",devTitles)+":", selDevID, 32, 32));
                         out.println(FormRow_ComboBox (PARM_PREF_DEVICE , _editUser, i18n.getString("UserInfo.preferredDevice","Preferred {0} ID",devTitles)+":", selDevID, devMap, "", -1));
+                        userInfoMap.put("PARM_PREF_DEVICE", PARM_PREF_DEVICE);
+                        userInfoMap.put("prefDeviceLabel", i18n.getString("UserInfo.preferredDevice","Preferred {0} ID"));
+                        userInfoMap.put("selDeviceId", selDevID);
+                        userInfoMap.put("deviceMap", devMap);
                     }
+                    userInfoMap.put("showNotes", _showNotes);
                     if (_showNotes) {
                         String noteText = (_selUser != null)? StringTools.decodeNewline(_selUser.getNotes()) : "";
                         out.println(FormRow_Separator());
                         out.println(FormRow_TextArea(PARM_USER_NOTES, _editUser, i18n.getString("UserInfo.notes" ,"General Notes")+":", noteText, 5, 70));
+                        userInfoMap.put("PARM_USER_NOTES", PARM_USER_NOTES);
+                        userInfoMap.put("notesLabel", i18n.getString("UserInfo.notes" ,"General Notes"));
+                        userInfoMap.put("notesValue", noteText);
                     }
+                    userInfoMap.put("isCustomkey", !ListTools.isEmpty(customKeys));
                     if (!ListTools.isEmpty(customKeys)) {
                         out.println(FormRow_Separator());
+                        List<Map<String,Object>> customKeyMapList = new ArrayList<Map<String,Object>>();
                         for (String key : customKeys) {
                             String desc  = privLabel.getStringProperty(PrivateLabel.PROP_UserInfo_custom_ + key, key);
                             String value = (_selUser != null)? _selUser.getCustomAttribute(key) : "";
                             out.println(FormRow_TextField(PARM_USER_CUSTOM_ + key, _editUser, desc + ":", value, 40, 50));
+                            Map<String,Object> customKeyMap = new HashMap<String,Object>();
+                            customKeyMap.put("PARM_USER_CUSTOM", PARM_USER_CUSTOM_ + key);
+                            customKeyMap.put("userCustomerLabel",desc);
+                            customKeyMap.put("userCustomerValue",value);
+                            customKeyMapList.add(customKeyMap);
                         }
+                        userInfoMap.put("customKeyMapList", customKeyMapList);
                     }
 
                     /* Default AccessLevel/Role */
@@ -1254,17 +1369,29 @@ public class UserInfo
                         dftAclOpt = privLabel.getEnumComboMap(AccessLevel.class, new AccessLevel[] { AccessLevel.READ, AccessLevel.WRITE, AccessLevel.ALL });
                         dftAccLvl = privLabel.getEnumComboOption(AclEntry.getAccessLevel(_selUser.getMaxAccessLevel()));
                     }
+                    userInfoMap.put("viewALvl", viewALvl);
                     if (viewALvl) {
                         out.write(FormRow_ComboBox(PARM_ACCESS_LEVEL, editALvl, i18n.getString("UserInfo.maxAccessLevel","Maximum Access Level")+":", dftAccLvl, dftAclOpt, "", 18, null) + "\n");
+                        userInfoMap.put("PARM_ACCESS_LEVEL", PARM_ACCESS_LEVEL);
+                        userInfoMap.put("editALvl", editALvl);
+                        userInfoMap.put("accessLevelLabel", i18n.getString("UserInfo.maxAccessLevel","Maximum Access Level"));
+                        userInfoMap.put("selAccessLevel", dftAccLvl.getKey());
+                        userInfoMap.put("accessLevelMap", dftAclOpt);
                     }
+                    userInfoMap.put("isUserRole", _showRole && _viewRole);
                     if (_showRole && _viewRole) {
                         out.println(FormRow_ComboBox (PARM_USER_ROLE, _editRole, i18n.getString("UserInfo.defaultRole","Default ACL Role")+":", userRoleID, roleMap, null, 20));
+                        userInfoMap.put("PARM_USER_ROLE", PARM_USER_ROLE);
+                        userInfoMap.put("userRoleLabel", i18n.getString("UserInfo.defaultRole","Default ACL Role"));
+                        userInfoMap.put("selUserRole", userRoleID);
+                        userInfoMap.put("userRoleMap", roleMap);
                     }
 
                     /* end table */
                     out.println("</table>");
                     //out.write("<hr>\n");
 
+                    userInfoMap.put("isUserAccessCtrl", _showACLs && _viewAcls);
                     /* ACL entries (overrides) */
                     if (_showACLs && _viewAcls) {
                         out.write("<span style='margin-left: 4px; margin-top: 8px; font-weight: bold;'>");
@@ -1274,9 +1401,14 @@ public class UserInfo
                         out.write("</span>\n");
                         out.write("<div class='userAclViewDiv'>\n");
                         out.write("<table>\n");
+                        userInfoMap.put("userAccessCtrlTitle", i18n.getString("UserInfo.userAccessControl","User Access Control"));
+                        userInfoMap.put("userAccessCtrlDesc", i18n.getString("UserInfo.scrollDownToView","(scroll to view all configurable options)"));
+                        
                         AclEntry aclEntries[] = privLabel.getAllAclEntries();
                         String aclLevels[] = EnumTools.getValueNames(AccessLevel.class, locale);
                         Role userRole = (_selUser != null)? _selUser.getRole() : null;
+                        List<Map<String,Object>> userAccessCtrlMapList = new ArrayList<Map<String,Object>>();
+                        
                         for (int a = 0; a < aclEntries.length; a++) {
                             AclEntry acl = aclEntries[a];
                             if (!acl.isHidden()) {
@@ -1291,20 +1423,35 @@ public class UserInfo
                                 AccessLevel usrAcc   = (!isSelectedAdminUser && (_selUser != null))? UserAcl.getAccessLevel(_selUser,aclName,AccessLevel.UNDEFINED) : null;
                                 if ((usrAcc != null) && usrAcc.equals(AccessLevel.UNDEFINED)) { usrAcc = null; }
                                 if ((usrAcc != null) && !ListTools.contains(valAcc,usrAcc))   { usrAcc = maxAcc; } // to prevent selecting non-existant levels
+                                Map<String, Object> userAccessCtrlMap = new HashMap<String,Object>();
                                 if (_editAcls) {
                                     ComboOption accSel = (usrAcc != null)?
                                         privLabel.getEnumComboOption(usrAcc) :
                                         new ComboOption(ACL_DEFAULT, i18n.getString("UserInfo.default","Default"));
                                     String  dftHtml  = i18n.getString("UserInfo.defaultIsAcl","[Default is ''{0}'']","<b>"+dftAcc.toString(locale)+"</b>");
                                     out.write(FormRow_ComboBox(argKey, true , desc+":", accSel, aclOpt, "", 18, dftHtml) + "\n");
+                                    userAccessCtrlMap.put("comboId", argKey);
+                                    userAccessCtrlMap.put("comboLabel", desc);
+                                    userAccessCtrlMap.put("isComboEditable", true);
+                                    userAccessCtrlMap.put("selComboKey", ACL_DEFAULT);
+                                    userAccessCtrlMap.put("comboMap", aclOpt);
+                                    userAccessCtrlMap.put("comboTrailingHtml", dftHtml);
                                 } else {
                                     ComboOption accSel = (usrAcc != null)? 
                                         privLabel.getEnumComboOption(usrAcc) :
                                         privLabel.getEnumComboOption(dftAcc);
                                     out.write(FormRow_ComboBox(argKey, false, desc+":", accSel, aclOpt, "", 18, null) + "\n");
+                                    userAccessCtrlMap.put("comboId", argKey);
+                                    userAccessCtrlMap.put("comboLabel", desc);
+                                    userAccessCtrlMap.put("isComboEditable", false);
+                                    userAccessCtrlMap.put("selComboKey", ACL_DEFAULT);
+                                    userAccessCtrlMap.put("comboMap", aclOpt);
+                                    userAccessCtrlMap.put("comboTrailingHtml", "");
                                 }
+                                userAccessCtrlMapList.add(userAccessCtrlMap);
                             }
                         }
+                        userInfoMap.put("userAccessCtrlMapList", userAccessCtrlMapList);
                         out.write("</table>\n");
                         out.write("</div>\n");
                     }
@@ -1316,11 +1463,26 @@ public class UserInfo
                         out.write("<input type='submit' name='"+PARM_SUBMIT_CHG+"' value='"+i18n.getString("UserInfo.change","Change")+"'>\n");
                         out.write("<span style='padding-left:10px'>&nbsp;</span>\n");
                         out.write("<input type='button' name='"+PARM_BUTTON_CANCEL+"' value='"+i18n.getString("UserInfo.cancel","Cancel")+"' onclick=\"javascript:openURL('"+editURL+"','_self');\">\n"); // target='_top'
+                        userInfoMap.put("PARM_SUBMIT_CHG", PARM_SUBMIT_CHG);
+                        userInfoMap.put("submitBtnLabel", i18n.getString("UserInfo.change","Change"));
+                        userInfoMap.put("PARM_BUTTON_CANCEL", PARM_BUTTON_CANCEL);
+                        userInfoMap.put("cancelBtnLabel", i18n.getString("UserInfo.cancel","Cancel"));
                     } else {
                         out.write("<input type='button' name='"+PARM_BUTTON_BACK+"' value='"+i18n.getString("UserInfo.back","Back")+"' onclick=\"javascript:openURL('"+editURL+"','_self');\">\n"); // target='_top'
+                        userInfoMap.put("PARM_BUTTON_BACK", PARM_BUTTON_BACK);
+                        userInfoMap.put("backBtnLabel", i18n.getString("UserInfo.back","Back"));
                     }
                     out.write("</form>\n");
 
+                    Configuration cfg = TemplateLoader.getConfiguration();
+                    Template template = cfg.getTemplate("track/ftl/User-admin-edit.ftl");
+
+                    try {
+                      template.process(userInfoMap, out);
+                    } catch (TemplateException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
 
             }
