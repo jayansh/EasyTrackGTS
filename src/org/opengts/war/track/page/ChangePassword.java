@@ -249,7 +249,7 @@ public class ChangePassword
                 
                 
                 Configuration cfg = TemplateLoader.getConfiguration();
-                Template template = cfg.getTemplate("track/ftl/Change-password.ftl");
+                Template template = cfg.getTemplate("ftl/Change-password.ftl");
 
                 
                 try {

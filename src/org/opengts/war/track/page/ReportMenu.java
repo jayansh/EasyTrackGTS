@@ -1083,7 +1083,7 @@ public class ReportMenu
                 }
                 
                 Configuration cfg = TemplateLoader.getConfiguration();
-                Template template = cfg.getTemplate("track/ftl/Vehicle-detail.ftl");
+                Template template = cfg.getTemplate("ftl/Vehicle-detail.ftl");
 
                 try {
                   template.process(reportMap, out);

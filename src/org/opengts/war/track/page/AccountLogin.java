@@ -508,7 +508,7 @@ public class AccountLogin
                     
                     // 2.2. Get the template
 
-                    Template template = cfg.getTemplate("track/ftl/login.ftl");
+                    Template template = cfg.getTemplate("ftl/login.ftl");
                       
                    
                     utilMap.put("username", userID);

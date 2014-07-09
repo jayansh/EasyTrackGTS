@@ -757,7 +757,7 @@ public class GroupInfo
                     groupInfoMap.put("newBtnValue",i18n.getString("GroupInfo.new","New"));
                     
                     Configuration cfg = TemplateLoader.getConfiguration();
-                    Template template = cfg.getTemplate("track/ftl/Group-admin.ftl");
+                    Template template = cfg.getTemplate("ftl/Group-admin.ftl");
 
                     try {
                       template.process(groupInfoMap, out);

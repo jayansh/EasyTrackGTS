@@ -566,7 +566,7 @@ public class AccountInfo
                 
                 Configuration cfg = TemplateLoader.getConfiguration();
 
-                Template template = cfg.getTemplate("track/ftl/Account-admin.ftl");
+                Template template = cfg.getTemplate("ftl/Account-admin.ftl");
 
                 try {
                   template.process(accountInfoMap, out);

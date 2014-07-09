@@ -1649,7 +1649,7 @@ public abstract class TrackMap
                 
                 // 2.2. Get the template
 
-                Template template = cfg.getTemplate("track/ftl/Vehicle-map.ftl");
+                Template template = cfg.getTemplate("ftl/Vehicle-map.ftl");
 
                 try {
                   template.process(utilMap, out);

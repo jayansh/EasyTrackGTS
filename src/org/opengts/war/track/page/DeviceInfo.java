@@ -2285,7 +2285,7 @@ public class DeviceInfo
                     }
 
                     Configuration cfg = TemplateLoader.getConfiguration();
-                    Template template = cfg.getTemplate("track/ftl/Vehicle-admin.ftl");
+                    Template template = cfg.getTemplate("ftl/Vehicle-admin.ftl");
 
                     try {
                       template.process(deviceInfoMap, out);

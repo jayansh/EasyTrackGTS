@@ -1033,7 +1033,7 @@ public class UserInfo
                     }
                     
                     Configuration cfg = TemplateLoader.getConfiguration();
-                    Template template = cfg.getTemplate("track/ftl/User-admin.ftl");
+                    Template template = cfg.getTemplate("ftl/User-admin.ftl");
 
                     try {
                       template.process(userInfoMap, out);
@@ -1475,7 +1475,7 @@ public class UserInfo
                     out.write("</form>\n");
 
                     Configuration cfg = TemplateLoader.getConfiguration();
-                    Template template = cfg.getTemplate("track/ftl/User-admin-edit.ftl");
+                    Template template = cfg.getTemplate("ftl/User-admin-edit.ftl");
 
                     try {
                       template.process(userInfoMap, out);

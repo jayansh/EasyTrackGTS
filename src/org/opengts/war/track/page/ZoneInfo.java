@@ -926,7 +926,7 @@ public class ZoneInfo
                     zoneInfoMap.put("newBtnLabel", i18n.getString("ZoneInfo.list.new","New"));
                     
                     Configuration cfg = TemplateLoader.getConfiguration();
-                    Template template = cfg.getTemplate("track/ftl/Geozone-admin.ftl");
+                    Template template = cfg.getTemplate("ftl/Geozone-admin.ftl");
 
                     try {
                       template.process(zoneInfoMap, out);

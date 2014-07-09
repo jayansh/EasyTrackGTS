@@ -831,6 +831,7 @@ File     : build.xml
         <include name="org/opengts/war/track/**/*.java"/>
         <include name="org/opengts/extra/war/track/**/*.java"/>
         <include name="org/opengts/extra/war/service/Service.java"/>
+        <include name="com/jaysan/opengts/track/**/*.java"/>
     </javac>
 
     <!-- copy Locale property files -->
@@ -879,7 +880,7 @@ File     : build.xml
             <include name="**/*"/>
             <exclude name="WEB-INF/web.xml"/>
             <exclude name="WEB-INF/classes/**/*"/>
-            
+            <exclude name="WEB-INF/lib/**/*"/>
         </fileset>
     </war>
 

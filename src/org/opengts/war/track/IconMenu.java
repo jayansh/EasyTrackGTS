@@ -387,7 +387,7 @@ public class IconMenu
         utilMap.put("reqState",reqState);
 
         // 2.2. Get the template
-        Template template = cfg.getTemplate("track/ftl/Dashboard.ftl");
+        Template template = cfg.getTemplate("ftl/Dashboard.ftl");
 
         try {
           template.process(utilMap, out);
