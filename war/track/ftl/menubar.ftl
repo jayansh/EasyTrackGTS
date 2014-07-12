@@ -29,7 +29,7 @@
                 </#if>
               </#list>
              </ul>
-             <a href="Track?page=login"><img style="float:right; margin-top:10px;" src="track/images/logout-icon.png" width='40'height='40'/></a>
+             <a href="Track?page=login"><img style="float:right; margin-top:10px;" src="images/logout-icon.png" width='40'height='40'/></a>
              <form class="navbar-form navbar-right" style="margin-right:10px;">
             <input type="text" class="form-control" placeholder="Search...">
   

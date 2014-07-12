@@ -6,13 +6,13 @@
         <title> GPS Tracking</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="track/css/bootstrap.css" rel="stylesheet"/>
-        <link href="track/css/style.css" rel="stylesheet"/>
-        <link href="track/css/sticky-footer.css" rel="stylesheet"/>
+        <link href="css/bootstrap.css" rel="stylesheet"/>
+        <link href="css/style.css" rel="stylesheet"/>
+        <link href="css/sticky-footer.css" rel="stylesheet"/>
         <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
-      <script src="track/js/.0html5shiv.js"></script>
-      <script src="track/js/respond.min.js"></script>
+      <script src="js/.0html5shiv.js"></script>
+      <script src="js/respond.min.js"></script>
     <![endif]-->
     </head>
     <body>
@@ -34,7 +34,7 @@
         <!--<h1>GPS Tracking System</h1>-->
         
                     
- <img  src="track/images/logo.gif"  alt="jaysan"/>
+ <img  src="images/logo.gif"  alt="jaysan"/>
  </div>
       <form class="form-signin" role="form" name='${FORM_LOGIN}' method='post' action='${baseURL}' target='${target}'>
         <h2 class="form-signin-heading">Please sign in</h2>
@@ -61,8 +61,8 @@
         <p class="text-muted">copyright 2014.</p>
       
     </div>
-       <script src="track/js/jquery.min.js"></script>
-        <script src="track/js/bootstrap.js"></script>
+       <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.js"></script>
     </body>
 </html>
 

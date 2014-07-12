@@ -26,12 +26,12 @@
           <div class="navbar">
             <ul class="nav nav-justified">
               
-                <li >   <a href="#"><img  style="margin-right:150px;"src="track/images/map.gif" width="200" height="200"/></a> 
+                <li >   <a href="#"><img  style="margin-right:150px;"src="images/map.gif" width="200" height="200"/></a> 
                     <button class="btn btn-primary"style="margin-left:20px;" onclick="window.location.href='Vehicle-map.html'" >Vehicle Map</button>
                 <button class="btn btn-primary" onclick="window.location.href='Group-map.html'">Group Map</button>
                 </li>
               
-              <li>   <a href="#"><img style="margin-right:150px;" src="track/images/reports.png" width="200" height="200"/></a>
+              <li>   <a href="#"><img style="margin-right:150px;" src="images/reports.png" width="200" height="200"/></a>
               
               <button class="btn btn-primary" style="margin-left:20px; " onclick="window.location.href='Vehicle-detail.html'">Vehicle Detail</button>
                 <button class="btn btn-primary" >Group Detail</button>
@@ -40,7 +40,7 @@
               
               </li>
               
-              <li ><a href="#"><img style="margin-right:150px;" src="track/images/user-admin-1.png" width="200" height="200"/></a>
+              <li ><a href="#"><img style="margin-right:150px;" src="images/user-admin-1.png" width="200" height="200"/></a>
               <button class="btn btn-primary" style="margin-left:20px; " onclick="window.location.href='Account-admin.html'">Account Admin</button>
                 <button class="btn btn-primary">User Admin</button>
                 <br> <button class="btn btn-primary" style="margin-top:10px;margin-left:20px; " onclick="window.location.href='Vehicle-admin.html'">Vehicle Admin</button>
