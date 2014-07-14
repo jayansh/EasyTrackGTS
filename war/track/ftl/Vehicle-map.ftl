@@ -96,9 +96,9 @@
           <form id='ReplayMap' name='ReplayMap' method='get' 
                 action="javascript:trackMapClickedReplay(document.getElementById('ReplayMap').${ID_MAP_SHOW_INFO}.checked);" target='_self'>
             <br><label for="${ID_MAP_REPLAY_BTN}">${i18nReplayBtn}</label>
-            <input type="button" id="${ID_MAP_REPLAY_BTN}" name='replayMap' class="glyphicon glyphicon-play-circle" title="${i18nReplayTip}"></input>
+            <input type="image" id="${ID_MAP_REPLAY_BTN}" name='replayMap' title="${i18nReplayTip}"></input>
             <span title="${i18nInfoTip}">
-              <label for="${ID_MAP_SHOW_INFO}>${i18nInfoText}</label>
+              <label for="${ID_MAP_SHOW_INFO}">${i18nInfoText}</label>
               <input type="checkbox" id='${ID_MAP_SHOW_INFO}' name='${ID_MAP_SHOW_INFO}'></input>
             </span>
           </form>
