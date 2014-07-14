@@ -32,9 +32,11 @@
         
         <label>${mapTypeTitle}:</label>
         <select class="form-control input-sm" id='${ID_DEVICE_ID}' name='${parmDevGrp}' onchange="javascript:trackMapSelectDevice()">
-          <#list deviceMapList as deviceMap>
-            <option value="${deviceMap['id']}" ${deviceMap['sel']}>  ${deviceMap['disp']}</option>
-          </#list>
+          <#if deviceMapList?has_content>
+            <#list deviceMapList as deviceMap>
+              <option value="${deviceMap['id']}" ${deviceMap['sel']}>  ${deviceMap['disp']}</option>
+            </#list>
+          </#if>
         </select>
     </form>
     <div class="calendar">
