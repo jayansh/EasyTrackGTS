@@ -48,6 +48,7 @@
                     </tr>
                   </thead>
                   <tbody>
+                  <#if deviceMapList?has_content>
                     <#list deviceMapList as deviceMap>
                         <tr>
                           <td><input type='radio' name='${PARM_DEVICE}' id="${deviceMap['deviceID']}" value="${deviceMap['deviceID']}" ${deviceMap['checked']}></td>
@@ -75,6 +76,7 @@
                           </#if>
                         </tr>
                     </#list>
+                  </#if>
                   </tbody>
                 </table>
                 <#if allowView>

@@ -369,7 +369,11 @@ public class IconMenu
                 /* menu help */
                 String menuHelp = StringTools.trim(wp.getMenuHelp(reqState, parentPageName));
                 if(count == 0){
+<<<<<<< HEAD
                     out.write("<a href=\"#\"><img  style=\"margin-right:150px;\"src=\"/images/"+mgn.substring(mgn.indexOf(".")+1)+".png\" width=\"200\" height=\"200\" alt='"+parentPageName+"'/></a>");
+=======
+                    out.write("<a href=\"#\"><img  style=\"margin-right:150px;\"src=\"images/"+mgn.substring(mgn.indexOf(".")+1)+".png\" width=\"200\" height=\"200\" alt='"+parentPageName+"'/></a>");
+>>>>>>> b2901ae630b67910231dfb50566a43bf7743a526
                 }
                 out.write("<button class='btn btn-primary'  style='margin-top:10px;margin-left:10px;' title='"+menuHelp+"' onclick=\"window.location.href='"+url+"'\">"+menuDesc+"</button>");
                 if(count == 1 || count%2 ==1){
