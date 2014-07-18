@@ -1009,6 +1009,7 @@ public abstract class TrackMap
                 utilMap.put("PARM_PAGE", PARM_PAGE);
                 utilMap.put("PARM_COMMAND", PARM_COMMAND);
                 utilMap.put("PARM_ARGUMENT", PARM_ARGUMENT);
+                utilMap.put("ID_DEVICE_ID", ID_DEVICE_ID);
                 // start of map/date table (2 columns)
                 String tableStyle = "width:100%;" + (mapAutoSize?" height:100%;":"");
 //                out.println("<table border='0' cellspacing='0' cellpadding='0' style='"+tableStyle+"'>"); // [
@@ -1045,6 +1046,7 @@ public abstract class TrackMap
 //                out.print("<td nowrap><b>"+mapTypeTitle+":</b>&nbsp;</td>");
                 String selId = isFleet? reqState.getSelectedDeviceGroupID() : reqState.getSelectedDeviceID();
                 String parmDevGrp = isFleet? PARM_GROUP : PARM_DEVICE;
+                utilMap.put("parmDevGrp", parmDevGrp);
                 IDDescription.SortBy dcSortBy = DeviceChooser.getSortBy(privLabel);
                 if (DeviceChooser.isDeviceChooserUseTable(privLabel)) {
 //                    out.write("<td nowrap>");
@@ -1105,8 +1107,8 @@ public abstract class TrackMap
                         IDDescription.SortList(sortList, rtnDispName? IDDescription.SortBy.DESCRIPTION : dcSortBy);
 //                        out.print("<td nowrap>");
 //                        out.print("<select id='"+ID_DEVICE_ID+"' name='"+parmDevGrp+"' onchange=\"javascript:trackMapSelectDevice()\">");
-                        utilMap.put("ID_DEVICE_ID", ID_DEVICE_ID);
-                        utilMap.put("parmDevGrp", parmDevGrp);
+//                        utilMap.put("ID_DEVICE_ID", ID_DEVICE_ID);
+//                        utilMap.put("parmDevGrp", parmDevGrp);
                         for (IDDescription dd : sortList) {
                             String id   = dd.getID();
                             String desc = dd.getDescription();
