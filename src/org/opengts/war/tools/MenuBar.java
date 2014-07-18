@@ -380,7 +380,7 @@ public class MenuBar
             cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
 
             // 2.2. Get the template
-            Template template = cfg.getTemplate("track/ftl/menubar.ftl");
+            Template template = cfg.getTemplate("ftl/menubar.ftl");
 
             try {
               template.process(menuBarMap, out);
