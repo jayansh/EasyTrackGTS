@@ -34,7 +34,7 @@
         <!--<h1>GPS Tracking System</h1>-->
         
                     
- <img  src="track/images/logo.gif"  alt="jaysan"/>
+ <img  src="images/logo.gif"  alt="jaysan"/>
  </div>
       <form class="form-signin" role="form" name='${FORM_LOGIN}' method='post' action='${baseURL}' target='${target}'>
         <h2 class="form-signin-heading">Please sign in</h2>
