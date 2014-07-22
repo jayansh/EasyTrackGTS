@@ -9,11 +9,14 @@
         <link href="css/bootstrap.css" rel="stylesheet"/>
         <link href="css/style.css" rel="stylesheet"/>
         <link href="css/sticky-footer.css" rel="stylesheet"/>
+        <link href="css/login.css" rel="stylesheet"/>
+        
         <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="js/.0html5shiv.js"></script>
       <script src="js/respond.min.js"></script>
     <![endif]-->
+   
     </head>
     <body>
     <#--assign username = requestParameters.USERNAME?default((sessionAttributes.autoUserLogin.userLoginId)?default(""))>
@@ -28,9 +31,10 @@
         
         <div class="container">
         
-        <div class="modal-dialog">
+        <!--<div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header"><div class="header-title">
+                    <div class="modal-header">-->
+                    <div class="header-title">
         <!--<h1>GPS Tracking System</h1>-->
         
                     
@@ -48,9 +52,9 @@
         <a href="#">Forgot your Password?</a>
       </form>
 
+   <!-- </div>
     </div>
-    </div>
-    </div>
+    </div>-->
     </div>
         <!--If Username/Password is incorrect Show this Message-->
        <!-- <div class="alert alert-danger">
