@@ -370,7 +370,11 @@ public class IconMenu
                 String menuHelp = StringTools.trim(wp.getMenuHelp(reqState, parentPageName));
                 if(count == 0){
 
+
                     
+
+                    out.write("<a href=\"#\"><img  style=\"margin-right:150px;\"src=\"images/"+mgn.substring(mgn.indexOf(".")+1)+".png\" width=\"200\" height=\"200\" alt='"+parentPageName+"'/></a>");
+
 
                     out.write("<a href=\"#\"><img  style=\"margin-right:150px;\"src=\"images/"+mgn.substring(mgn.indexOf(".")+1)+".png\" width=\"200\" height=\"200\" alt='"+parentPageName+"'/></a>");
 
