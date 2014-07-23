@@ -9,11 +9,8 @@
         <link href="css/bootstrap.css" rel="stylesheet"/>
         <link href="css/style.css" rel="stylesheet"/>
         <link href="css/sticky-footer.css" rel="stylesheet"/>
-<<<<<<< HEAD
         <link href="css/login.css" rel="stylesheet"/>
         
-=======
->>>>>>> 2172a2e2539c8ec906a52292a1d275c990858fd4
         <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="js/.0html5shiv.js"></script>
@@ -57,7 +54,7 @@
 
    <!-- </div>
     </div>
-    </div>-->
+    </div>
     </div>
         <!--If Username/Password is incorrect Show this Message-->
        <!-- <div class="alert alert-danger">
