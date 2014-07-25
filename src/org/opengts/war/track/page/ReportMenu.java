@@ -709,50 +709,51 @@ public class ReportMenu
                     String grpTitles[] = reqState.getDeviceGroupTitles();
 //                    out.write("<b>"+i18n.getString("ReportMenu.deviceGroup","{0}:",grpTitles)+"</b><br>\n");
                     reportMap.put("deviceGroupTitle",i18n.getString("ReportMenu.deviceGroup","{0}:",grpTitles));
-                    if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Fleet
-                        out.write("<table cellspacing='0' cellpadding='0' border='0'><tr>");
-                        out.write("<td>");
-                        String chooserStyle   = "height:17px; padding:0px 0px 0px 3px; margin:0px 0px 0px 3px; cursor:pointer; border:1px solid gray;";
-                        String chooserOnclick = "javascript:rptmShowSelector()";
-                        String chooserLen     = "16";
-                        switch (sortBy) {
-                            case DESCRIPTION : {
-                                String grDesc = FilterValue(reqState.getDeviceGroupDescription(_groupID,false));
-                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+_groupID+"'>");
-                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+grDesc+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
-                                } break;
-                            case NAME : {
-                                String grName = FilterValue(reqState.getDeviceGroupDescription(_groupID,true));
-                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+_groupID+"'>");
-                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+grName+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
-                                } break;
-                            default : {
-                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='text' value='"+_groupID+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
-                                } break;
-                        }
-                        out.write("</td>");
-                        out.write("<td><img src='images/Pulldown.png' height='17' style='cursor:pointer;' onclick='"+chooserOnclick+"'></td>");
-                        out.write("</tr></table>\n");
-                    } else {
+//                    if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Fleet
+//                        out.write("<table cellspacing='0' cellpadding='0' border='0'><tr>");
+//                        out.write("<td>");
+//                        String chooserStyle   = "height:17px; padding:0px 0px 0px 3px; margin:0px 0px 0px 3px; cursor:pointer; border:1px solid gray;";
+//                        String chooserOnclick = "javascript:rptmShowSelector()";
+//                        String chooserLen     = "16";
+//                        switch (sortBy) {
+//                            case DESCRIPTION : {
+//                                String grDesc = FilterValue(reqState.getDeviceGroupDescription(_groupID,false));
+//                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+_groupID+"'>");
+//                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+grDesc+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
+//                                } break;
+//                            case NAME : {
+//                                String grName = FilterValue(reqState.getDeviceGroupDescription(_groupID,true));
+//                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+_groupID+"'>");
+//                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+grName+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
+//                                } break;
+//                            default : {
+//                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='text' value='"+_groupID+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
+//                                } break;
+//                        }
+//                        out.write("</td>");
+//                        out.write("<td><img src='images/Pulldown.png' height='17' style='cursor:pointer;' onclick='"+chooserOnclick+"'></td>");
+//                        out.write("</tr></table>\n");
+//                    } else {
                         OrderedSet<String> groupList = reqState.getDeviceGroupIDList(true); // non-null, length > 0
-                        if (ListTools.isEmpty(groupList)) {
-                            // will not occur
-                            String id   = DeviceGroup.DEVICE_GROUP_NONE;
-                            String desc = FilterValue("?");
-                            out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+id+"'>");
-                            out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
-                        } else
-                        if (DeviceChooser.showSingleItemTextField(privLabel) && (groupList.size() == 1)) {
-                            String id   = groupList.get(0);
-                            if (sortBy.equals(IDDescription.SortBy.ID)) {
-                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+id+"'>");
-                            } else {
-                                boolean rtnDispName = sortBy.equals(IDDescription.SortBy.NAME);
-                                String desc = FilterValue(reqState.getDeviceGroupDescription(id,rtnDispName));
-                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+id+"'>");
-                                out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
-                            }
-                        } else {
+                        reportMap.put("ID_DEVICE_ID",ID_DEVICE_ID);
+//                        if (ListTools.isEmpty(groupList)) {
+//                            // will not occur
+//                            String id   = DeviceGroup.DEVICE_GROUP_NONE;
+//                            String desc = FilterValue("?");
+//                            out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+id+"'>");
+//                            out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
+//                        } else
+//                        if (DeviceChooser.showSingleItemTextField(privLabel) && (groupList.size() == 1)) {
+//                            String id   = groupList.get(0);
+//                            if (sortBy.equals(IDDescription.SortBy.ID)) {
+//                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+id+"'>");
+//                            } else {
+//                                boolean rtnDispName = sortBy.equals(IDDescription.SortBy.NAME);
+//                                String desc = FilterValue(reqState.getDeviceGroupDescription(id,rtnDispName));
+//                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_GROUP_ID  +"' type='hidden' value='"+id+"'>");
+//                                out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
+//                            }
+//                        } else {
                             java.util.List<IDDescription> sortList = new Vector<IDDescription>();
                             boolean rtnDispName = sortBy.equals(IDDescription.SortBy.NAME);
                             for (String id : groupList) {
@@ -761,7 +762,6 @@ public class ReportMenu
                             }
                             IDDescription.SortList(sortList, rtnDispName? IDDescription.SortBy.DESCRIPTION : sortBy);
 //                            out.write("<select id='"+ID_DEVICE_ID+"' name='"+PARM_GROUP_ID+"'>\n");
-                            reportMap.put("ID_DEVICE_ID",ID_DEVICE_ID);
                             reportMap.put("PARM_DEVICE_ID", PARM_DEVICE_ID);
                             for (IDDescription dd : sortList) {
                                 String id   = dd.getID();
@@ -777,56 +777,59 @@ public class ReportMenu
                             }
 //                            out.write("</select>\n");
                             reportMap.put("deviceMapList", deviceMapList);
-                        }
-                    }
+//                        }
+//                    }
                 } else {
                     // device selection
                     String devTitles[] = reqState.getDeviceTitles();
 //                    out.write("<b>"+i18n.getString("ReportMenu.device","{0}:",devTitles)+"</b><br>\n");
                     reportMap.put("deviceGroupTitle",i18n.getString("ReportMenu.device","{0}:",devTitles));
-                    if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Device
-                        out.write("<table cellspacing='0' cellpadding='0' border='0'><tr>");
-                        out.write("<td>");
-                        String chooserStyle   = "height:17px; padding:0px 0px 0px 3px; margin:0px 0px 0px 3px; cursor:pointer; border:1px solid gray;";
-                        String chooserOnclick = "javascript:rptmShowSelector()";
-                        String chooserLen     = "16";
-                        switch (sortBy) {
-                            case DESCRIPTION : {
-                                String dvDesc = FilterValue(reqState.getDeviceDescription(_deviceID,false));
-                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='hidden' value='"+_deviceID+"'>");
-                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+dvDesc   +"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
-                                } break;
-                            case NAME : {
-                                String dvName = FilterValue(reqState.getDeviceDescription(_deviceID,true));
-                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='hidden' value='"+_deviceID+"'>");
-                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+dvName   +"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
-                                } break;
-                            default : {
-                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='text' value='"+_deviceID+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
-                                } break;
-                        }
-                        out.write("</td>");
-                        out.write("<td><img src='images/Pulldown.png' height='17' style='cursor:pointer;' onclick='"+chooserOnclick+"'></td>");
-                        out.write("</tr></table>\n");
-                    } else {
+                    reportMap.put("ID_DEVICE_ID",ID_DEVICE_ID);
+                    reportMap.put("PARM_DEVICE_ID", PARM_DEVICE_ID);
+//                    if (DeviceChooser.isDeviceChooserUseTable(privLabel)) { // Device
+//                        out.write("<table cellspacing='0' cellpadding='0' border='0'><tr>");
+//                        out.write("<td>");
+//                        String chooserStyle   = "height:17px; padding:0px 0px 0px 3px; margin:0px 0px 0px 3px; cursor:pointer; border:1px solid gray;";
+//                        String chooserOnclick = "javascript:rptmShowSelector()";
+//                        String chooserLen     = "16";
+//                        switch (sortBy) {
+//                            case DESCRIPTION : {
+//                                String dvDesc = FilterValue(reqState.getDeviceDescription(_deviceID,false));
+//                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='hidden' value='"+_deviceID+"'>");
+//                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+dvDesc   +"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
+//                                } break;
+//                            case NAME : {
+//                                String dvName = FilterValue(reqState.getDeviceDescription(_deviceID,true));
+//                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='hidden' value='"+_deviceID+"'>");
+//                                out.write("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' type='text' value='"+dvName   +"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
+//                                } break;
+//                            default : {
+//                                out.write("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='text' value='"+_deviceID+"' readonly size='"+chooserLen+"' style='"+chooserStyle+"' onclick=\""+chooserOnclick+"\">");
+//                                } break;
+//                        }
+//                        out.write("</td>");
+//                        out.write("<td><img src='images/Pulldown.png' height='17' style='cursor:pointer;' onclick='"+chooserOnclick+"'></td>");
+//                        out.write("</tr></table>\n");
+//                    } else {
                         OrderedSet<String> devList = reqState.getDeviceIDList(false/*inclInactv*/);
-                        if (ListTools.isEmpty(devList)) {
-                            String id   = DeviceGroup.DEVICE_GROUP_NONE;
-                            String desc = FilterValue("?");
-                            out.println("<input id='"+ID_DEVICE_ID+"' name='"+PARM_DEVICE_ID+"' type='hidden' value='"+id+"'>");
-                            out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
-                        } else
-                        if (DeviceChooser.showSingleItemTextField(privLabel) && (devList.size() == 1)) {
-                            String id   = devList.get(0);
-                            if (sortBy.equals(IDDescription.SortBy.ID)) {
-                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+id+"'>");
-                            } else {
-                                boolean rtnDispName = sortBy.equals(IDDescription.SortBy.NAME);
-                                String desc = FilterValue(reqState.getDeviceDescription(id,rtnDispName));
-                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='hidden' value='"+id+"'>");
-                                out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
-                            }
-                        } else {
+                        reportMap.put("isDeviceListEmpty",ListTools.isEmpty(devList));
+//                        if (ListTools.isEmpty(devList)) {
+//                            String id   = DeviceGroup.DEVICE_GROUP_NONE;
+//                            String desc = FilterValue("?");
+//                            out.println("<input id='"+ID_DEVICE_ID+"' name='"+PARM_DEVICE_ID+"' type='hidden' value='"+id+"'>");
+//                            out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
+//                        } else
+//                        if (DeviceChooser.showSingleItemTextField(privLabel) && (devList.size() == 1)) {
+//                            String id   = devList.get(0);
+//                            if (sortBy.equals(IDDescription.SortBy.ID)) {
+//                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+id+"'>");
+//                            } else {
+//                                boolean rtnDispName = sortBy.equals(IDDescription.SortBy.NAME);
+//                                String desc = FilterValue(reqState.getDeviceDescription(id,rtnDispName));
+//                                out.println("<input id='"+ID_DEVICE_ID   +"' name='"+PARM_DEVICE_ID +"' type='hidden' value='"+id+"'>");
+//                                out.println("<input id='"+ID_DEVICE_DESCR+"' name='"+ID_DEVICE_DESCR+"' class='"+CommonServlet.CSS_TEXT_READONLY+"' type='text' readonly size='14' maxlength='32' value='"+desc+"'>");
+//                            }
+//                        } else {
                             java.util.List<IDDescription> sortList = new Vector<IDDescription>();
                             boolean rtnDispName = sortBy.equals(IDDescription.SortBy.NAME);
                             for (String id : devList) {
@@ -835,7 +838,6 @@ public class ReportMenu
                             }
                             IDDescription.SortList(sortList, rtnDispName? IDDescription.SortBy.DESCRIPTION : sortBy);
 //                            out.write("<select id='"+ID_DEVICE_ID+"' name='"+PARM_DEVICE_ID+"'>\n");
-                            reportMap.put("ID_DEVICE_ID",ID_DEVICE_ID);
                             reportMap.put("PARM_DEVICE_ID", PARM_DEVICE_ID);
                             for (IDDescription dd : sortList) {
                                 String id   = dd.getID();
@@ -851,8 +853,8 @@ public class ReportMenu
                             }
 //                            out.write("</select>\n");
                             reportMap.put("deviceMapList", deviceMapList);
-                        }
-                    }
+//                        }
+//                    }
                 }
 //                out.write("</form>\n");
 

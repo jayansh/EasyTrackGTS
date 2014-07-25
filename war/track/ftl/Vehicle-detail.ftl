@@ -19,9 +19,11 @@
               <form id='${FORM_DEVICE_GROUP}' name='${FORM_DEVICE_GROUP}' method='post' action="javascript:rptmSubmitReport();" target='_self''>
                 <label>${deviceGroupTitle}</label>
                 <select class="form-control input-lg" id='${ID_DEVICE_ID}' name='${PARM_DEVICE_ID}' onchange="javascript:trackMapSelectDevice()">
-                  <#list deviceMapList as deviceMap>
-                    <option value="${deviceMap['id']}" ${deviceMap['sel']}>  ${deviceMap['disp']}</option>
-                  </#list>
+                  <#if deviceMapList?has_content>
+                    <#list deviceMapList as deviceMap>
+                      <option value="${deviceMap['id']}" ${deviceMap['sel']}>  ${deviceMap['disp']}</option>
+                    </#list>
+                  </#if>
                 </select>
               </form>
               <label>${selectDateTitle}</label>
