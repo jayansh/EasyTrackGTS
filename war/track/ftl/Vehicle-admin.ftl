@@ -96,7 +96,7 @@
                 </#if>
             </form>
                 <hr>
-                <#if allowNew>
+                <#if allowNew??>
                   <form name='${FORM_DEVICE_NEW}' method='post' action='${newURL}' target='_self'>
                   <input type='hidden' name='${PARM_COMMAND}' value='${COMMAND_INFO_NEW_DEVICE}'/>
                   <div style="margin-top:10px;">${createText}:</div>

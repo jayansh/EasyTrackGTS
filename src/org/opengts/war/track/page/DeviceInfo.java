@@ -2270,9 +2270,10 @@ public class DeviceInfo
 //                    out.write("</form>\n");
 //                    out.write("</div>\n");
 //                    out.write("<hr>\n");
+                    deviceInfoMap.put("createText", createText);
+                    }
 
                     deviceInfoMap.put("allowNew", _allowNew);
-                    deviceInfoMap.put("createText", createText);
                     deviceInfoMap.put("FORM_DEVICE_NEW", FORM_DEVICE_NEW);
                     deviceInfoMap.put("newURL", newURL);
                     // deviceInfoMap.put("PARM_COMMAND", PARM_COMMAND);
@@ -2281,8 +2282,6 @@ public class DeviceInfo
                     deviceInfoMap.put("PARM_NEW_NAME", PARM_NEW_NAME);
                     deviceInfoMap.put("PARM_SUBMIT_NEW", PARM_SUBMIT_NEW);
                     deviceInfoMap.put("newBtnValue", i18n.getString("DeviceInfo.new","New"));
-                    
-                    }
 
                     Configuration cfg = TemplateLoader.getConfiguration();
                     Template template = cfg.getTemplate("ftl/Vehicle-admin.ftl");
