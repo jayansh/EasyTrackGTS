@@ -206,9 +206,10 @@
                 </#list>
               </select>
             </#if>
-
+ 
             <#if isUserRole>
               <label>${userRoleLabel}</label>
+             
               <select class="form-control input-lg" name="${PARM_USER_ROLE}" ${comboEnabled}>
                 <#list userRoleMap?keys as key> 
                   <#assign sel>
@@ -221,9 +222,11 @@
                 </#list>
               </select>
             </#if>
-
+   
             <#if isUserAccessCtrl>
+            <div style="margin-top:20px;">
                <label>${userAccessCtrlTitle}: ${userAccessCtrlDesc}</label>
+               <div class="scroll">
                <#list userAccessCtrlMapList as userAccessCtrlMap>
                  <label>${userAccessCtrlMap['comboLabel']}</label>
                  <#assign userAccessCtrlComboEnabled>
@@ -246,7 +249,8 @@
                  </select>
                </#list>
             </#if>
-
+ </div>
+ </div>
             <#if editUser>
               <input type='submit' name='${PARM_SUBMIT_CHG}' value='${submitBtnLabel}' class="btn btn-primary btn-sm" >
               <input type='button' name='${PARM_BUTTON_CANCEL}' value='${cancelBtnLabel}' onclick="javascript:openURL('${editURL}','_self')" class="btn btn-primary btn-sm">
@@ -257,6 +261,7 @@
         </div>
       </div>
     </div>
+   
     <#include "footer.ftl">
   </body>
 </html>
