@@ -1433,7 +1433,8 @@ public class UserInfo
                                     userAccessCtrlMap.put("comboId", argKey);
                                     userAccessCtrlMap.put("comboLabel", desc);
                                     userAccessCtrlMap.put("isComboEditable", true);
-                                    userAccessCtrlMap.put("selComboKey", ACL_DEFAULT);
+                                    String selComboKey =  (usrAcc != null)?((Enum)usrAcc).name():ACL_DEFAULT;
+                                    userAccessCtrlMap.put("selComboKey", selComboKey);
                                     userAccessCtrlMap.put("comboMap", aclOpt);
                                     userAccessCtrlMap.put("comboTrailingHtml", dftHtml);
                                 } else {
@@ -1444,7 +1445,8 @@ public class UserInfo
                                     userAccessCtrlMap.put("comboId", argKey);
                                     userAccessCtrlMap.put("comboLabel", desc);
                                     userAccessCtrlMap.put("isComboEditable", false);
-                                    userAccessCtrlMap.put("selComboKey", ACL_DEFAULT);
+                                    String selComboKey =  (usrAcc != null)?((Enum)usrAcc).name():((Enum)dftAcc).name();
+                                    userAccessCtrlMap.put("selComboKey", selComboKey);
                                     userAccessCtrlMap.put("comboMap", aclOpt);
                                     userAccessCtrlMap.put("comboTrailingHtml", "");
                                 }

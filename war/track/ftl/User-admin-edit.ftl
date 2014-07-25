@@ -238,7 +238,6 @@
                      <#assign sel>
                        <#if userAccessCtrlMap['selComboKey'] = key>
                          selected
-                       <#else>
                        </#if>
                      </#assign>
                      <option value='${key}' ${sel}>${userAccessComboMap[key]}</option>
